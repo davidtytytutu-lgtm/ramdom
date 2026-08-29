@@ -1,27 +1,38 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
 <title>DAVID RANDOM // INTERNET TERMINAL</title>
 
 <style>
+
 /* =========================================================
-   DAVID RANDOM — RETRO INTERNET / TERMINAL
-   ========================================================= */
+   DAVID RANDOM
+   RETRO INTERNET TERMINAL
+========================================================= */
 
 :root {
+
     --bg: #050805;
     --panel: #0b100b;
     --panel2: #101710;
+
     --green: #35ff5a;
     --green-dark: #16852b;
     --green-soft: #8cff9d;
+
     --text: #d5ffd9;
+
     --red: #ff4444;
-    --yellow: #ffff55;
-    --blue: #55aaff;
-    --border: #238b35;
+
 }
 
 * {
@@ -33,913 +44,1687 @@ html {
 }
 
 body {
+
     margin: 0;
-    background:
-        radial-gradient(circle at center, #101810 0%, #030503 80%);
-    color: var(--text);
-    font-family: "Courier New", monospace;
+
     min-height: 100vh;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #101810 0%,
+            #030503 80%
+        );
+
+    color: var(--text);
+
+    font-family:
+        "Courier New",
+        monospace;
+
     overflow-x: hidden;
+
 }
 
-/* CRT */
+
+/* =========================================================
+   CRT EFFECT
+========================================================= */
 
 body::before {
+
     content: "";
+
     pointer-events: none;
+
     position: fixed;
+
     inset: 0;
+
     z-index: 9999;
+
     background:
         repeating-linear-gradient(
             to bottom,
-            rgba(255,255,255,0.025) 0px,
-            rgba(255,255,255,0.025) 1px,
+            rgba(255,255,255,.025) 0px,
+            rgba(255,255,255,.025) 1px,
             transparent 2px,
             transparent 4px
         );
-    mix-blend-mode: overlay;
+
 }
 
 body::after {
+
     content: "";
+
     pointer-events: none;
+
     position: fixed;
+
     inset: 0;
+
     z-index: 9998;
+
     box-shadow:
         inset 0 0 100px rgba(0,0,0,.9),
         inset 0 0 20px rgba(0,255,50,.08);
+
 }
 
-a {
-    color: var(--green);
-    text-decoration: none;
-}
 
-a:hover {
-    color: white;
-    text-shadow: 0 0 8px var(--green);
-}
+/* =========================================================
+   GLOBAL
+========================================================= */
 
 button,
 input,
-textarea,
-select {
-    font-family: inherit;
+textarea {
+
+    font-family:
+        "Courier New",
+        monospace;
+
 }
 
-/* MAIN */
+a {
+
+    color:
+        var(--green);
+
+    text-decoration:
+        none;
+
+}
+
+a:hover {
+
+    color:
+        white;
+
+    text-shadow:
+        0 0 8px var(--green);
+
+}
+
+
+/* =========================================================
+   WRAPPER
+========================================================= */
 
 .wrapper {
-    width: min(1200px, calc(100% - 20px));
-    margin: 15px auto;
+
+    width:
+        min(
+            1200px,
+            calc(100% - 20px)
+        );
+
+    margin:
+        15px auto;
+
 }
 
-/* HEADER */
+
+/* =========================================================
+   HEADER
+========================================================= */
 
 header {
-    border: 2px solid var(--border);
-    background: #071007;
-    padding: 18px;
+
+    border:
+        2px solid var(--green-dark);
+
+    background:
+        #071007;
+
+    padding:
+        18px;
+
     box-shadow:
         0 0 15px rgba(30,255,70,.12),
         inset 0 0 20px rgba(30,255,70,.04);
+
 }
 
 .logo {
-    color: var(--green);
-    font-size: clamp(24px, 5vw, 52px);
-    font-weight: bold;
-    letter-spacing: 5px;
+
+    color:
+        var(--green);
+
+    font-size:
+        clamp(
+            25px,
+            5vw,
+            55px
+        );
+
+    font-weight:
+        bold;
+
+    letter-spacing:
+        5px;
+
     text-shadow:
         0 0 4px var(--green),
         0 0 15px rgba(50,255,80,.5);
+
 }
 
 .logo-small {
-    color: var(--green-soft);
-    font-size: 14px;
-    margin-top: 5px;
+
+    color:
+        var(--green-soft);
+
+    font-size:
+        14px;
+
+    margin-top:
+        5px;
+
 }
 
 .blink {
-    animation: blink 1s steps(2, start) infinite;
+
+    animation:
+        blink 1s steps(2,start) infinite;
+
 }
 
 @keyframes blink {
-    50% { opacity: 0; }
+
+    50% {
+        opacity: 0;
+    }
+
 }
 
-/* STATUS BAR */
+
+/* =========================================================
+   STATUS
+========================================================= */
 
 .status {
-    margin-top: 15px;
-    border-top: 1px dashed var(--green-dark);
-    padding-top: 10px;
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    font-size: 13px;
+
+    margin-top:
+        15px;
+
+    padding-top:
+        10px;
+
+    border-top:
+        1px dashed var(--green-dark);
+
+    display:
+        flex;
+
+    flex-wrap:
+        wrap;
+
+    gap:
+        20px;
+
+    font-size:
+        13px;
+
 }
 
 .online {
-    color: var(--green);
+
+    color:
+        var(--green);
+
 }
 
 .online::before {
-    content: "● ";
+
+    content:
+        "● ";
+
 }
 
-.visitor {
-    color: var(--yellow);
+.offline {
+
+    color:
+        var(--red);
+
 }
 
-/* NAV */
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
 nav {
-    margin-top: 10px;
-    border: 2px solid var(--border);
-    background: #080d08;
-    display: flex;
-    flex-wrap: wrap;
+
+    margin-top:
+        10px;
+
+    border:
+        2px solid var(--green-dark);
+
+    background:
+        #080d08;
+
+    display:
+        flex;
+
+    flex-wrap:
+        wrap;
+
 }
 
 nav button {
-    border: 0;
-    border-right: 1px solid var(--border);
-    background: transparent;
-    color: var(--green);
-    padding: 12px 15px;
-    cursor: pointer;
-    font-weight: bold;
+
+    padding:
+        12px 15px;
+
+    border:
+        0;
+
+    border-right:
+        1px solid var(--green-dark);
+
+    background:
+        transparent;
+
+    color:
+        var(--green);
+
+    cursor:
+        pointer;
+
+    font-weight:
+        bold;
+
 }
 
 nav button:hover,
 nav button.active {
-    background: var(--green);
-    color: #001800;
-}
 
-/* LAYOUT */
-
-.layout {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-@media(max-width: 750px) {
-    .layout {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* SIDEBAR */
-
-.sidebar {
-    border: 2px solid var(--border);
-    background: var(--panel);
-    padding: 10px;
-    height: max-content;
-}
-
-.sidebar h3 {
-    color: var(--green);
-    margin-top: 0;
-    border-bottom: 1px dashed var(--green-dark);
-    padding-bottom: 8px;
-}
-
-.side-link {
-    display: block;
-    padding: 8px;
-    border-bottom: 1px dotted #245b2c;
-    cursor: pointer;
-}
-
-.side-link:hover {
-    background: #142014;
-}
-
-.side-box {
-    border: 1px solid var(--green-dark);
-    margin-top: 15px;
-    padding: 10px;
-    font-size: 12px;
-}
-
-/* CONTENT */
-
-main {
-    min-width: 0;
-}
-
-.page {
-    display: none;
-}
-
-.page.active {
-    display: block;
-}
-
-.panel {
-    border: 2px solid var(--border);
-    background: var(--panel);
-    margin-bottom: 10px;
-    box-shadow: inset 0 0 25px rgba(0,255,50,.025);
-}
-
-.panel-title {
-    background: #101b10;
-    border-bottom: 1px solid var(--border);
-    padding: 9px 12px;
-    color: var(--green);
-    font-weight: bold;
-}
-
-.panel-content {
-    padding: 15px;
-}
-
-/* HOME */
-
-.hero {
-    min-height: 270px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.hero h1 {
-    color: var(--green);
-    font-size: clamp(25px, 5vw, 45px);
-    margin: 0 0 15px;
-}
-
-.terminal-line {
-    margin: 5px 0;
-}
-
-.prompt {
-    color: var(--green);
-}
-
-.cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-
-@media(max-width: 700px) {
-    .cards {
-        grid-template-columns: 1fr;
-    }
-}
-
-.card {
-    border: 1px solid var(--green-dark);
-    padding: 15px;
-    background: #091009;
-}
-
-.card:hover {
-    border-color: var(--green);
-    transform: translateY(-2px);
-}
-
-.card h3 {
-    color: var(--green);
-}
-
-/* TABLE */
-
-.retro-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.retro-table th,
-.retro-table td {
-    border: 1px solid var(--green-dark);
-    padding: 9px;
-    text-align: left;
-}
-
-.retro-table th {
-    color: var(--green);
-    background: #101910;
-}
-
-.retro-table tr:hover {
-    background: #101a10;
-}
-
-/* BUTTONS */
-
-.retro-btn {
-    background: #0a160a;
-    color: var(--green);
-    border: 1px solid var(--green);
-    padding: 8px 12px;
-    cursor: pointer;
-}
-
-.retro-btn:hover {
-    background: var(--green);
-    color: #001500;
-}
-
-/* FORMS */
-
-.retro-input,
-.retro-textarea,
-.retro-select {
-    width: 100%;
-    background: #020602;
-    color: var(--green-soft);
-    border: 1px solid var(--green-dark);
-    padding: 10px;
-    outline: none;
-    margin-bottom: 10px;
-}
-
-.retro-input:focus,
-.retro-textarea:focus {
-    border-color: var(--green);
-    box-shadow: 0 0 5px rgba(50,255,80,.3);
-}
-
-.retro-textarea {
-    min-height: 120px;
-    resize: vertical;
-}
-
-/* TERMINAL */
-
-.terminal {
-    background: #020502;
-    border: 1px solid var(--green-dark);
-    min-height: 380px;
-    padding: 12px;
-    overflow-y: auto;
-}
-
-.terminal-output {
-    white-space: pre-wrap;
-    line-height: 1.5;
-    min-height: 320px;
-}
-
-.terminal-input-line {
-    display: flex;
-    align-items: center;
-}
-
-.terminal-input {
-    flex: 1;
-    background: transparent;
-    color: var(--green);
-    border: 0;
-    outline: 0;
-    padding: 5px;
-}
-
-/* GUESTBOOK */
-
-.guest {
-    border-left: 3px solid var(--green);
-    padding: 10px 15px;
-    margin: 10px 0;
-    background: #081008;
-}
-
-.guest strong {
-    color: var(--green);
-}
-
-/* GALLERY */
-
-.gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
-    gap: 10px;
-}
-
-.pixel-box {
-    aspect-ratio: 1;
-    border: 1px solid var(--green-dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background:
-        repeating-linear-gradient(
-            45deg,
-            #091009,
-            #091009 5px,
-            #0d160d 5px,
-            #0d160d 10px
-        );
-    color: var(--green);
-    cursor: pointer;
+        var(--green);
+
+    color:
+        #001800;
+
 }
 
-.pixel-box:hover {
-    border-color: var(--green);
-    box-shadow: 0 0 10px rgba(40,255,80,.3);
-}
 
-/* GAME */
-
-.game {
-    text-align: center;
-    padding: 20px;
-}
-
-.click-target {
-    width: 120px;
-    height: 120px;
-    margin: 30px auto;
-    border: 3px solid var(--green);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    color: var(--green);
-    user-select: none;
-}
-
-.click-target:hover {
-    background: #102510;
-}
-
-/* FOOTER */
-
-footer {
-    border: 2px solid var(--border);
-    margin-top: 10px;
-    padding: 20px;
-    text-align: center;
-    background: #070c07;
-    font-size: 12px;
-}
-
-.footer-links {
-    margin: 10px;
-}
-
-/* MARQUEE */
+/* =========================================================
+   MARQUEE
+========================================================= */
 
 .marquee {
-    overflow: hidden;
-    white-space: nowrap;
-    border-top: 1px dashed var(--green-dark);
-    border-bottom: 1px dashed var(--green-dark);
-    padding: 7px;
-    color: var(--green-soft);
+
+    overflow:
+        hidden;
+
+    white-space:
+        nowrap;
+
+    border-top:
+        1px dashed var(--green-dark);
+
+    border-bottom:
+        1px dashed var(--green-dark);
+
+    padding:
+        7px;
+
+    color:
+        var(--green-soft);
+
 }
 
 .marquee span {
-    display: inline-block;
-    animation: scroll 18s linear infinite;
+
+    display:
+        inline-block;
+
+    animation:
+        scrollText 18s linear infinite;
+
 }
 
-@keyframes scroll {
-    from { transform: translateX(100%); }
-    to { transform: translateX(-100%); }
+@keyframes scrollText {
+
+    from {
+        transform:
+            translateX(100%);
+    }
+
+    to {
+        transform:
+            translateX(-100%);
+    }
+
 }
 
-/* SECRET */
 
-.secret {
-    color: #061006;
-    cursor: default;
+/* =========================================================
+   LAYOUT
+========================================================= */
+
+.layout {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        220px 1fr;
+
+    gap:
+        10px;
+
+    margin-top:
+        10px;
+
 }
 
-.secret:hover {
-    color: var(--green);
+@media(max-width:750px) {
+
+    .layout {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
 }
 
-/* GLITCH */
 
-.glitch {
-    animation: glitch .15s infinite;
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar {
+
+    height:
+        max-content;
+
+    padding:
+        10px;
+
+    border:
+        2px solid var(--green-dark);
+
+    background:
+        var(--panel);
+
 }
 
-@keyframes glitch {
-    0% { transform: translate(0); }
-    33% { transform: translate(1px,-1px); }
-    66% { transform: translate(-1px,1px); }
-    100% { transform: translate(0); }
+.sidebar h3 {
+
+    margin-top:
+        0;
+
+    padding-bottom:
+        8px;
+
+    border-bottom:
+        1px dashed var(--green-dark);
+
+    color:
+        var(--green);
+
 }
+
+.side-link {
+
+    padding:
+        8px;
+
+    border-bottom:
+        1px dotted #245b2c;
+
+    cursor:
+        pointer;
+
+}
+
+.side-link:hover {
+
+    background:
+        #142014;
+
+}
+
+.side-box {
+
+    margin-top:
+        15px;
+
+    padding:
+        10px;
+
+    border:
+        1px solid var(--green-dark);
+
+    font-size:
+        12px;
+
+}
+
+
+/* =========================================================
+   PAGES
+========================================================= */
+
+.page {
+
+    display:
+        none;
+
+}
+
+.page.active {
+
+    display:
+        block;
+
+}
+
+.panel {
+
+    margin-bottom:
+        10px;
+
+    border:
+        2px solid var(--green-dark);
+
+    background:
+        var(--panel);
+
+    box-shadow:
+        inset 0 0 25px rgba(0,255,50,.025);
+
+}
+
+.panel-title {
+
+    padding:
+        9px 12px;
+
+    border-bottom:
+        1px solid var(--green-dark);
+
+    background:
+        #101b10;
+
+    color:
+        var(--green);
+
+    font-weight:
+        bold;
+
+}
+
+.panel-content {
+
+    padding:
+        15px;
+
+}
+
+
+/* =========================================================
+   HOME
+========================================================= */
+
+.hero {
+
+    min-height:
+        270px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+}
+
+.hero h1 {
+
+    color:
+        var(--green);
+
+    font-size:
+        clamp(
+            25px,
+            5vw,
+            45px
+        );
+
+}
+
+.prompt {
+
+    color:
+        var(--green);
+
+}
+
+.cards {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            1fr
+        );
+
+    gap:
+        10px;
+
+}
+
+@media(max-width:700px) {
+
+    .cards {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+}
+
+.card {
+
+    padding:
+        15px;
+
+    border:
+        1px solid var(--green-dark);
+
+    background:
+        #091009;
+
+}
+
+.card:hover {
+
+    border-color:
+        var(--green);
+
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.retro-btn {
+
+    padding:
+        8px 12px;
+
+    border:
+        1px solid var(--green);
+
+    background:
+        #0a160a;
+
+    color:
+        var(--green);
+
+    cursor:
+        pointer;
+
+}
+
+.retro-btn:hover {
+
+    background:
+        var(--green);
+
+    color:
+        #001500;
+
+}
+
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+.retro-input,
+.retro-textarea {
+
+    width:
+        100%;
+
+    margin-bottom:
+        10px;
+
+    padding:
+        10px;
+
+    outline:
+        none;
+
+    border:
+        1px solid var(--green-dark);
+
+    background:
+        #020602;
+
+    color:
+        var(--green-soft);
+
+}
+
+.retro-textarea {
+
+    min-height:
+        120px;
+
+    resize:
+        vertical;
+
+}
+
+
+/* =========================================================
+   UPLOAD
+========================================================= */
+
+.upload-box {
+
+    margin-bottom:
+        15px;
+
+    padding:
+        20px;
+
+    border:
+        1px dashed var(--green-dark);
+
+}
+
+.upload-status {
+
+    margin-top:
+        10px;
+
+    color:
+        var(--green-soft);
+
+}
+
+
+/* =========================================================
+   MEDIA
+========================================================= */
+
+.media-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(
+                180px,
+                1fr
+            )
+        );
+
+    gap:
+        10px;
+
+}
+
+.media-item {
+
+    padding:
+        10px;
+
+    border:
+        1px solid var(--green-dark);
+
+    background:
+        #080d08;
+
+    overflow:
+        hidden;
+
+}
+
+.media-item img,
+.media-item video {
+
+    width:
+        100%;
+
+    max-height:
+        200px;
+
+    object-fit:
+        contain;
+
+    background:
+        #000;
+
+}
+
+.media-item audio {
+
+    width:
+        100%;
+
+}
+
+
+/* =========================================================
+   CHAT
+========================================================= */
+
+.chat-box {
+
+    height:
+        420px;
+
+    overflow-y:
+        auto;
+
+    padding:
+        10px;
+
+    border:
+        1px solid var(--green-dark);
+
+    background:
+        #020502;
+
+}
+
+.chat-message {
+
+    margin-bottom:
+        10px;
+
+    padding-left:
+        10px;
+
+    border-left:
+        3px solid var(--green-dark);
+
+}
+
+.chat-user {
+
+    color:
+        var(--green);
+
+    font-weight:
+        bold;
+
+}
+
+.chat-time {
+
+    color:
+        #58745c;
+
+    font-size:
+        11px;
+
+}
+
+.chat-form {
+
+    display:
+        flex;
+
+    gap:
+        5px;
+
+    margin-top:
+        10px;
+
+}
+
+.chat-form input {
+
+    margin:
+        0;
+
+    flex:
+        1;
+
+}
+
+
+/* =========================================================
+   TERMINAL
+========================================================= */
+
+.terminal {
+
+    min-height:
+        380px;
+
+    padding:
+        12px;
+
+    overflow-y:
+        auto;
+
+    border:
+        1px solid var(--green-dark);
+
+    background:
+        #020502;
+
+}
+
+.terminal-output {
+
+    min-height:
+        320px;
+
+    white-space:
+        pre-wrap;
+
+    line-height:
+        1.5;
+
+}
+
+.terminal-input-line {
+
+    display:
+        flex;
+
+}
+
+.terminal-input {
+
+    flex:
+        1;
+
+    border:
+        0;
+
+    outline:
+        0;
+
+    background:
+        transparent;
+
+    color:
+        var(--green);
+
+}
+
+
+/* =========================================================
+   GAME
+========================================================= */
+
+.game {
+
+    padding:
+        20px;
+
+    text-align:
+        center;
+
+}
+
+.click-target {
+
+    width:
+        120px;
+
+    height:
+        120px;
+
+    margin:
+        30px auto;
+
+    display:
+        flex;
+
+    justify-content:
+        center;
+
+    align-items:
+        center;
+
+    border:
+        3px solid var(--green);
+
+    cursor:
+        pointer;
+
+    user-select:
+        none;
+
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+footer {
+
+    margin-top:
+        10px;
+
+    padding:
+        20px;
+
+    border:
+        2px solid var(--green-dark);
+
+    background:
+        #070c07;
+
+    text-align:
+        center;
+
+    font-size:
+        12px;
+
+}
+
 </style>
+
 </head>
+
 
 <body>
 
+
 <div class="wrapper">
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
 
 <header>
 
     <div class="logo">
+
         DAVID RANDOM<span class="blink">_</span>
+
     </div>
 
     <div class="logo-small">
-        [ RANDOM INTERNET TERMINAL // EST. 1999-ish ]
+
+        [ RANDOM INTERNET TERMINAL // V2 ]
+
     </div>
 
     <div class="status">
-        <span class="online">SYSTEM ONLINE</span>
-        <span>TIME: <span id="clock">--:--:--</span></span>
-        <span class="visitor">VISITORS: <span id="visitors">1337</span></span>
-        <span>IP: UNKNOWN</span>
+
+        <span
+            id="serverStatus"
+            class="online"
+        >
+            SYSTEM ONLINE
+        </span>
+
+        <span>
+
+            TIME:
+            <span id="clock">
+                --:--:--
+            </span>
+
+        </span>
+
+        <span>
+
+            VISITORS:
+            <span id="visitors">
+                1337
+            </span>
+
+        </span>
+
     </div>
 
 </header>
 
+
+<!-- =====================================================
+     NAVIGATION
+===================================================== -->
+
 <nav>
-    <button class="active" data-page="home">[ HOME ]</button>
-    <button data-page="forum">[ FORUM ]</button>
-    <button data-page="downloads">[ DOWNLOADS ]</button>
-    <button data-page="gallery">[ GALLERY ]</button>
-    <button data-page="music">[ MUSIC ]</button>
-    <button data-page="terminal">[ TERMINAL ]</button>
-    <button data-page="games">[ GAMES ]</button>
-    <button data-page="guestbook">[ GUESTBOOK ]</button>
-    <button data-page="about">[ ABOUT ]</button>
+
+    <button
+        class="active"
+        data-page="home"
+    >
+        [ HOME ]
+    </button>
+
+    <button data-page="chat">
+        [ CHAT ]
+    </button>
+
+    <button data-page="media">
+        [ MEDIA ]
+    </button>
+
+    <button data-page="terminal">
+        [ TERMINAL ]
+    </button>
+
+    <button data-page="games">
+        [ GAMES ]
+    </button>
+
+    <button data-page="guestbook">
+        [ GUESTBOOK ]
+    </button>
+
+    <button data-page="about">
+        [ ABOUT ]
+    </button>
+
 </nav>
 
+
+<!-- =====================================================
+     MARQUEE
+===================================================== -->
+
 <div class="marquee">
+
     <span>
-        *** WELCOME TO DAVID RANDOM *** INTERNET IS WEIRD *** YOU FOUND THE RANDOM ZONE ***
-        *** DO NOT TRUST THE INTERNET *** HAVE FUN ***
+
+        *** DAVID RANDOM ***
+        *** RENDER SERVER ONLINE ***
+        *** GITHUB STORAGE ONLINE ***
+        *** RANDOM INTERNET TERMINAL ***
+        *** WELCOME ***
+
     </span>
+
 </div>
+
 
 <div class="layout">
 
+
+<!-- =====================================================
+     SIDEBAR
+===================================================== -->
+
 <aside class="sidebar">
 
-    <h3>DIRECTORY</h3>
+    <h3>
+        DIRECTORY
+    </h3>
 
-    <div class="side-link" data-page="home">⌂ Home</div>
-    <div class="side-link" data-page="forum">▣ Forum</div>
-    <div class="side-link" data-page="downloads">↓ Downloads</div>
-    <div class="side-link" data-page="gallery">▧ Gallery</div>
-    <div class="side-link" data-page="music">♫ Music</div>
-    <div class="side-link" data-page="terminal">$_ Terminal</div>
-    <div class="side-link" data-page="games">★ Games</div>
-    <div class="side-link" data-page="guestbook">✎ Guestbook</div>
 
-    <div class="side-box">
-        <b>SERVER STATUS</b><br><br>
-        HTTP: <span class="online">OK</span><br>
-        DATABASE: <span class="online">OK</span><br>
-        FORUM: <span class="online">OK</span><br>
-        RANDOMNESS: <span class="online">999%</span>
+    <div
+        class="side-link"
+        data-page="home"
+    >
+        ⌂ Home
     </div>
 
-    <div class="side-box">
-        <b>WEBRING</b><br><br>
-        ← PREVIOUS<br>
-        RANDOM SITE<br>
-        NEXT → 
+
+    <div
+        class="side-link"
+        data-page="chat"
+    >
+        ▣ Chat
     </div>
 
-    <div class="side-box secret" onclick="secretMessage()">
-        nothing here...
+
+    <div
+        class="side-link"
+        data-page="media"
+    >
+        ▧ Media
+    </div>
+
+
+    <div
+        class="side-link"
+        data-page="terminal"
+    >
+        $_ Terminal
+    </div>
+
+
+    <div
+        class="side-link"
+        data-page="games"
+    >
+        ★ Games
+    </div>
+
+
+    <div
+        class="side-link"
+        data-page="guestbook"
+    >
+        ✎ Guestbook
+    </div>
+
+
+    <div class="side-box">
+
+        <b>
+            SERVER
+        </b>
+
+        <br><br>
+
+        RENDER:
+        <span class="online">
+            ONLINE
+        </span>
+
+        <br>
+
+        GITHUB:
+        <span class="online">
+            ONLINE
+        </span>
+
+        <br>
+
+        API:
+        <span class="online">
+            READY
+        </span>
+
+    </div>
+
+
+    <div class="side-box">
+
+        <b>
+            STORAGE
+        </b>
+
+        <br><br>
+
+        /image/<br>
+        /music/<br>
+        /video/<br>
+        /chat-log/
+
     </div>
 
 </aside>
 
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
 <main>
+
 
 <!-- =====================================================
      HOME
 ===================================================== -->
 
-<section class="page active" id="home">
+<section
+    class="page active"
+    id="home"
+>
 
-<div class="panel hero">
-    <div class="panel-content">
+    <div class="panel hero">
 
-        <h1>WELCOME, INTERNET USER.</h1>
+        <div class="panel-content">
 
-        <div class="terminal-line">
-            <span class="prompt">root@david-random:~$</span> whoami
+            <h1>
+                WELCOME TO DAVID RANDOM
+            </h1>
+
+
+            <p>
+
+                <span class="prompt">
+                    root@david:~$
+                </span>
+
+                whoami
+
+            </p>
+
+
+            <p>
+                visitor
+            </p>
+
+
+            <p>
+
+                <span class="prompt">
+                    root@david:~$
+                </span>
+
+                cat welcome.txt
+
+            </p>
+
+
+            <p>
+
+                Bienvenue dans le coin
+                le plus random de l'Internet.
+
+            </p>
+
+
+            <p>
+
+                Images, musique, vidéos,
+                chat, terminal et trucs inutiles.
+
+            </p>
+
+
+            <p>
+
+                <span class="blink">
+                    █
+                </span>
+
+                Explore.
+
+            </p>
+
         </div>
 
-        <div class="terminal-line">
-            visitor
+    </div>
+
+
+    <div class="cards">
+
+
+        <div class="card">
+
+            <h3>
+                ▣ CHAT
+            </h3>
+
+            <p>
+                Discute avec les visiteurs.
+            </p>
+
+            <button
+                class="retro-btn"
+                onclick="showPage('chat')"
+            >
+                OPEN
+            </button>
+
         </div>
 
-        <br>
 
-        <div class="terminal-line">
-            <span class="prompt">root@david-random:~$</span> cat welcome.txt
+        <div class="card">
+
+            <h3>
+                ▧ MEDIA
+            </h3>
+
+            <p>
+                Images, musique et vidéos.
+            </p>
+
+            <button
+                class="retro-btn"
+                onclick="showPage('media')"
+            >
+                OPEN
+            </button>
+
         </div>
 
-        <p>
-            Bienvenue sur <b>DAVID RANDOM</b>, un endroit complètement
-            random de l'Internet.
-        </p>
 
-        <p>
-            Ici tu trouveras des jeux, des fichiers, de la musique,
-            un forum, une galerie, un terminal et probablement des
-            choses qui n'ont absolument aucun rapport entre elles.
-        </p>
+        <div class="card">
 
-        <p>
-            <span class="blink">█</span> Explore le site.
-        </p>
+            <h3>
+                $_ TERMINAL
+            </h3>
 
-    </div>
-</div>
+            <p>
+                Un terminal complètement inutile.
+            </p>
 
-<div class="cards">
+            <button
+                class="retro-btn"
+                onclick="showPage('terminal')"
+            >
+                OPEN
+            </button>
 
-    <div class="card">
-        <h3>▣ FORUM</h3>
-        <p>Discutez avec les autres visiteurs.</p>
-        <button class="retro-btn" onclick="showPage('forum')">ENTER</button>
-    </div>
+        </div>
 
-    <div class="card">
-        <h3>$_ TERMINAL</h3>
-        <p>Un terminal totalement inutile.</p>
-        <button class="retro-btn" onclick="showPage('terminal')">OPEN</button>
-    </div>
-
-    <div class="card">
-        <h3>★ RANDOM</h3>
-        <p>Besoin de quelque chose de random ?</p>
-        <button class="retro-btn" onclick="randomPage()">RANDOM</button>
-    </div>
-
-</div>
-
-<div class="panel">
-
-    <div class="panel-title">LATEST NEWS.TXT</div>
-
-    <div class="panel-content">
-
-        <table class="retro-table">
-
-            <tr>
-                <th>DATE</th>
-                <th>EVENT</th>
-            </tr>
-
-            <tr>
-                <td>29/08/2026</td>
-                <td>DAVID RANDOM ouvre ses portes.</td>
-            </tr>
-
-            <tr>
-                <td>28/08/2026</td>
-                <td>Le serveur a probablement été réparé.</td>
-            </tr>
-
-            <tr>
-                <td>???</td>
-                <td>Un événement mystérieux...</td>
-            </tr>
-
-        </table>
 
     </div>
-
-</div>
 
 </section>
 
 
 <!-- =====================================================
-     FORUM
+     CHAT
 ===================================================== -->
 
-<section class="page" id="forum">
+<section
+    class="page"
+    id="chat"
+>
 
-<div class="panel">
+    <div class="panel">
 
-<div class="panel-title">
-    FORUM // MAIN BOARD
-</div>
+        <div class="panel-title">
 
-<div class="panel-content">
+            CHAT // GLOBAL
 
-<table class="retro-table">
+        </div>
 
-<tr>
-    <th>TOPIC</th>
-    <th>AUTHOR</th>
-    <th>REPLIES</th>
-    <th>LAST POST</th>
-</tr>
 
-<tr>
-    <td>Bienvenue sur David Random !</td>
-    <td>admin</td>
-    <td>12</td>
-    <td>Today</td>
-</tr>
+        <div class="panel-content">
 
-<tr>
-    <td>Quel est votre jeu préféré ?</td>
-    <td>player123</td>
-    <td>34</td>
-    <td>Yesterday</td>
-</tr>
 
-<tr>
-    <td>Le coin des trucs complètement random</td>
-    <td>unknown</td>
-    <td>666</td>
-    <td>???</td>
-</tr>
+            <div
+                class="chat-box"
+                id="chatBox"
+            >
 
-<tr>
-    <td>Vos configurations PC</td>
-    <td>retro_user</td>
-    <td>8</td>
-    <td>28/08</td>
-</tr>
+                <div class="chat-message">
 
-</table>
+                    <span class="chat-user">
+                        SYSTEM
+                    </span>
 
-<br>
+                    <br>
 
-<button class="retro-btn" onclick="fakePost()">
-    + NEW TOPIC
-</button>
+                    Connexion au chat...
 
-</div>
-</div>
+                </div>
 
-<div class="panel">
+            </div>
 
-<div class="panel-title">FORUM RULES.TXT</div>
 
-<div class="panel-content">
+            <div class="chat-form">
 
-<pre>
-1. Soyez sympa.
-2. Pas de spam.
-3. Pas de contenu illégal.
-4. Ne cassez pas le serveur.
-5. La règle 4 est importante.
-6. Soyez random.
-</pre>
 
-</div>
-</div>
+                <input
+                    class="retro-input"
+                    id="chatUsername"
+                    placeholder="Pseudo"
+                    maxlength="24"
+                >
+
+
+                <input
+                    class="retro-input"
+                    id="chatMessage"
+                    placeholder="Message..."
+                    maxlength="500"
+                >
+
+
+                <button
+                    class="retro-btn"
+                    onclick="sendChat()"
+                >
+
+                    SEND
+
+                </button>
+
+
+            </div>
+
+
+            <p id="chatStatus">
+
+                Prêt.
+
+            </p>
+
+
+        </div>
+
+    </div>
 
 </section>
 
 
 <!-- =====================================================
-     DOWNLOADS
+     MEDIA
 ===================================================== -->
 
-<section class="page" id="downloads">
-
-<div class="panel">
-
-<div class="panel-title">DOWNLOADS // FILE SERVER</div>
-
-<div class="panel-content">
-
-<table class="retro-table">
-
-<tr>
-    <th>FILE</th>
-    <th>TYPE</th>
-    <th>SIZE</th>
-    <th>ACTION</th>
-</tr>
-
-<tr>
-    <td>david_random_wallpaper.txt</td>
-    <td>TXT</td>
-    <td>2 KB</td>
-    <td><button class="retro-btn" onclick="downloadFile('david_random_wallpaper.txt','DAVID RANDOM')">DOWNLOAD</button></td>
-</tr>
-
-<tr>
-    <td>random_stuff.zip</td>
-    <td>ZIP</td>
-    <td>4.2 MB</td>
-    <td><button class="retro-btn" onclick="fakeDownload()">DOWNLOAD</button></td>
-</tr>
-
-<tr>
-    <td>secret.exe</td>
-    <td>EXE</td>
-    <td>???</td>
-    <td><button class="retro-btn" onclick="secretDownload()">DOWNLOAD</button></td>
-</tr>
-
-</table>
-
-</div>
-</div>
-
-</section>
+<section
+    class="page"
+    id="media"
+>
 
 
-<!-- =====================================================
-     GALLERY
-===================================================== -->
+    <div class="panel">
 
-<section class="page" id="gallery">
+        <div class="panel-title">
 
-<div class="panel">
+            UPLOAD // GITHUB STORAGE
 
-<div class="panel-title">GALLERY // IMAGE_ARCHIVE</div>
-
-<div class="panel-content">
-
-<div class="gallery">
-
-<div class="pixel-box" onclick="galleryClick(1)">
-    IMAGE_001
-</div>
-
-<div class="pixel-box" onclick="galleryClick(2)">
-    IMAGE_002
-</div>
-
-<div class="pixel-box" onclick="galleryClick(3)">
-    IMAGE_003
-</div>
-
-<div class="pixel-box" onclick="galleryClick(4)">
-    IMAGE_004
-</div>
-
-<div class="pixel-box" onclick="galleryClick(5)">
-    IMAGE_005
-</div>
-
-<div class="pixel-box" onclick="galleryClick(6)">
-    IMAGE_006
-</div>
-
-</div>
-
-<br>
-
-<p>
-Ces images sont actuellement des placeholders.
-On pourra remplacer cette galerie par de vraies images plus tard.
-</p>
-
-</div>
-</div>
-
-</section>
+        </div>
 
 
-<!-- =====================================================
-     MUSIC
-===================================================== -->
+        <div class="panel-content">
 
-<section class="page" id="music">
 
-<div class="panel">
+            <!-- IMAGE -->
 
-<div class="panel-title">MUSIC PLAYER // AUDIO.SYS</div>
+            <div class="upload-box">
 
-<div class="panel-content">
+                <h3>
+                    🖼 IMAGE
+                </h3>
 
-<p>
-&gt; AUDIO DEVICE DETECTED
-</p>
 
-<p>
-&gt; PLAYER READY
-</p>
+                <input
+                    type="file"
+                    id="imageFile"
+                    accept="image/*"
+                >
 
-<audio id="audioPlayer" controls style="width:100%;">
-    Votre navigateur ne supporte pas l'audio HTML5.
-</audio>
 
-<br><br>
+                <br><br>
 
-<button class="retro-btn" onclick="musicInfo()">
-    LOAD RANDOM TRACK
-</button>
 
-<p id="musicStatus">
-    Aucun fichier audio chargé.
-</p>
+                <button
+                    class="retro-btn"
+                    onclick="uploadFile('image')"
+                >
 
-</div>
-</div>
+                    UPLOAD IMAGE
+
+                </button>
+
+
+                <div
+                    id="imageUploadStatus"
+                    class="upload-status"
+                >
+                </div>
+
+            </div>
+
+
+            <!-- MUSIC -->
+
+            <div class="upload-box">
+
+                <h3>
+                    🎵 MUSIC
+                </h3>
+
+
+                <input
+                    type="file"
+                    id="musicFile"
+                    accept="audio/*"
+                >
+
+
+                <br><br>
+
+
+                <button
+                    class="retro-btn"
+                    onclick="uploadFile('music')"
+                >
+
+                    UPLOAD MUSIC
+
+                </button>
+
+
+                <div
+                    id="musicUploadStatus"
+                    class="upload-status"
+                >
+                </div>
+
+            </div>
+
+
+            <!-- VIDEO -->
+
+            <div class="upload-box">
+
+                <h3>
+                    🎥 VIDEO
+                </h3>
+
+
+                <input
+                    type="file"
+                    id="videoFile"
+                    accept="video/*"
+                >
+
+
+                <br><br>
+
+
+                <button
+                    class="retro-btn"
+                    onclick="uploadFile('video')"
+                >
+
+                    UPLOAD VIDEO
+
+                </button>
+
+
+                <div
+                    id="videoUploadStatus"
+                    class="upload-status"
+                >
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- IMAGES -->
+
+    <div class="panel">
+
+        <div class="panel-title">
+
+            IMAGES // /image/
+
+        </div>
+
+
+        <div class="panel-content">
+
+            <div
+                class="media-grid"
+                id="imageList"
+            >
+
+                Ouvre cette page pour charger les images.
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- MUSIC -->
+
+    <div class="panel">
+
+        <div class="panel-title">
+
+            MUSIC // /music/
+
+        </div>
+
+
+        <div class="panel-content">
+
+            <div
+                class="media-grid"
+                id="musicList"
+            >
+
+                Ouvre cette page pour charger les musiques.
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- VIDEOS -->
+
+    <div class="panel">
+
+        <div class="panel-title">
+
+            VIDEOS // /video/
+
+        </div>
+
+
+        <div class="panel-content">
+
+            <div
+                class="media-grid"
+                id="videoList"
+            >
+
+                Ouvre cette page pour charger les vidéos.
+
+            </div>
+
+        </div>
+
+    </div>
+
 
 </section>
 
@@ -948,51 +1733,72 @@ On pourra remplacer cette galerie par de vraies images plus tard.
      TERMINAL
 ===================================================== -->
 
-<section class="page" id="terminal">
+<section
+    class="page"
+    id="terminal"
+>
 
-<div class="panel">
+    <div class="panel">
 
-<div class="panel-title">
-    TERMINAL // DAVID_OS v0.1
-</div>
+        <div class="panel-title">
 
-<div class="panel-content">
+            TERMINAL // DAVID_OS
 
-<div class="terminal" id="terminalBox">
+        </div>
 
-<div class="terminal-output" id="terminalOutput">
-DAVID_OS v0.1
-Copyright (C) David Random
 
-Booting system...
-Loading random modules...
-Loading useless programs...
-Loading internet...
+        <div class="panel-content">
+
+
+            <div
+                class="terminal"
+                id="terminalBox"
+            >
+
+
+                <div
+                    class="terminal-output"
+                    id="terminalOutput"
+                >DAVID_OS v2.0
+
+Booting...
+
+Render server detected.
+
+GitHub storage detected.
 
 SYSTEM READY.
 
-Tape "help" pour afficher les commandes.
+Type "help".
+                </div>
 
-</div>
 
-<div class="terminal-input-line">
+                <div
+                    class="terminal-input-line"
+                >
 
-<span class="prompt">guest@david:~$&nbsp;</span>
+                    <span class="prompt">
 
-<input
-    class="terminal-input"
-    id="terminalInput"
-    autocomplete="off"
-    spellcheck="false"
->
+                        guest@david:~$&nbsp;
 
-</div>
+                    </span>
 
-</div>
 
-</div>
+                    <input
+                        class="terminal-input"
+                        id="terminalInput"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
 
-</div>
+                </div>
+
+
+            </div>
+
+        </div>
+
+    </div>
 
 </section>
 
@@ -1001,49 +1807,78 @@ Tape "help" pour afficher les commandes.
      GAMES
 ===================================================== -->
 
-<section class="page" id="games">
-
-<div class="panel">
-
-<div class="panel-title">
-    GAMES // MINI ARCADE
-</div>
-
-<div class="panel-content">
-
-<div class="game">
-
-<h2>CLICK THE RANDOM BOX</h2>
-
-<p>
-Clique sur le carré le plus vite possible.
-</p>
-
-<p>
-SCORE: <span id="score">0</span>
-</p>
-
-<p>
-TIME: <span id="gameTime">10</span>s
-</p>
-
-<div
-    class="click-target"
-    id="clickTarget"
-    onclick="gameClick()"
+<section
+    class="page"
+    id="games"
 >
-    CLICK
-</div>
 
-<button class="retro-btn" onclick="startGame()">
-    START GAME
-</button>
+    <div class="panel">
 
-</div>
+        <div class="panel-title">
 
-</div>
+            GAMES // MINI ARCADE
 
-</div>
+        </div>
+
+
+        <div class="panel-content">
+
+
+            <div class="game">
+
+                <h2>
+                    CLICK THE RANDOM BOX
+                </h2>
+
+
+                <p>
+
+                    SCORE:
+
+                    <span id="score">
+                        0
+                    </span>
+
+                </p>
+
+
+                <p>
+
+                    TIME:
+
+                    <span id="gameTime">
+                        10
+                    </span>
+
+                </p>
+
+
+                <div
+                    class="click-target"
+                    id="clickTarget"
+                    onclick="gameClick()"
+                >
+
+                    CLICK
+
+                </div>
+
+
+                <button
+                    class="retro-btn"
+                    onclick="startGame()"
+                >
+
+                    START GAME
+
+                </button>
+
+
+            </div>
+
+        </div>
+
+    </div>
 
 </section>
 
@@ -1052,49 +1887,67 @@ TIME: <span id="gameTime">10</span>s
      GUESTBOOK
 ===================================================== -->
 
-<section class="page" id="guestbook">
-
-<div class="panel">
-
-<div class="panel-title">
-    GUESTBOOK // SIGN_HERE
-</div>
-
-<div class="panel-content">
-
-<input
-    class="retro-input"
-    id="guestName"
-    placeholder="Votre pseudo..."
+<section
+    class="page"
+    id="guestbook"
 >
 
-<textarea
-    class="retro-textarea"
-    id="guestMessage"
-    placeholder="Votre message..."
-></textarea>
+    <div class="panel">
 
-<button class="retro-btn" onclick="addGuest()">
-    SIGN GUESTBOOK
-</button>
+        <div class="panel-title">
 
-<div id="guestList">
+            GUESTBOOK
 
-<div class="guest">
-    <strong>admin</strong><br>
-    Bienvenue sur David Random !
-</div>
+        </div>
 
-<div class="guest">
-    <strong>anonymous</strong><br>
-    first!!!
-</div>
 
-</div>
+        <div class="panel-content">
 
-</div>
 
-</div>
+            <input
+                class="retro-input"
+                id="guestName"
+                placeholder="Pseudo"
+            >
+
+
+            <textarea
+                class="retro-textarea"
+                id="guestMessage"
+                placeholder="Message..."
+            ></textarea>
+
+
+            <button
+                class="retro-btn"
+                onclick="addGuest()"
+            >
+
+                SIGN
+
+            </button>
+
+
+            <div id="guestList">
+
+                <div class="chat-message">
+
+                    <span class="chat-user">
+                        admin
+                    </span>
+
+                    <br>
+
+                    Bienvenue !
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
 
 </section>
 
@@ -1103,84 +1956,86 @@ TIME: <span id="gameTime">10</span>s
      ABOUT
 ===================================================== -->
 
-<section class="page" id="about">
+<section
+    class="page"
+    id="about"
+>
 
-<div class="panel">
+    <div class="panel">
 
-<div class="panel-title">
-    ABOUT // README.TXT
-</div>
+        <div class="panel-title">
 
-<div class="panel-content">
+            ABOUT // README.TXT
+
+        </div>
+
+
+        <div class="panel-content">
+
 
 <pre>
-╔══════════════════════════════════════════╗
-║             DAVID RANDOM                 ║
-║                                          ║
-║  Version : 1.0                           ║
-║  Engine  : HTML / CSS / JavaScript       ║
-║  Style   : Retro Internet                ║
-║  Status  : ONLINE                        ║
-╚══════════════════════════════════════════╝
+
+╔══════════════════════════════════╗
+║          DAVID RANDOM            ║
+║                                  ║
+║ Version : 2.0                    ║
+║ Server  : Render                 ║
+║ Storage : GitHub                 ║
+║ Engine  : HTML/CSS/JS            ║
+║                                  ║
+║ STATUS : ONLINE                   ║
+╚══════════════════════════════════╝
+
 </pre>
 
-<p>
-David Random est un site personnel expérimental
-inspiré des vieux sites Internet, des forums,
-des terminaux et des interfaces informatiques
-rétro.
-</p>
 
-<p>
-Le but :
-</p>
+            <p>
 
-<ul>
-<li>Faire des trucs random.</li>
-<li>Tester des idées.</li>
-<li>Partager des fichiers.</li>
-<li>Créer une petite communauté.</li>
-<li>Ne jamais prendre le site trop au sérieux.</li>
-</ul>
+                David Random est un site
+                expérimental inspiré des vieux
+                sites Internet, terminaux et forums.
 
-<p>
-Built with:
-<br>
-HTML + CSS + JavaScript
-</p>
+            </p>
 
-</div>
-</div>
+
+        </div>
+
+    </div>
 
 </section>
+
 
 </main>
 
 </div>
 
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
 <footer>
 
-<div>
-DAVID RANDOM // © 1999-2026
-</div>
+    DAVID RANDOM // © 1999-2026
 
-<div class="footer-links">
-    [ HOME ] [ FORUM ] [ DOWNLOADS ] [ GAMES ]
-</div>
+    <br><br>
 
-<div>
-Best viewed at 800x600 • No cookies • Probably no AI
-</div>
+    Best viewed at 800x600
 
-<br>
+    <br><br>
 
-<div>
-<span class="blink">█</span>
-END OF TRANSMISSION
-<span class="blink">█</span>
-</div>
+    <span class="blink">
+        █
+    </span>
+
+    END OF TRANSMISSION
+
+    <span class="blink">
+        █
+    </span>
 
 </footer>
+
 
 </div>
 
@@ -1188,48 +2043,110 @@ END OF TRANSMISSION
 <script>
 
 /* =========================================================
+   CONFIGURATION
+========================================================= */
+
+const API = "";
+
+
+/* =========================================================
    NAVIGATION
 ========================================================= */
 
-const pages = document.querySelectorAll(".page");
-const navButtons = document.querySelectorAll("nav button");
-const sideLinks = document.querySelectorAll(".side-link");
+const pages =
+    document.querySelectorAll(".page");
 
-function showPage(pageName) {
+const navButtons =
+    document.querySelectorAll("nav button");
 
-    pages.forEach(page => {
+const sideLinks =
+    document.querySelectorAll(".side-link");
+
+
+function showPage(name) {
+
+    pages.forEach(function(page) {
+
         page.classList.remove("active");
+
     });
 
-    const target = document.getElementById(pageName);
+
+    const target =
+        document.getElementById(name);
+
 
     if (target) {
+
         target.classList.add("active");
+
     }
 
-    navButtons.forEach(button => {
+
+    navButtons.forEach(function(button) {
+
         button.classList.toggle(
             "active",
-            button.dataset.page === pageName
+            button.dataset.page === name
         );
+
     });
+
+
+    if (name === "media") {
+
+        loadMedia();
+
+    }
+
+
+    if (name === "chat") {
+
+        loadChat();
+
+    }
+
 
     window.scrollTo({
+
         top: 0,
+
         behavior: "smooth"
+
     });
+
 }
 
-navButtons.forEach(button => {
-    button.addEventListener("click", () => {
-        showPage(button.dataset.page);
-    });
+
+navButtons.forEach(function(button) {
+
+    button.addEventListener(
+        "click",
+        function() {
+
+            showPage(
+                button.dataset.page
+            );
+
+        }
+    );
+
 });
 
-sideLinks.forEach(link => {
-    link.addEventListener("click", () => {
-        showPage(link.dataset.page);
-    });
+
+sideLinks.forEach(function(link) {
+
+    link.addEventListener(
+        "click",
+        function() {
+
+            showPage(
+                link.dataset.page
+            );
+
+        }
+    );
+
 });
 
 
@@ -1239,57 +2156,774 @@ sideLinks.forEach(link => {
 
 function updateClock() {
 
-    const now = new Date();
+    const now =
+        new Date();
 
-    const h = String(now.getHours()).padStart(2,"0");
-    const m = String(now.getMinutes()).padStart(2,"0");
-    const s = String(now.getSeconds()).padStart(2,"0");
 
-    document.getElementById("clock").textContent =
-        `${h}:${m}:${s}`;
+    document.getElementById(
+        "clock"
+    ).textContent =
+        now.toLocaleTimeString(
+            "fr-FR"
+        );
+
 }
 
-setInterval(updateClock, 1000);
+
+setInterval(
+    updateClock,
+    1000
+);
+
+
 updateClock();
 
 
 /* =========================================================
-   VISITOR COUNTER
+   SERVER STATUS
 ========================================================= */
 
-let visitors = 1337;
+async function checkServer() {
 
-setInterval(() => {
+    const status =
+        document.getElementById(
+            "serverStatus"
+        );
 
-    if (Math.random() > 0.65) {
-        visitors++;
-        document.getElementById("visitors").textContent = visitors;
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/status"
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " +
+                response.status
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (data.online) {
+
+            status.textContent =
+                "SYSTEM ONLINE";
+
+            status.className =
+                "online";
+
+        } else {
+
+            throw new Error();
+
+        }
+
     }
 
-}, 5000);
+    catch(error) {
+
+        console.error(
+            "Server status:",
+            error
+        );
+
+
+        status.textContent =
+            "SYSTEM OFFLINE";
+
+        status.className =
+            "offline";
+
+    }
+
+}
+
+
+checkServer();
 
 
 /* =========================================================
-   RANDOM PAGE
+   MEDIA UPLOAD
 ========================================================= */
 
-function randomPage() {
+async function uploadFile(type) {
 
-    const list = [
-        "forum",
-        "downloads",
-        "gallery",
-        "music",
-        "terminal",
-        "games",
-        "guestbook",
-        "about"
-    ];
+    let input;
+    let status;
 
-    const random =
-        list[Math.floor(Math.random() * list.length)];
 
-    showPage(random);
+    if (type === "image") {
+
+        input =
+            document.getElementById(
+                "imageFile"
+            );
+
+        status =
+            document.getElementById(
+                "imageUploadStatus"
+            );
+
+    }
+
+
+    else if (type === "music") {
+
+        input =
+            document.getElementById(
+                "musicFile"
+            );
+
+        status =
+            document.getElementById(
+                "musicUploadStatus"
+            );
+
+    }
+
+
+    else if (type === "video") {
+
+        input =
+            document.getElementById(
+                "videoFile"
+            );
+
+        status =
+            document.getElementById(
+                "videoUploadStatus"
+            );
+
+    }
+
+
+    if (!input || !status) {
+
+        return;
+
+    }
+
+
+    const file =
+        input.files[0];
+
+
+    if (!file) {
+
+        status.textContent =
+            "Aucun fichier sélectionné.";
+
+        return;
+
+    }
+
+
+    /*
+       Protection basique côté navigateur.
+       Les limites définitives devront également
+       être appliquées côté serveur.
+    */
+
+    const maxSize =
+        25 * 1024 * 1024;
+
+
+    if (file.size > maxSize) {
+
+        status.textContent =
+            "Fichier trop gros. Maximum : 25 MB.";
+
+        return;
+
+    }
+
+
+    status.textContent =
+        "Lecture du fichier...";
+
+
+    const reader =
+        new FileReader();
+
+
+    reader.onload = async function() {
+
+        try {
+
+            status.textContent =
+                "Upload vers GitHub...";
+
+
+            let folder;
+
+
+            if (type === "image") {
+
+                folder = "image";
+
+            }
+
+            else if (type === "music") {
+
+                folder = "music";
+
+            }
+
+            else {
+
+                folder = "video";
+
+            }
+
+
+            const response =
+                await fetch(
+                    "/api/upload",
+                    {
+
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                filename:
+                                    file.name,
+
+                                content:
+                                    reader.result,
+
+                                folder:
+                                    folder
+
+                            })
+
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                !response.ok ||
+                !data.success
+            ) {
+
+                throw new Error(
+                    data.error ||
+                    "Upload failed"
+                );
+
+            }
+
+
+            status.innerHTML =
+                "UPLOAD OK ✓<br>" +
+                `<a href="${data.download}" target="_blank">` +
+                "Ouvrir le fichier" +
+                "</a>";
+
+
+            input.value =
+                "";
+
+
+            await loadMedia();
+
+        }
+
+        catch(error) {
+
+            console.error(
+                "Upload error:",
+                error
+            );
+
+
+            status.textContent =
+                "ERREUR : " +
+                error.message;
+
+        }
+
+    };
+
+
+    reader.onerror =
+        function() {
+
+            status.textContent =
+                "Impossible de lire le fichier.";
+
+        };
+
+
+    reader.readAsDataURL(file);
+
+}
+
+
+/* =========================================================
+   MEDIA LOADING
+========================================================= */
+
+async function loadMedia() {
+
+    await Promise.all([
+
+        loadFolder(
+            "image",
+            "imageList",
+            "image"
+        ),
+
+        loadFolder(
+            "music",
+            "musicList",
+            "music"
+        ),
+
+        loadFolder(
+            "video",
+            "videoList",
+            "video"
+        )
+
+    ]);
+
+}
+
+
+async function loadFolder(
+    folder,
+    elementId,
+    type
+) {
+
+    const container =
+        document.getElementById(
+            elementId
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        "Chargement...";
+
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/files/${encodeURIComponent(folder)}`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.error ||
+                "Impossible de charger les fichiers"
+            );
+
+        }
+
+
+        /*
+           Ne pas afficher les fichiers .gitkeep.
+        */
+
+        const files =
+            data.files.filter(
+                function(file) {
+
+                    return !file.name
+                        .toLowerCase()
+                        .endsWith(".gitkeep");
+
+                }
+            );
+
+
+        if (files.length === 0) {
+
+            container.innerHTML =
+                "Aucun fichier.";
+
+            return;
+
+        }
+
+
+        container.innerHTML =
+            "";
+
+
+        files.forEach(
+            function(file) {
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                item.className =
+                    "media-item";
+
+
+                const safeName =
+                    escapeHTML(
+                        file.name
+                    );
+
+
+                if (type === "image") {
+
+                    item.innerHTML = `
+
+                        <img
+                            src="${file.download}"
+                            alt="${safeName}"
+                            loading="lazy"
+                        >
+
+                        <br><br>
+
+                        <b>
+                            ${safeName}
+                        </b>
+
+                        <br><br>
+
+                        <a
+                            href="${file.download}"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            OPEN
+                        </a>
+
+                    `;
+
+                }
+
+
+                else if (type === "music") {
+
+                    item.innerHTML = `
+
+                        <b>
+                            ${safeName}
+                        </b>
+
+                        <br><br>
+
+                        <audio
+                            controls
+                            preload="metadata"
+                            src="${file.download}"
+                        >
+                        </audio>
+
+                        <br><br>
+
+                        <a
+                            href="${file.download}"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            OPEN
+                        </a>
+
+                    `;
+
+                }
+
+
+                else if (type === "video") {
+
+                    item.innerHTML = `
+
+                        <video
+                            controls
+                            preload="metadata"
+                            src="${file.download}"
+                        >
+                        </video>
+
+                        <br><br>
+
+                        <b>
+                            ${safeName}
+                        </b>
+
+                        <br><br>
+
+                        <a
+                            href="${file.download}"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            OPEN
+                        </a>
+
+                    `;
+
+                }
+
+
+                container.appendChild(
+                    item
+                );
+
+            }
+        );
+
+    }
+
+    catch(error) {
+
+        console.error(
+            `Media ${folder}:`,
+            error
+        );
+
+
+        container.innerHTML =
+            `<span class="offline">` +
+            `ERREUR : ${escapeHTML(error.message)}` +
+            `</span>`;
+
+    }
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+
+    div.textContent =
+        String(text);
+
+
+    return div.innerHTML;
+
+}
+
+
+/* =========================================================
+   CHAT
+========================================================= */
+
+async function sendChat() {
+
+    const username =
+        document.getElementById(
+            "chatUsername"
+        ).value.trim();
+
+
+    const message =
+        document.getElementById(
+            "chatMessage"
+        ).value.trim();
+
+
+    const status =
+        document.getElementById(
+            "chatStatus"
+        );
+
+
+    if (!username) {
+
+        status.textContent =
+            "Entre un pseudo.";
+
+        return;
+
+    }
+
+
+    if (!message) {
+
+        status.textContent =
+            "Entre un message.";
+
+        return;
+
+    }
+
+
+    status.textContent =
+        "Envoi...";
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/chat",
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            username:
+                                username,
+
+                            message:
+                                message
+
+                        })
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.error ||
+                "Erreur"
+            );
+
+        }
+
+
+        document.getElementById(
+            "chatMessage"
+        ).value =
+            "";
+
+
+        status.textContent =
+            "Message enregistré ✓";
+
+
+        loadChat();
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "Chat error:",
+            error
+        );
+
+
+        status.textContent =
+            "ERREUR : " +
+            error.message;
+
+    }
+
+}
+
+
+/*
+   Pour le moment le serveur permet d'écrire
+   les logs.
+
+   La lecture de l'historique sera ajoutée
+   dans la prochaine version de l'API.
+*/
+
+async function loadChat() {
+
+    const box =
+        document.getElementById(
+            "chatBox"
+        );
+
+
+    if (!box) {
+
+        return;
+
+    }
+
+
+    box.innerHTML = `
+
+        <div class="chat-message">
+
+            <span class="chat-user">
+                SYSTEM
+            </span>
+
+            <br>
+
+            Chat connecté à Render.
+
+            <br>
+
+            Les nouveaux messages sont
+            enregistrés dans /chat-log/.
+
+        </div>
+
+    `;
+
 }
 
 
@@ -1298,99 +2932,129 @@ function randomPage() {
 ========================================================= */
 
 const terminalInput =
-    document.getElementById("terminalInput");
+    document.getElementById(
+        "terminalInput"
+    );
+
 
 const terminalOutput =
-    document.getElementById("terminalOutput");
+    document.getElementById(
+        "terminalOutput"
+    );
+
 
 function terminalPrint(text) {
 
     terminalOutput.textContent +=
-        "\n" + text;
+        "\n" +
+        text;
 
-    terminalOutput.parentElement.scrollTop =
-        terminalOutput.parentElement.scrollHeight;
 }
+
 
 function terminalCommand(command) {
 
-    const cmd = command.trim().toLowerCase();
+    const cmd =
+        command
+            .trim()
+            .toLowerCase();
 
-    if (!cmd) return;
 
-    terminalPrint("\n" + "guest@david:~$ " + command);
+    if (!cmd) {
+
+        return;
+
+    }
+
+
+    terminalPrint(
+        "\nguest@david:~$ " +
+        command
+    );
+
 
     switch(cmd) {
 
+
         case "help":
 
-            terminalPrint(
-`COMMANDS:
+            terminalPrint(`
 
-help       - affiche cette aide
-clear      - efface le terminal
-about      - informations
-date       - date actuelle
-time       - heure actuelle
-random     - nombre random
-hello      - dire bonjour
-whoami     - utilisateur actuel
-ls         - fichiers
-forum      - ouvrir le forum
-games      - ouvrir les jeux
-matrix     - ???
-sudo       - impossible
-exit       - quitter le terminal`
-            );
+COMMANDS
 
-        break;
+help       aide
+clear      effacer
+about      informations
+date       date
+time       heure
+random     nombre random
+whoami     utilisateur
+ls         fichiers
+status     serveur
+media      médias
+chat       chat
+games      jeux
+github     stockage
+matrix     ???
+
+`);
+
+            break;
+
 
         case "clear":
 
-            terminalOutput.textContent = "";
+            terminalOutput.textContent =
+                "";
 
-        break;
+            break;
+
 
         case "about":
 
             terminalPrint(
-                "DAVID RANDOM OS // made with HTML + CSS + JS"
+                "DAVID RANDOM V2 // Render + GitHub"
             );
 
-        break;
+            break;
+
 
         case "date":
 
             terminalPrint(
-                new Date().toLocaleDateString("fr-FR")
+                new Date()
+                    .toLocaleDateString(
+                        "fr-FR"
+                    )
             );
 
-        break;
+            break;
+
 
         case "time":
 
             terminalPrint(
-                new Date().toLocaleTimeString("fr-FR")
+                new Date()
+                    .toLocaleTimeString(
+                        "fr-FR"
+                    )
             );
 
-        break;
+            break;
+
 
         case "random":
 
             terminalPrint(
-                "RANDOM NUMBER: " +
-                Math.floor(Math.random() * 999999)
+                "RANDOM = " +
+                Math.floor(
+                    Math.random() *
+                    999999
+                )
             );
 
-        break;
+            break;
 
-        case "hello":
-
-            terminalPrint(
-                "Hello, internet user."
-            );
-
-        break;
 
         case "whoami":
 
@@ -1398,83 +3062,116 @@ exit       - quitter le terminal`
                 "guest"
             );
 
-        break;
+            break;
+
 
         case "ls":
 
+            terminalPrint(`
+
+image/
+music/
+video/
+chat-log/
+
+index.html
+server.js
+package.json
+
+`);
+
+            break;
+
+
+        case "status":
+
             terminalPrint(
-`README.TXT
-RANDOM.EXE
-MUSIC/
-GAMES/
-SECRET/
-FORUM/
-UNKNOWN.DAT`
+                "Checking server..."
             );
 
-        break;
+            checkServer();
 
-        case "forum":
+            break;
 
-            showPage("forum");
 
-        break;
+        case "github":
+
+            terminalPrint(
+                "GitHub storage = ONLINE"
+            );
+
+            break;
+
+
+        case "media":
+
+            showPage(
+                "media"
+            );
+
+            break;
+
+
+        case "chat":
+
+            showPage(
+                "chat"
+            );
+
+            break;
+
 
         case "games":
 
-            showPage("games");
-
-        break;
-
-        case "sudo":
-
-            terminalPrint(
-                "Nice try."
+            showPage(
+                "games"
             );
 
-        break;
+            break;
 
-        case "exit":
-
-            terminalPrint(
-                "ERROR: There is nowhere to exit."
-            );
-
-        break;
 
         case "matrix":
 
-            document.body.classList.toggle("glitch");
-
             terminalPrint(
-                "MATRIX MODE TOGGLED."
+                "MATRIX MODE ACTIVATED"
             );
 
-        break;
+            break;
+
 
         default:
 
             terminalPrint(
-                `Command not found: ${command}`
+                "Command not found: " +
+                command
             );
+
     }
+
 }
 
-terminalInput.addEventListener("keydown", event => {
 
-    if (event.key === "Enter") {
+terminalInput.addEventListener(
+    "keydown",
+    function(event) {
 
-        terminalCommand(terminalInput.value);
+        if (
+            event.key ===
+            "Enter"
+        ) {
 
-        terminalInput.value = "";
+            terminalCommand(
+                terminalInput.value
+            );
+
+
+            terminalInput.value =
+                "";
+
+        }
+
     }
-
-});
-
-document.getElementById("terminalBox")
-    .addEventListener("click", () => {
-        terminalInput.focus();
-    });
+);
 
 
 /* =========================================================
@@ -1484,148 +3181,76 @@ document.getElementById("terminalBox")
 function addGuest() {
 
     const name =
-        document.getElementById("guestName").value.trim();
+        document.getElementById(
+            "guestName"
+        ).value.trim();
+
 
     const message =
-        document.getElementById("guestMessage").value.trim();
-
-    if (!name || !message) {
-
-        alert("Veuillez remplir les deux champs.");
-
-        return;
-    }
-
-    const guest =
-        document.createElement("div");
-
-    guest.className = "guest";
-
-    const strong =
-        document.createElement("strong");
-
-    strong.textContent = name;
-
-    guest.appendChild(strong);
-
-    guest.appendChild(
-        document.createElement("br")
-    );
-
-    guest.appendChild(
-        document.createTextNode(message)
-    );
-
-    document
-        .getElementById("guestList")
-        .prepend(guest);
-
-    document.getElementById("guestName").value = "";
-    document.getElementById("guestMessage").value = "";
-}
+        document.getElementById(
+            "guestMessage"
+        ).value.trim();
 
 
-/* =========================================================
-   FAKE FORUM
-========================================================= */
+    if (
+        !name ||
+        !message
+    ) {
 
-function fakePost() {
-
-    const title =
-        prompt("Titre du topic :");
-
-    if (!title) return;
-
-    alert(
-        "Topic créé localement !\n\n" +
-        title +
-        "\n\nDans une vraie version serveur, il serait enregistré dans une base de données."
-    );
-}
-
-
-/* =========================================================
-   DOWNLOAD
-========================================================= */
-
-function downloadFile(filename, content) {
-
-    const blob =
-        new Blob(
-            [content],
-            {type:"text/plain"}
+        alert(
+            "Remplis les deux champs."
         );
 
-    const url =
-        URL.createObjectURL(blob);
+        return;
 
-    const a =
-        document.createElement("a");
-
-    a.href = url;
-    a.download = filename;
-    a.click();
-
-    URL.revokeObjectURL(url);
-}
-
-function fakeDownload() {
-
-    alert(
-        "DOWNLOAD SERVER:\n\n" +
-        "random_stuff.zip\n\n" +
-        "Fichier non disponible dans cette version."
-    );
-}
-
-function secretDownload() {
-
-    alert(
-        "ACCESS DENIED.\n\n" +
-        "You are not supposed to download this."
-    );
-}
+    }
 
 
-/* =========================================================
-   GALLERY
-========================================================= */
-
-function galleryClick(number) {
-
-    alert(
-        "IMAGE_" +
-        String(number).padStart(3,"0") +
-        "\n\nPlaceholder image."
-    );
-}
+    const guest =
+        document.createElement(
+            "div"
+        );
 
 
-/* =========================================================
-   MUSIC
-========================================================= */
-
-function musicInfo() {
-
-    document.getElementById("musicStatus")
-        .textContent =
-        "Aucun MP3 configuré. Ajoute ton fichier audio puis indique son chemin dans le HTML.";
-}
+    guest.className =
+        "chat-message";
 
 
-/* =========================================================
-   SECRET
-========================================================= */
+    guest.innerHTML = `
 
-function secretMessage() {
+        <span class="chat-user">
 
-    alert(
-        "████████████████\n" +
-        "YOU FOUND THE SECRET\n" +
-        "████████████████\n\n" +
-        "There is nothing here.\n" +
-        "Probably."
-    );
+            ${escapeHTML(name)}
+
+        </span>
+
+        <br>
+
+        ${escapeHTML(message)}
+
+    `;
+
+
+    document
+        .getElementById(
+            "guestList"
+        )
+        .prepend(
+            guest
+        );
+
+
+    document.getElementById(
+        "guestName"
+    ).value =
+        "";
+
+
+    document.getElementById(
+        "guestMessage"
+    ).value =
+        "";
+
 }
 
 
@@ -1633,126 +3258,157 @@ function secretMessage() {
    MINI GAME
 ========================================================= */
 
-let score = 0;
-let gameRunning = false;
-let gameTimer = 10;
-let gameInterval;
+let score =
+    0;
+
+let gameRunning =
+    false;
+
+let gameTimer =
+    10;
+
+let gameInterval =
+    null;
+
 
 function startGame() {
 
-    score = 0;
-    gameTimer = 10;
-    gameRunning = true;
+    score =
+        0;
 
-    document.getElementById("score").textContent = score;
-    document.getElementById("gameTime").textContent = gameTimer;
+    gameTimer =
+        10;
 
-    clearInterval(gameInterval);
+    gameRunning =
+        true;
 
-    gameInterval = setInterval(() => {
 
-        gameTimer--;
+    document.getElementById(
+        "score"
+    ).textContent =
+        score;
 
-        document.getElementById("gameTime")
-            .textContent = gameTimer;
 
-        if (gameTimer <= 0) {
+    document.getElementById(
+        "gameTime"
+    ).textContent =
+        gameTimer;
 
-            clearInterval(gameInterval);
 
-            gameRunning = false;
+    const target =
+        document.getElementById(
+            "clickTarget"
+        );
 
-            alert(
-                "GAME OVER\n\n" +
-                "Score: " +
-                score
-            );
-        }
 
-    },1000);
+    target.style.transform =
+        "translate(0, 0)";
+
+
+    clearInterval(
+        gameInterval
+    );
+
+
+    gameInterval =
+        setInterval(
+            function() {
+
+                gameTimer--;
+
+
+                document.getElementById(
+                    "gameTime"
+                ).textContent =
+                    gameTimer;
+
+
+                if (
+                    gameTimer <= 0
+                ) {
+
+                    clearInterval(
+                        gameInterval
+                    );
+
+
+                    gameRunning =
+                        false;
+
+
+                    alert(
+                        "GAME OVER\n\nScore: " +
+                        score
+                    );
+
+                }
+
+            },
+            1000
+        );
+
 }
+
 
 function gameClick() {
 
-    if (!gameRunning) return;
+    if (!gameRunning) {
+
+        return;
+
+    }
+
 
     score++;
 
-    document.getElementById("score")
-        .textContent = score;
+
+    document.getElementById(
+        "score"
+    ).textContent =
+        score;
+
 
     const target =
-        document.getElementById("clickTarget");
+        document.getElementById(
+            "clickTarget"
+        );
+
+
+    const x =
+        Math.random() *
+        120 -
+        60;
+
+
+    const y =
+        Math.random() *
+        100 -
+        50;
+
 
     target.style.transform =
-        `translate(
-            ${Math.random()*120-60}px,
-            ${Math.random()*100-50}px
-        )`;
+        `translate(${x}px, ${y}px)`;
+
 }
 
 
 /* =========================================================
-   KONAMI CODE
-========================================================= */
-
-const konami = [
-    "ArrowUp",
-    "ArrowUp",
-    "ArrowDown",
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowRight",
-    "ArrowLeft",
-    "ArrowRight",
-    "b",
-    "a"
-];
-
-let konamiIndex = 0;
-
-document.addEventListener("keydown", event => {
-
-    if (
-        event.key === konami[konamiIndex]
-    ) {
-
-        konamiIndex++;
-
-        if (konamiIndex === konami.length) {
-
-            document.body.classList.add("glitch");
-
-            alert(
-                "KONAMI CODE ACTIVATED.\n\n" +
-                "YOU ARE NOW 1337."
-            );
-
-            konamiIndex = 0;
-        }
-
-    } else {
-
-        konamiIndex = 0;
-    }
-
-});
-
-
-/* =========================================================
-   RANDOM CONSOLE MESSAGE
+   CONSOLE
 ========================================================= */
 
 console.log(
-    "%cDAVID RANDOM",
-    "color:#35ff5a;font-size:30px;font-weight:bold;"
+    "%cDAVID RANDOM V2",
+    "color:#35ff5a;font-size:30px;font-weight:bold"
 );
 
+
 console.log(
-    "Welcome to the source code."
+    "Render + GitHub storage online."
 );
 
 </script>
 
+
 </body>
+
 </html>
