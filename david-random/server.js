@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
 const path = require("path");
+const crypto = require("crypto");
 
 /* =========================================================
    CONFIG
@@ -26,8 +27,14 @@ const GITHUB_BRANCH =
     process.env.GITHUB_BRANCH ||
     "main";
 
+const ACCOUNTS_ENCRYPTION_KEY =
+    process.env.ACCOUNTS_ENCRYPTION_KEY;
+
 const MAX_FILE_SIZE =
     25 * 1024 * 1024;
+
+const USERS_FILE =
+    "accounts/users.enc";
 
 
 /* =========================================================
@@ -367,7 +374,7 @@ async function githubRequest(
 
 
 /* =========================================================
-   TEST GITHUB CONFIG
+   GITHUB CONFIG
 ========================================================= */
 
 function githubConfigured() {
@@ -379,6 +386,1055 @@ function githubConfigured() {
     );
 
 }
+
+
+/* =========================================================
+   ACCOUNTS CONFIG
+========================================================= */
+
+function accountsConfigured() {
+
+    return Boolean(
+        githubConfigured() &&
+        ACCOUNTS_ENCRYPTION_KEY
+    );
+
+}
+
+
+/* =========================================================
+   ENCRYPTION KEY
+========================================================= */
+
+/*
+   La clé doit être exactement 32 octets.
+
+   On accepte :
+   - Base64 URL-safe
+   - Base64 classique
+   - hexadécimal de 64 caractères
+
+   La valeur générée précédemment est Base64 URL-safe.
+*/
+
+function getEncryptionKey() {
+
+    if (!ACCOUNTS_ENCRYPTION_KEY) {
+
+        throw new Error(
+            "ACCOUNTS_ENCRYPTION_KEY non configurée."
+        );
+
+    }
+
+
+    const value =
+        ACCOUNTS_ENCRYPTION_KEY.trim();
+
+
+    /* -----------------------------------------
+       HEX 64 caractères
+    ----------------------------------------- */
+
+    if (
+        /^[0-9a-fA-F]{64}$/.test(value)
+    ) {
+
+        const key =
+            Buffer.from(
+                value,
+                "hex"
+            );
+
+
+        if (key.length === 32) {
+
+            return key;
+
+        }
+
+    }
+
+
+    /* -----------------------------------------
+       BASE64
+    ----------------------------------------- */
+
+    try {
+
+        let normalized =
+            value
+                .replace(/-/g, "+")
+                .replace(/_/g, "/");
+
+
+        while (
+            normalized.length % 4 !== 0
+        ) {
+
+            normalized += "=";
+
+        }
+
+
+        const key =
+            Buffer.from(
+                normalized,
+                "base64"
+            );
+
+
+        if (key.length === 32) {
+
+            return key;
+
+        }
+
+    }
+
+    catch {
+
+        // continuer vers l'erreur
+
+    }
+
+
+    throw new Error(
+        "ACCOUNTS_ENCRYPTION_KEY doit représenter exactement 32 octets."
+    );
+
+}
+
+
+/* =========================================================
+   ENCRYPTION
+========================================================= */
+
+function encryptAccounts(accounts) {
+
+    const key =
+        getEncryptionKey();
+
+
+    const iv =
+        crypto.randomBytes(12);
+
+
+    const cipher =
+        crypto.createCipheriv(
+            "aes-256-gcm",
+            key,
+            iv
+        );
+
+
+    const plaintext =
+        JSON.stringify(
+            accounts
+        );
+
+
+    const encrypted =
+        Buffer.concat([
+            cipher.update(
+                plaintext,
+                "utf8"
+            ),
+            cipher.final()
+        ]);
+
+
+    const authTag =
+        cipher.getAuthTag();
+
+
+    /*
+       Format :
+
+       DR1:IV:AUTH_TAG:DATA
+    */
+
+    return [
+        "DR1",
+        iv.toString("base64url"),
+        authTag.toString("base64url"),
+        encrypted.toString("base64url")
+    ].join(":");
+
+}
+
+
+/* =========================================================
+   DECRYPTION
+========================================================= */
+
+function decryptAccounts(encryptedText) {
+
+    const key =
+        getEncryptionKey();
+
+
+    const parts =
+        String(
+            encryptedText || ""
+        ).trim().split(":");
+
+
+    if (
+        parts.length !== 4 ||
+        parts[0] !== "DR1"
+    ) {
+
+        throw new Error(
+            "Format users.enc invalide."
+        );
+
+    }
+
+
+    const iv =
+        Buffer.from(
+            parts[1],
+            "base64url"
+        );
+
+
+    const authTag =
+        Buffer.from(
+            parts[2],
+            "base64url"
+        );
+
+
+    const encrypted =
+        Buffer.from(
+            parts[3],
+            "base64url"
+        );
+
+
+    if (
+        iv.length !== 12 ||
+        authTag.length !== 16
+    ) {
+
+        throw new Error(
+            "Données de chiffrement invalides."
+        );
+
+    }
+
+
+    const decipher =
+        crypto.createDecipheriv(
+            "aes-256-gcm",
+            key,
+            iv
+        );
+
+
+    decipher.setAuthTag(
+        authTag
+    );
+
+
+    const decrypted =
+        Buffer.concat([
+            decipher.update(
+                encrypted
+            ),
+            decipher.final()
+        ]);
+
+
+    const accounts =
+        JSON.parse(
+            decrypted.toString("utf8")
+        );
+
+
+    if (
+        !Array.isArray(accounts)
+    ) {
+
+        throw new Error(
+            "Base de comptes invalide."
+        );
+
+    }
+
+
+    return accounts;
+
+}
+
+
+/* =========================================================
+   PASSWORD HASH
+========================================================= */
+
+/*
+   Le mot de passe n'est jamais stocké.
+
+   scrypt + salt unique par compte.
+*/
+
+function hashPassword(password) {
+
+    return new Promise(
+        (resolve, reject) => {
+
+            const salt =
+                crypto.randomBytes(16);
+
+
+            crypto.scrypt(
+                password,
+                salt,
+                64,
+                {
+                    N: 16384,
+                    r: 8,
+                    p: 1
+                },
+                (error, derivedKey) => {
+
+                    if (error) {
+
+                        return reject(
+                            error
+                        );
+
+                    }
+
+
+                    resolve({
+
+                        salt:
+                            salt.toString(
+                                "base64url"
+                            ),
+
+                        hash:
+                            derivedKey.toString(
+                                "base64url"
+                            )
+
+                    });
+
+                }
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   PASSWORD VERIFY
+========================================================= */
+
+function verifyPassword(
+    password,
+    storedSalt,
+    storedHash
+) {
+
+    return new Promise(
+        (resolve, reject) => {
+
+            try {
+
+                const salt =
+                    Buffer.from(
+                        storedSalt,
+                        "base64url"
+                    );
+
+
+                const expected =
+                    Buffer.from(
+                        storedHash,
+                        "base64url"
+                    );
+
+
+                crypto.scrypt(
+                    password,
+                    salt,
+                    expected.length,
+                    {
+                        N: 16384,
+                        r: 8,
+                        p: 1
+                    },
+                    (
+                        error,
+                        derivedKey
+                    ) => {
+
+                        if (error) {
+
+                            return reject(
+                                error
+                            );
+
+                        }
+
+
+                        if (
+                            derivedKey.length !==
+                            expected.length
+                        ) {
+
+                            return resolve(
+                                false
+                            );
+
+                        }
+
+
+                        resolve(
+                            crypto.timingSafeEqual(
+                                derivedKey,
+                                expected
+                            )
+                        );
+
+                    }
+                );
+
+            }
+
+            catch (error) {
+
+                reject(
+                    error
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   USERNAME VALIDATION
+========================================================= */
+
+function normalizeUsername(username) {
+
+    return String(
+        username || ""
+    )
+    .trim()
+    .toLowerCase();
+
+}
+
+
+function validUsername(username) {
+
+    return /^[a-zA-Z0-9_-]{3,24}$/
+        .test(
+            username
+        );
+
+}
+
+
+/* =========================================================
+   PASSWORD VALIDATION
+========================================================= */
+
+function validPassword(password) {
+
+    return (
+        typeof password === "string" &&
+        password.length >= 6 &&
+        password.length <= 128
+    );
+
+}
+
+
+/* =========================================================
+   GET USERS FILE FROM GITHUB
+========================================================= */
+
+async function getUsersFile() {
+
+    if (!accountsConfigured()) {
+
+        throw new Error(
+            "Système de comptes non configuré."
+        );
+
+    }
+
+
+    const url =
+        githubURL(
+            `/repos/${encodeURIComponent(
+                GITHUB_OWNER
+            )}/${encodeURIComponent(
+                GITHUB_REPO
+            )}/contents/${USERS_FILE}?ref=${encodeURIComponent(
+                GITHUB_BRANCH
+            )}`
+        );
+
+
+    try {
+
+        const data =
+            await githubRequest(
+                url
+            );
+
+
+        if (
+            !data ||
+            !data.content
+        ) {
+
+            throw new Error(
+                "users.enc vide ou invalide."
+            );
+
+        }
+
+
+        const encoded =
+            String(
+                data.content
+            ).replace(
+                /\s/g,
+                ""
+            );
+
+
+        const encryptedText =
+            Buffer.from(
+                encoded,
+                "base64"
+            ).toString(
+                "utf8"
+            );
+
+
+        const users =
+            decryptAccounts(
+                encryptedText
+            );
+
+
+        return {
+
+            users,
+
+            sha:
+                data.sha
+
+        };
+
+    }
+
+    catch (error) {
+
+        /*
+           Le fichier n'existe pas encore.
+        */
+
+        if (
+            error.status === 404
+        ) {
+
+            return {
+
+                users: [],
+
+                sha: null
+
+            };
+
+        }
+
+
+        throw error;
+
+    }
+
+}
+
+
+/* =========================================================
+   SAVE USERS FILE TO GITHUB
+========================================================= */
+
+async function saveUsersFile(
+    users,
+    existingSha = null
+) {
+
+    if (!accountsConfigured()) {
+
+        throw new Error(
+            "Système de comptes non configuré."
+        );
+
+    }
+
+
+    const encrypted =
+        encryptAccounts(
+            users
+        );
+
+
+    const content =
+        Buffer.from(
+            encrypted,
+            "utf8"
+        ).toString(
+            "base64"
+        );
+
+
+    const body = {
+
+        message:
+            existingSha
+                ? "Update encrypted accounts"
+                : "Create encrypted accounts",
+
+        content,
+
+        branch:
+            GITHUB_BRANCH
+
+    };
+
+
+    if (existingSha) {
+
+        body.sha =
+            existingSha;
+
+    }
+
+
+    const url =
+        githubURL(
+            `/repos/${encodeURIComponent(
+                GITHUB_OWNER
+            )}/${encodeURIComponent(
+                GITHUB_REPO
+            )}/contents/${USERS_FILE}`
+        );
+
+
+    const result =
+        await githubRequest(
+            url,
+            {
+
+                method:
+                    "PUT",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body:
+                    JSON.stringify(
+                        body
+                    )
+
+            }
+        );
+
+
+    return result;
+
+}
+
+
+/* =========================================================
+   ACCOUNT REGISTER
+========================================================= */
+
+app.post(
+    "/api/account/register",
+    async (req, res) => {
+
+        try {
+
+            if (!accountsConfigured()) {
+
+                return res.status(500).json({
+
+                    success: false,
+
+                    error:
+                        "Système de comptes non configuré sur Render."
+
+                });
+
+            }
+
+
+            const username =
+                normalizeUsername(
+                    req.body?.username
+                );
+
+
+            const password =
+                String(
+                    req.body?.password ||
+                    ""
+                );
+
+
+            if (
+                !validUsername(
+                    username
+                )
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Pseudo invalide. Utilise 3 à 24 caractères : lettres, chiffres, _ ou -."
+
+                });
+
+            }
+
+
+            if (
+                !validPassword(
+                    password
+                )
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Mot de passe invalide. Il doit contenir entre 6 et 128 caractères."
+
+                });
+
+            }
+
+
+            console.log(
+                "[ACCOUNT] Inscription:",
+                username
+            );
+
+
+            const database =
+                await getUsersFile();
+
+
+            const exists =
+                database.users.some(
+                    user =>
+                        user.username ===
+                        username
+                );
+
+
+            if (exists) {
+
+                return res.status(409).json({
+
+                    success: false,
+
+                    error:
+                        "Ce pseudo existe déjà."
+
+                });
+
+            }
+
+
+            const passwordData =
+                await hashPassword(
+                    password
+                );
+
+
+            const user = {
+
+                username,
+
+                passwordHash:
+                    passwordData.hash,
+
+                passwordSalt:
+                    passwordData.salt,
+
+                createdAt:
+                    new Date()
+                        .toISOString()
+
+            };
+
+
+            database.users.push(
+                user
+            );
+
+
+            await saveUsersFile(
+                database.users,
+                database.sha
+            );
+
+
+            console.log(
+                "[ACCOUNT] Compte créé:",
+                username
+            );
+
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Compte créé avec succès.",
+
+                username
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "[ACCOUNT REGISTER]",
+                error
+            );
+
+
+            res.status(
+                error.status || 500
+            )
+            .json({
+
+                success: false,
+
+                error:
+                    error.message ||
+                    "Erreur lors de la création du compte."
+
+            });
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   ACCOUNT LOGIN
+========================================================= */
+
+app.post(
+    "/api/account/login",
+    async (req, res) => {
+
+        try {
+
+            if (!accountsConfigured()) {
+
+                return res.status(500).json({
+
+                    success: false,
+
+                    error:
+                        "Système de comptes non configuré sur Render."
+
+                });
+
+            }
+
+
+            const username =
+                normalizeUsername(
+                    req.body?.username
+                );
+
+
+            const password =
+                String(
+                    req.body?.password ||
+                    ""
+                );
+
+
+            if (!username || !password) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Pseudo ou mot de passe manquant."
+
+                });
+
+            }
+
+
+            console.log(
+                "[ACCOUNT] Tentative connexion:",
+                username
+            );
+
+
+            const database =
+                await getUsersFile();
+
+
+            const user =
+                database.users.find(
+                    account =>
+                        account.username ===
+                        username
+                );
+
+
+            /*
+               Même réponse dans les deux cas :
+               cela évite de révéler si le compte existe.
+            */
+
+            if (!user) {
+
+                return res.status(401).json({
+
+                    success: false,
+
+                    error:
+                        "Pseudo ou mot de passe incorrect."
+
+                });
+
+            }
+
+
+            const valid =
+                await verifyPassword(
+                    password,
+                    user.passwordSalt,
+                    user.passwordHash
+                );
+
+
+            if (!valid) {
+
+                return res.status(401).json({
+
+                    success: false,
+
+                    error:
+                        "Pseudo ou mot de passe incorrect."
+
+                });
+
+            }
+
+
+            console.log(
+                "[ACCOUNT] Connexion réussie:",
+                username
+            );
+
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Connexion réussie.",
+
+                username
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "[ACCOUNT LOGIN]",
+                error
+            );
+
+
+            res.status(
+                error.status || 500
+            )
+            .json({
+
+                success: false,
+
+                error:
+                    error.message ||
+                    "Erreur lors de la connexion."
+
+            });
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   ACCOUNT STATUS
+========================================================= */
+
+app.get(
+    "/api/account/status",
+    async (req, res) => {
+
+        res.json({
+
+            success: true,
+
+            configured:
+                accountsConfigured(),
+
+            encryptedFile:
+                USERS_FILE,
+
+            encryption:
+                "AES-256-GCM",
+
+            passwordHash:
+                "scrypt"
+
+        });
+
+    }
+);
 
 
 /* =========================================================
@@ -513,6 +1569,18 @@ app.get(
 
             githubConfigured:
                 configured,
+
+            accountsConfigured:
+                accountsConfigured(),
+
+            accountsFile:
+                USERS_FILE,
+
+            encryption:
+                "AES-256-GCM",
+
+            passwordHash:
+                "scrypt",
 
             repository:
                 `${GITHUB_OWNER}/${GITHUB_REPO}`,
@@ -760,10 +1828,6 @@ app.post(
                 );
 
 
-            /* -----------------------------------------
-               DATA URL
-            ----------------------------------------- */
-
             const match =
                 String(content).match(
                     /^data:[^;]+;base64,(.+)$/s
@@ -824,10 +1888,6 @@ app.post(
             );
 
 
-            /* -----------------------------------------
-               Vérifier si le fichier existe
-            ----------------------------------------- */
-
             let existingSha =
                 null;
 
@@ -866,10 +1926,6 @@ app.post(
 
             }
 
-
-            /* -----------------------------------------
-               Upload
-            ----------------------------------------- */
 
             const body = {
 
@@ -1047,14 +2103,33 @@ API : ONLINE
 WebSocket : ONLINE
 </p>
 
+<p class="ok">
+Encrypted Accounts : ${
+    accountsConfigured()
+        ? "ONLINE"
+        : "NOT CONFIGURED"
+}
+</p>
+
 <p>
 Repository :
 ${GITHUB_OWNER}/${GITHUB_REPO}
 </p>
 
 <p>
+Encrypted file :
+${USERS_FILE}
+</p>
+
+<p>
 <a href="/api/status">
 API STATUS
+</a>
+</p>
+
+<p>
+<a href="/api/account/status">
+ACCOUNT STATUS
 </a>
 </p>
 
@@ -1149,13 +2224,20 @@ server.listen(
         );
 
         console.log(
+            "Accounts encryption :",
+            ACCOUNTS_ENCRYPTION_KEY
+                ? "CONFIGURED"
+                : "NOT CONFIGURED"
+        );
+
+        console.log(
             "Repository :",
             `${GITHUB_OWNER}/${GITHUB_REPO}`
         );
 
         console.log(
-            "Branch :",
-            GITHUB_BRANCH
+            "Encrypted accounts :",
+            USERS_FILE
         );
 
         console.log(
