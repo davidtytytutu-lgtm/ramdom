@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -7,565 +8,571 @@
 
 <style>
 :root {
-    --bg: #050805;
-    --panel: #0b100b;
-    --panel2: #101710;
-    --green: #35ff5a;
-    --green-dark: #16852b;
-    --green-soft: #8cff9d;
-    --text: #d5ffd9;
-    --red: #ff4444;
-    --yellow: #ffff55;
+    --bg:#050805;
+    --panel:#0b100b;
+    --panel2:#101710;
+    --green:#35ff5a;
+    --green-dark:#16852b;
+    --green-soft:#8cff9d;
+    --text:#d5ffd9;
+    --red:#ff4444;
+    --yellow:#ffff55;
 }
 
 * {
-    box-sizing: border-box;
+    box-sizing:border-box;
 }
 
 html {
-    scroll-behavior: smooth;
+    scroll-behavior:smooth;
 }
 
 body {
-    margin: 0;
-    min-height: 100vh;
-    background:
-        radial-gradient(circle at center, #101810 0%, #030503 80%);
-    color: var(--text);
-    font-family: "Courier New", monospace;
-    overflow-x: hidden;
+    margin:0;
+    min-height:100vh;
+    background:radial-gradient(circle at center,#101810 0%,#030503 80%);
+    color:var(--text);
+    font-family:"Courier New",monospace;
+    overflow-x:hidden;
 }
 
 body::before {
-    content: "";
-    pointer-events: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background:
-        repeating-linear-gradient(
-            to bottom,
-            rgba(255,255,255,.025) 0px,
-            rgba(255,255,255,.025) 1px,
-            transparent 2px,
-            transparent 4px
-        );
+    content:"";
+    pointer-events:none;
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    background:repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.025) 0px,
+        rgba(255,255,255,.025) 1px,
+        transparent 2px,
+        transparent 4px
+    );
 }
 
 body::after {
-    content: "";
-    pointer-events: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
+    content:"";
+    pointer-events:none;
+    position:fixed;
+    inset:0;
+    z-index:9998;
     box-shadow:
         inset 0 0 100px rgba(0,0,0,.9),
         inset 0 0 20px rgba(0,255,50,.08);
 }
 
-button,
-input,
-textarea {
-    font-family: "Courier New", monospace;
+button,input,textarea {
+    font-family:"Courier New",monospace;
 }
 
 a {
-    color: var(--green);
-    text-decoration: none;
+    color:var(--green);
+    text-decoration:none;
 }
 
 a:hover {
-    color: white;
-    text-shadow: 0 0 8px var(--green);
+    color:white;
+    text-shadow:0 0 8px var(--green);
 }
 
 .wrapper {
-    width: min(1200px, calc(100% - 20px));
-    margin: 15px auto;
+    width:min(1200px,calc(100% - 20px));
+    margin:15px auto;
 }
 
 header {
-    border: 2px solid var(--green-dark);
-    background: #071007;
-    padding: 18px;
+    border:2px solid var(--green-dark);
+    background:#071007;
+    padding:18px;
     box-shadow:
         0 0 15px rgba(30,255,70,.12),
         inset 0 0 20px rgba(30,255,70,.04);
 }
 
 .logo {
-    color: var(--green);
-    font-size: clamp(25px, 5vw, 55px);
-    font-weight: bold;
-    letter-spacing: 5px;
+    color:var(--green);
+    font-size:clamp(25px,5vw,55px);
+    font-weight:bold;
+    letter-spacing:5px;
     text-shadow:
         0 0 4px var(--green),
         0 0 15px rgba(50,255,80,.5);
 }
 
 .logo-small {
-    color: var(--green-soft);
-    font-size: 14px;
-    margin-top: 5px;
+    color:var(--green-soft);
+    font-size:14px;
+    margin-top:5px;
 }
 
 .blink {
-    animation: blink 1s steps(2,start) infinite;
+    animation:blink 1s steps(2,start) infinite;
 }
 
 @keyframes blink {
-    50% {
-        opacity: 0;
-    }
+    50% { opacity:0; }
 }
 
 .status {
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px dashed var(--green-dark);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    font-size: 13px;
+    margin-top:15px;
+    padding-top:10px;
+    border-top:1px dashed var(--green-dark);
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    font-size:13px;
 }
 
 .online {
-    color: var(--green);
+    color:var(--green);
 }
 
 .online::before {
-    content: "● ";
+    content:"● ";
 }
 
 .offline {
-    color: var(--red);
+    color:var(--red);
 }
 
 .warning {
-    color: var(--yellow);
+    color:var(--yellow);
 }
 
 nav {
-    margin-top: 10px;
-    border: 2px solid var(--green-dark);
-    background: #080d08;
-    display: flex;
-    flex-wrap: wrap;
+    margin-top:10px;
+    border:2px solid var(--green-dark);
+    background:#080d08;
+    display:flex;
+    flex-wrap:wrap;
 }
 
 nav button {
-    padding: 12px 15px;
-    border: 0;
-    border-right: 1px solid var(--green-dark);
-    background: transparent;
-    color: var(--green);
-    cursor: pointer;
-    font-weight: bold;
+    padding:12px 15px;
+    border:0;
+    border-right:1px solid var(--green-dark);
+    background:transparent;
+    color:var(--green);
+    cursor:pointer;
+    font-weight:bold;
 }
 
 nav button:hover,
 nav button.active {
-    background: var(--green);
-    color: #001800;
+    background:var(--green);
+    color:#001800;
 }
 
 .marquee {
-    overflow: hidden;
-    white-space: nowrap;
-    border-top: 1px dashed var(--green-dark);
-    border-bottom: 1px dashed var(--green-dark);
-    padding: 7px;
-    color: var(--green-soft);
+    overflow:hidden;
+    white-space:nowrap;
+    border-top:1px dashed var(--green-dark);
+    border-bottom:1px dashed var(--green-dark);
+    padding:7px;
+    color:var(--green-soft);
 }
 
 .marquee span {
-    display: inline-block;
-    animation: scrollText 18s linear infinite;
+    display:inline-block;
+    animation:scrollText 18s linear infinite;
 }
 
 @keyframes scrollText {
-    from {
-        transform: translateX(100%);
-    }
-
-    to {
-        transform: translateX(-100%);
-    }
+    from { transform:translateX(100%); }
+    to { transform:translateX(-100%); }
 }
 
 .layout {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 10px;
-    margin-top: 10px;
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:10px;
+    margin-top:10px;
 }
 
 @media(max-width:750px) {
     .layout {
-        grid-template-columns: 1fr;
+        grid-template-columns:1fr;
     }
 }
 
 .sidebar {
-    height: max-content;
-    padding: 10px;
-    border: 2px solid var(--green-dark);
-    background: var(--panel);
+    height:max-content;
+    padding:10px;
+    border:2px solid var(--green-dark);
+    background:var(--panel);
 }
 
 .sidebar h3 {
-    margin-top: 0;
-    padding-bottom: 8px;
-    border-bottom: 1px dashed var(--green-dark);
-    color: var(--green);
+    margin-top:0;
+    padding-bottom:8px;
+    border-bottom:1px dashed var(--green-dark);
+    color:var(--green);
 }
 
 .side-link {
-    padding: 8px;
-    border-bottom: 1px dotted #245b2c;
-    cursor: pointer;
+    padding:8px;
+    border-bottom:1px dotted #245b2c;
+    cursor:pointer;
 }
 
 .side-link:hover {
-    background: #142014;
+    background:#142014;
 }
 
 .side-box {
-    margin-top: 15px;
-    padding: 10px;
-    border: 1px solid var(--green-dark);
-    font-size: 12px;
+    margin-top:15px;
+    padding:10px;
+    border:1px solid var(--green-dark);
+    font-size:12px;
 }
 
 .account-mini {
-    text-align: center;
+    text-align:center;
 }
 
 .account-mini img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border: 2px solid var(--green);
-    background: #000;
-    margin-bottom: 8px;
+    width:80px;
+    height:80px;
+    object-fit:cover;
+    border:2px solid var(--green);
+    background:#000;
+    margin-bottom:8px;
 }
 
 .account-mini-name {
-    color: var(--green);
-    font-weight: bold;
-    word-break: break-word;
+    color:var(--green);
+    font-weight:bold;
+    word-break:break-word;
 }
 
 .page {
-    display: none;
+    display:none;
 }
 
 .page.active {
-    display: block;
+    display:block;
 }
 
 .panel {
-    margin-bottom: 10px;
-    border: 2px solid var(--green-dark);
-    background: var(--panel);
-    box-shadow: inset 0 0 25px rgba(0,255,50,.025);
+    margin-bottom:10px;
+    border:2px solid var(--green-dark);
+    background:var(--panel);
+    box-shadow:inset 0 0 25px rgba(0,255,50,.025);
 }
 
 .panel-title {
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--green-dark);
-    background: #101b10;
-    color: var(--green);
-    font-weight: bold;
+    padding:9px 12px;
+    border-bottom:1px solid var(--green-dark);
+    background:#101b10;
+    color:var(--green);
+    font-weight:bold;
 }
 
 .panel-content {
-    padding: 15px;
+    padding:15px;
 }
 
 .hero {
-    min-height: 270px;
-    display: flex;
-    align-items: center;
+    min-height:270px;
+    display:flex;
+    align-items:center;
 }
 
 .hero h1 {
-    color: var(--green);
-    font-size: clamp(25px, 5vw, 45px);
+    color:var(--green);
+    font-size:clamp(25px,5vw,45px);
 }
 
 .prompt {
-    color: var(--green);
+    color:var(--green);
 }
 
 .cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
 }
 
 @media(max-width:700px) {
     .cards {
-        grid-template-columns: 1fr;
+        grid-template-columns:1fr;
     }
 }
 
 .card {
-    padding: 15px;
-    border: 1px solid var(--green-dark);
-    background: #091009;
+    padding:15px;
+    border:1px solid var(--green-dark);
+    background:#091009;
 }
 
 .card:hover {
-    border-color: var(--green);
+    border-color:var(--green);
 }
 
 .retro-btn {
-    padding: 8px 12px;
-    border: 1px solid var(--green);
-    background: #0a160a;
-    color: var(--green);
-    cursor: pointer;
+    padding:8px 12px;
+    border:1px solid var(--green);
+    background:#0a160a;
+    color:var(--green);
+    cursor:pointer;
 }
 
 .retro-btn:hover {
-    background: var(--green);
-    color: #001500;
+    background:var(--green);
+    color:#001500;
 }
 
 .retro-btn.danger {
-    border-color: var(--red);
-    color: var(--red);
+    border-color:var(--red);
+    color:var(--red);
 }
 
 .retro-btn.danger:hover {
-    background: var(--red);
-    color: #200000;
+    background:var(--red);
+    color:#200000;
 }
 
 .retro-input,
 .retro-textarea {
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 10px;
-    outline: none;
-    border: 1px solid var(--green-dark);
-    background: #020602;
-    color: var(--green-soft);
+    width:100%;
+    margin-bottom:10px;
+    padding:10px;
+    outline:none;
+    border:1px solid var(--green-dark);
+    background:#020602;
+    color:var(--green-soft);
 }
 
 .retro-input:focus,
 .retro-textarea:focus {
-    border-color: var(--green);
-    box-shadow: 0 0 8px rgba(53,255,90,.15);
+    border-color:var(--green);
+    box-shadow:0 0 8px rgba(53,255,90,.15);
+}
+
+.retro-input:disabled {
+    opacity:.7;
+    cursor:not-allowed;
 }
 
 .retro-textarea {
-    min-height: 120px;
-    resize: vertical;
+    min-height:120px;
+    resize:vertical;
 }
 
 .auth-box {
-    max-width: 600px;
-    margin: auto;
+    max-width:600px;
+    margin:auto;
 }
 
 .auth-section {
-    padding: 15px;
-    border: 1px solid var(--green-dark);
-    background: #080d08;
-    margin-bottom: 10px;
+    padding:15px;
+    border:1px solid var(--green-dark);
+    background:#080d08;
+    margin-bottom:10px;
 }
 
 .auth-section h3 {
-    margin-top: 0;
-    color: var(--green);
+    margin-top:0;
+    color:var(--green);
 }
 
 .auth-label {
-    display: block;
-    color: var(--green-soft);
-    margin-bottom: 5px;
+    display:block;
+    color:var(--green-soft);
+    margin-bottom:5px;
 }
 
 .auth-status {
-    min-height: 22px;
-    margin-top: 12px;
-    padding: 8px;
-    border: 1px dashed var(--green-dark);
-    background: #020502;
+    min-height:22px;
+    margin-top:12px;
+    padding:8px;
+    border:1px dashed var(--green-dark);
+    background:#020502;
 }
 
 .auth-status.success {
-    color: var(--green);
+    color:var(--green);
 }
 
 .auth-status.error {
-    color: var(--red);
+    color:var(--red);
 }
 
 .account-card {
-    text-align: center;
-    max-width: 500px;
-    margin: auto;
+    text-align:center;
+    max-width:500px;
+    margin:auto;
 }
 
 .account-avatar {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border: 3px solid var(--green);
-    background: #000;
-    box-shadow: 0 0 20px rgba(53,255,90,.2);
+    width:150px;
+    height:150px;
+    object-fit:cover;
+    border:3px solid var(--green);
+    background:#000;
+    box-shadow:0 0 20px rgba(53,255,90,.2);
 }
 
 .account-username {
-    margin: 15px 0 5px;
-    color: var(--green);
-    font-size: 28px;
-    font-weight: bold;
+    margin:15px 0 5px;
+    color:var(--green);
+    font-size:28px;
+    font-weight:bold;
 }
 
 .account-id {
-    color: #58745c;
-    font-size: 12px;
+    color:#58745c;
+    font-size:12px;
 }
 
 .account-status {
-    margin: 15px 0;
-    color: var(--green);
+    margin:15px 0;
+    color:var(--green);
 }
 
 .account-actions {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
 }
 
 .upload-box {
-    margin-bottom: 15px;
-    padding: 20px;
-    border: 1px dashed var(--green-dark);
+    margin-bottom:15px;
+    padding:20px;
+    border:1px dashed var(--green-dark);
 }
 
 .upload-status {
-    margin-top: 10px;
-    color: var(--green-soft);
+    margin-top:10px;
+    color:var(--green-soft);
 }
 
 .media-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 10px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:10px;
 }
 
 .media-item {
-    padding: 10px;
-    border: 1px solid var(--green-dark);
-    background: #080d08;
-    overflow: hidden;
+    padding:10px;
+    border:1px solid var(--green-dark);
+    background:#080d08;
+    overflow:hidden;
 }
 
 .media-item img,
 .media-item video {
-    width: 100%;
-    max-height: 200px;
-    object-fit: contain;
-    background: #000;
+    width:100%;
+    max-height:200px;
+    object-fit:contain;
+    background:#000;
 }
 
 .media-item audio {
-    width: 100%;
+    width:100%;
 }
 
 .chat-box {
-    height: 420px;
-    overflow-y: auto;
-    padding: 10px;
-    border: 1px solid var(--green-dark);
-    background: #020502;
+    height:420px;
+    overflow-y:auto;
+    padding:10px;
+    border:1px solid var(--green-dark);
+    background:#020502;
 }
 
 .chat-message {
-    margin-bottom: 10px;
-    padding-left: 10px;
-    border-left: 3px solid var(--green-dark);
+    margin-bottom:10px;
+    padding-left:10px;
+    border-left:3px solid var(--green-dark);
+    word-break:break-word;
 }
 
 .chat-user {
-    color: var(--green);
-    font-weight: bold;
+    color:var(--green);
+    font-weight:bold;
 }
 
 .chat-time {
-    color: #58745c;
-    font-size: 11px;
+    color:#58745c;
+    font-size:11px;
 }
 
 .chat-form {
-    display: flex;
-    gap: 5px;
-    margin-top: 10px;
+    display:flex;
+    gap:5px;
+    margin-top:10px;
 }
 
 .chat-form input {
-    margin: 0;
-    flex: 1;
+    margin:0;
+    flex:1;
+}
+
+@media(max-width:700px) {
+    .chat-form {
+        flex-direction:column;
+    }
+
+    .chat-form button {
+        width:100%;
+    }
 }
 
 .terminal {
-    min-height: 380px;
-    padding: 12px;
-    overflow-y: auto;
-    border: 1px solid var(--green-dark);
-    background: #020502;
+    min-height:380px;
+    padding:12px;
+    overflow-y:auto;
+    border:1px solid var(--green-dark);
+    background:#020502;
 }
 
 .terminal-output {
-    min-height: 320px;
-    white-space: pre-wrap;
-    line-height: 1.5;
+    min-height:320px;
+    white-space:pre-wrap;
+    line-height:1.5;
 }
 
 .terminal-input-line {
-    display: flex;
+    display:flex;
 }
 
 .terminal-input {
-    flex: 1;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: var(--green);
+    flex:1;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:var(--green);
 }
 
 .game {
-    padding: 20px;
-    text-align: center;
+    padding:20px;
+    text-align:center;
 }
 
 .click-target {
-    width: 120px;
-    height: 120px;
-    margin: 30px auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 3px solid var(--green);
-    cursor: pointer;
-    user-select: none;
+    width:120px;
+    height:120px;
+    margin:30px auto;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    border:3px solid var(--green);
+    cursor:pointer;
+    user-select:none;
 }
 
 footer {
-    margin-top: 10px;
-    padding: 20px;
-    border: 2px solid var(--green-dark);
-    background: #070c07;
-    text-align: center;
-    font-size: 12px;
+    margin-top:10px;
+    padding:20px;
+    border:2px solid var(--green-dark);
+    background:#070c07;
+    text-align:center;
+    font-size:12px;
 }
 </style>
+
 </head>
 
 <body>
@@ -574,135 +581,125 @@ footer {
 
 <header>
 
-    <div class="logo">
-        DAVID RANDOM<span class="blink">_</span>
-    </div>
+<div class="logo">
+DAVID RANDOM<span class="blink">_</span>
+</div>
 
-    <div class="logo-small">
-        [ RANDOM INTERNET TERMINAL // V2 ]
-    </div>
+<div class="logo-small">
+[ RANDOM INTERNET TERMINAL // V2 ]
+</div>
 
-    <div class="status">
+<div class="status">
 
-        <span id="serverStatus" class="offline">
-            CHECKING SERVER...
-        </span>
+<span id="serverStatus" class="offline">
+CHECKING SERVER...
+</span>
 
-        <span>
-            TIME:
-            <span id="clock">--:--:--</span>
-        </span>
+<span>
+TIME:
+<span id="clock">--:--:--</span>
+</span>
 
-        <span>
-            VISITORS:
-            <span id="visitors">1337</span>
-        </span>
+<span>
+VISITORS:
+<span id="visitors">1337</span>
+</span>
 
-        <span>
-            ACCOUNT:
-            <span id="headerAccountStatus" class="offline">
-                GUEST
-            </span>
-        </span>
+<span>
+ACCOUNT:
+<span id="headerAccountStatus" class="offline">
+GUEST
+</span>
+</span>
 
-    </div>
+</div>
 
 </header>
 
 <nav>
-
-    <button class="active" data-page="home">[ HOME ]</button>
-    <button data-page="chat">[ CHAT ]</button>
-    <button data-page="media">[ MEDIA ]</button>
-    <button data-page="terminal">[ TERMINAL ]</button>
-    <button data-page="games">[ GAMES ]</button>
-    <button data-page="guestbook">[ GUESTBOOK ]</button>
-    <button data-page="account">[ ACCOUNT ]</button>
-    <button data-page="about">[ ABOUT ]</button>
-
+<button class="active" data-page="home">[ HOME ]</button>
+<button data-page="chat">[ CHAT ]</button>
+<button data-page="media">[ MEDIA ]</button>
+<button data-page="terminal">[ TERMINAL ]</button>
+<button data-page="games">[ GAMES ]</button>
+<button data-page="guestbook">[ GUESTBOOK ]</button>
+<button data-page="account">[ ACCOUNT ]</button>
+<button data-page="about">[ ABOUT ]</button>
 </nav>
 
 <div class="marquee">
-
-    <span>
-        *** DAVID RANDOM ***
-        *** RENDER SERVER ***
-        *** GITHUB STORAGE ***
-        *** WSS CHAT ***
-        *** ACCOUNT SYSTEM ***
-        *** RANDOM INTERNET TERMINAL ***
-        *** WELCOME ***
-    </span>
-
+<span>
+*** DAVID RANDOM ***
+*** RENDER SERVER ***
+*** GITHUB STORAGE ***
+*** WSS CHAT ***
+*** ACCOUNT SYSTEM ***
+*** RANDOM INTERNET TERMINAL ***
+*** WELCOME ***
+</span>
 </div>
 
 <div class="layout">
 
 <aside class="sidebar">
 
-    <h3>DIRECTORY</h3>
+<h3>DIRECTORY</h3>
 
-    <div class="side-link" data-page="home">⌂ Home</div>
-    <div class="side-link" data-page="chat">▣ Chat</div>
-    <div class="side-link" data-page="media">▧ Media</div>
-    <div class="side-link" data-page="terminal">$_ Terminal</div>
-    <div class="side-link" data-page="games">★ Games</div>
-    <div class="side-link" data-page="guestbook">✎ Guestbook</div>
-    <div class="side-link" data-page="account">♙ Account</div>
-    <div class="side-link" data-page="about">ⓘ About</div>
+<div class="side-link" data-page="home">⌂ Home</div>
+<div class="side-link" data-page="chat">▣ Chat</div>
+<div class="side-link" data-page="media">▧ Media</div>
+<div class="side-link" data-page="terminal">$_ Terminal</div>
+<div class="side-link" data-page="games">★ Games</div>
+<div class="side-link" data-page="guestbook">✎ Guestbook</div>
+<div class="side-link" data-page="account">♙ Account</div>
+<div class="side-link" data-page="about">ⓘ About</div>
 
-    <div class="side-box">
+<div class="side-box">
 
-        <b>SERVER</b>
+<b>SERVER</b>
 
-        <br><br>
+<br><br>
 
-        RENDER:
-        <span id="renderSide" class="offline">CHECKING</span>
+RENDER: <span id="renderSide" class="offline">CHECKING</span>
 
-        <br>
+<br>
 
-        GITHUB:
-        <span class="online">ONLINE</span>
+GITHUB: <span class="online">ONLINE</span>
 
-        <br>
+<br>
 
-        API:
-        <span id="apiSide" class="offline">CHECKING</span>
+API: <span id="apiSide" class="offline">CHECKING</span>
 
-        <br>
+<br>
 
-        WSS:
-        <span id="sidebarSocket" class="offline">
-            CONNECTING
-        </span>
+WSS: <span id="sidebarSocket" class="offline">CONNECTING</span>
 
-    </div>
+</div>
 
-    <div class="side-box">
+<div class="side-box">
 
-        <b>ACCOUNT</b>
+<b>ACCOUNT</b>
 
-        <br><br>
+<br><br>
 
-        <div id="sidebarAccount">
-            GUEST
-        </div>
+<div id="sidebarAccount">
+GUEST
+</div>
 
-    </div>
+</div>
 
-    <div class="side-box">
+<div class="side-box">
 
-        <b>STORAGE</b>
+<b>STORAGE</b>
 
-        <br><br>
+<br><br>
 
-        /image/<br>
-        /music/<br>
-        /video/<br>
-        /chat-log/
+/image/<br>
+/music/<br>
+/video/<br>
+/chat-log/
 
-    </div>
+</div>
 
 </aside>
 
@@ -710,334 +707,307 @@ footer {
 
 <section class="page active" id="home">
 
-    <div class="panel hero">
+<div class="panel hero">
 
-        <div class="panel-content">
+<div class="panel-content">
 
-            <h1>WELCOME TO DAVID RANDOM</h1>
+<h1>WELCOME TO DAVID RANDOM</h1>
 
-            <p>
-                <span class="prompt">root@david:~$</span>
-                whoami
-            </p>
+<p>
+<span class="prompt">root@david:~$</span>
+whoami
+</p>
 
-            <p id="homeWhoami">visitor</p>
+<p id="homeWhoami">visitor</p>
 
-            <p>
-                <span class="prompt">root@david:~$</span>
-                cat welcome.txt
-            </p>
+<p>
+<span class="prompt">root@david:~$</span>
+cat welcome.txt
+</p>
 
-            <p>
-                Bienvenue dans le coin le plus random
-                de l'Internet.
-            </p>
+<p>
+Bienvenue dans le coin le plus random
+de l'Internet.
+</p>
 
-            <p>
-                Images, musique, vidéos, chat,
-                terminal et trucs inutiles.
-            </p>
+<p>
+Images, musique, vidéos, chat,
+terminal et trucs inutiles.
+</p>
 
-            <p>
-                <span class="blink">█</span>
-                Explore.
-            </p>
+<p>
+<span class="blink">█</span>
+Explore.
+</p>
 
-        </div>
+</div>
 
-    </div>
+</div>
 
-    <div class="cards">
+<div class="cards">
 
-        <div class="card">
+<div class="card">
 
-            <h3>▣ CHAT</h3>
+<h3>▣ CHAT</h3>
 
-            <p>
-                Discute avec les visiteurs.
-            </p>
+<p>
+Discute avec les visiteurs.
+</p>
 
-            <button
-                class="retro-btn"
-                onclick="showPage('chat')"
-            >
-                OPEN
-            </button>
+<button class="retro-btn" onclick="showPage('chat')">
+OPEN
+</button>
 
-        </div>
+</div>
 
-        <div class="card">
+<div class="card">
 
-            <h3>▧ MEDIA</h3>
+<h3>▧ MEDIA</h3>
 
-            <p>
-                Images, musique et vidéos.
-            </p>
+<p>
+Images, musique et vidéos.
+</p>
 
-            <button
-                class="retro-btn"
-                onclick="showPage('media')"
-            >
-                OPEN
-            </button>
+<button class="retro-btn" onclick="showPage('media')">
+OPEN
+</button>
 
-        </div>
+</div>
 
-        <div class="card">
+<div class="card">
 
-            <h3>♙ ACCOUNT</h3>
+<h3>♙ ACCOUNT</h3>
 
-            <p>
-                Crée ton compte ou connecte-toi.
-            </p>
+<p>
+Crée ton compte ou connecte-toi.
+</p>
 
-            <button
-                class="retro-btn"
-                onclick="showPage('account')"
-            >
-                OPEN
-            </button>
+<button class="retro-btn" onclick="showPage('account')">
+OPEN
+</button>
 
-        </div>
+</div>
 
-    </div>
+</div>
 
 </section>
-
-
-<!-- =====================================================
-     CHAT
-===================================================== -->
 
 <section class="page" id="chat">
 
-    <div class="panel">
+<div class="panel">
 
-        <div class="panel-title">
-            CHAT // GLOBAL // WSS
-        </div>
+<div class="panel-title">
+CHAT // GLOBAL // WSS
+</div>
 
-        <div class="panel-content">
+<div class="panel-content">
 
-            <div class="chat-box" id="chatBox">
+<div class="chat-box" id="chatBox">
 
-                <div class="chat-message">
+<div class="chat-message">
 
-                    <span class="chat-user">
-                        SYSTEM
-                    </span>
+<span class="chat-user">SYSTEM</span>
 
-                    <br>
+<br>
 
-                    Initialisation du chat...
+Initialisation du chat...
 
-                </div>
+</div>
 
-            </div>
+</div>
 
-            <div class="chat-form">
+<div class="chat-form">
 
-                <input
-                    class="retro-input"
-                    id="chatUsername"
-                    placeholder="Pseudo"
-                    maxlength="24"
-                >
+<input
+class="retro-input"
+id="chatUsername"
+placeholder="Pseudo"
+maxlength="24"
+autocomplete="nickname"
 
-                <input
-                    class="retro-input"
-                    id="chatMessage"
-                    placeholder="Message..."
-                    maxlength="500"
-                >
+>
 
-                <button
-                    class="retro-btn"
-                    onclick="sendChat()"
-                >
-                    SEND
-                </button>
+<input
+class="retro-input"
+id="chatMessage"
+placeholder="Message..."
+maxlength="500"
+autocomplete="off"
 
-            </div>
+>
 
-            <p id="chatStatus">
-                Connexion WSS...
-            </p>
+<button
+class="retro-btn"
+onclick="sendChat()"
 
-        </div>
+>
 
-    </div>
+SEND </button>
+
+</div>
+
+<p id="chatStatus">
+Connexion WSS...
+</p>
+
+</div>
+
+</div>
 
 </section>
-
-
-<!-- =====================================================
-     MEDIA
-===================================================== -->
 
 <section class="page" id="media">
 
-    <div class="panel">
+<div class="panel">
 
-        <div class="panel-title">
-            UPLOAD // GITHUB STORAGE
-        </div>
+<div class="panel-title">
+UPLOAD // GITHUB STORAGE
+</div>
 
-        <div class="panel-content">
+<div class="panel-content">
 
-            <div class="upload-box">
+<div class="upload-box">
 
-                <h3>🖼 IMAGE</h3>
+<h3>🖼 IMAGE</h3>
 
-                <input
-                    type="file"
-                    id="imageFile"
-                    accept="image/*"
-                >
+<input
+type="file"
+id="imageFile"
+accept="image/*"
 
-                <br><br>
+>
 
-                <button
-                    class="retro-btn"
-                    onclick="uploadFile('image')"
-                >
-                    UPLOAD IMAGE
-                </button>
+<br><br>
 
-                <div
-                    id="imageUploadStatus"
-                    class="upload-status"
-                ></div>
+<button
+class="retro-btn"
+onclick="uploadFile('image')"
 
-            </div>
+>
 
-            <div class="upload-box">
+UPLOAD IMAGE </button>
 
-                <h3>🎵 MUSIC</h3>
+<div id="imageUploadStatus" class="upload-status"></div>
 
-                <input
-                    type="file"
-                    id="musicFile"
-                    accept="audio/*"
-                >
+</div>
 
-                <br><br>
+<div class="upload-box">
 
-                <button
-                    class="retro-btn"
-                    onclick="uploadFile('music')"
-                >
-                    UPLOAD MUSIC
-                </button>
+<h3>🎵 MUSIC</h3>
 
-                <div
-                    id="musicUploadStatus"
-                    class="upload-status"
-                ></div>
+<input
+type="file"
+id="musicFile"
+accept="audio/*"
 
-            </div>
+>
 
-            <div class="upload-box">
+<br><br>
 
-                <h3>🎥 VIDEO</h3>
+<button
+class="retro-btn"
+onclick="uploadFile('music')"
 
-                <input
-                    type="file"
-                    id="videoFile"
-                    accept="video/*"
-                >
+>
 
-                <br><br>
+UPLOAD MUSIC </button>
 
-                <button
-                    class="retro-btn"
-                    onclick="uploadFile('video')"
-                >
-                    UPLOAD VIDEO
-                </button>
+<div id="musicUploadStatus" class="upload-status"></div>
 
-                <div
-                    id="videoUploadStatus"
-                    class="upload-status"
-                ></div>
+</div>
 
-            </div>
+<div class="upload-box">
 
-        </div>
+<h3>🎥 VIDEO</h3>
 
-    </div>
+<input
+type="file"
+id="videoFile"
+accept="video/*"
 
-    <div class="panel">
+>
 
-        <div class="panel-title">
-            IMAGES // /image/
-        </div>
+<br><br>
 
-        <div class="panel-content">
+<button
+class="retro-btn"
+onclick="uploadFile('video')"
 
-            <div class="media-grid" id="imageList">
-                Ouvre cette page pour charger les images.
-            </div>
+>
 
-        </div>
+UPLOAD VIDEO </button>
 
-    </div>
+<div id="videoUploadStatus" class="upload-status"></div>
 
-    <div class="panel">
+</div>
 
-        <div class="panel-title">
-            MUSIC // /music/
-        </div>
+</div>
 
-        <div class="panel-content">
+</div>
 
-            <div class="media-grid" id="musicList">
-                Ouvre cette page pour charger les musiques.
-            </div>
+<div class="panel">
 
-        </div>
+<div class="panel-title">
+IMAGES // /image/
+</div>
 
-    </div>
+<div class="panel-content">
 
-    <div class="panel">
+<div class="media-grid" id="imageList">
+Ouvre cette page pour charger les images.
+</div>
 
-        <div class="panel-title">
-            VIDEOS // /video/
-        </div>
+</div>
 
-        <div class="panel-content">
+</div>
 
-            <div class="media-grid" id="videoList">
-                Ouvre cette page pour charger les vidéos.
-            </div>
+<div class="panel">
 
-        </div>
+<div class="panel-title">
+MUSIC // /music/
+</div>
 
-    </div>
+<div class="panel-content">
+
+<div class="media-grid" id="musicList">
+Ouvre cette page pour charger les musiques.
+</div>
+
+</div>
+
+</div>
+
+<div class="panel">
+
+<div class="panel-title">
+VIDEOS // /video/
+</div>
+
+<div class="panel-content">
+
+<div class="media-grid" id="videoList">
+Ouvre cette page pour charger les vidéos.
+</div>
+
+</div>
+
+</div>
 
 </section>
 
-
-<!-- =====================================================
-     TERMINAL
-===================================================== -->
-
 <section class="page" id="terminal">
 
-    <div class="panel">
+<div class="panel">
 
-        <div class="panel-title">
-            TERMINAL // DAVID_OS
-        </div>
+<div class="panel-title">
+TERMINAL // DAVID_OS
+</div>
 
-        <div class="panel-content">
+<div class="panel-content">
 
-            <div class="terminal">
+<div class="terminal">
 
-                <div
-                    class="terminal-output"
-                    id="terminalOutput"
-                >DAVID_OS v2.0
+<div class="terminal-output" id="terminalOutput">DAVID_OS v2.0
 
 Booting...
 
@@ -1051,346 +1021,324 @@ ACCOUNT SYSTEM detected.
 
 SYSTEM READY.
 
-Type "help".
-                </div>
+Type "help".</div>
 
-                <div class="terminal-input-line">
+<div class="terminal-input-line">
 
-                    <span class="prompt">
-                        guest@david:~$&nbsp;
-                    </span>
+<span class="prompt">
+guest@david:~$&nbsp;
+</span>
 
-                    <input
-                        class="terminal-input"
-                        id="terminalInput"
-                        autocomplete="off"
-                        spellcheck="false"
-                    >
+<input
+class="terminal-input"
+id="terminalInput"
+autocomplete="off"
+spellcheck="false"
 
-                </div>
+>
 
-            </div>
+</div>
 
-        </div>
+</div>
 
-    </div>
+</div>
+
+</div>
 
 </section>
-
-
-<!-- =====================================================
-     GAMES
-===================================================== -->
 
 <section class="page" id="games">
 
-    <div class="panel">
+<div class="panel">
 
-        <div class="panel-title">
-            GAMES // MINI ARCADE
-        </div>
+<div class="panel-title">
+GAMES // MINI ARCADE
+</div>
 
-        <div class="panel-content">
+<div class="panel-content">
 
-            <div class="game">
+<div class="game">
 
-                <h2>
-                    CLICK THE RANDOM BOX
-                </h2>
+<h2>
+CLICK THE RANDOM BOX
+</h2>
 
-                <p>
-                    SCORE:
-                    <span id="score">0</span>
-                </p>
+<p>
+SCORE:
+<span id="score">0</span>
+</p>
 
-                <p>
-                    TIME:
-                    <span id="gameTime">10</span>
-                </p>
+<p>
+TIME:
+<span id="gameTime">10</span>
+</p>
 
-                <div
-                    class="click-target"
-                    id="clickTarget"
-                    onclick="gameClick()"
-                >
-                    CLICK
-                </div>
+<div
+class="click-target"
+id="clickTarget"
+onclick="gameClick()"
+>
+CLICK
+</div>
 
-                <button
-                    class="retro-btn"
-                    onclick="startGame()"
-                >
-                    START GAME
-                </button>
+<button
+class="retro-btn"
+onclick="startGame()"
 
-            </div>
+>
 
-        </div>
+START GAME </button>
 
-    </div>
+</div>
+
+</div>
+
+</div>
 
 </section>
-
-
-<!-- =====================================================
-     GUESTBOOK
-===================================================== -->
 
 <section class="page" id="guestbook">
 
-    <div class="panel">
+<div class="panel">
 
-        <div class="panel-title">
-            GUESTBOOK
-        </div>
+<div class="panel-title">
+GUESTBOOK
+</div>
 
-        <div class="panel-content">
+<div class="panel-content">
 
-            <input
-                class="retro-input"
-                id="guestName"
-                placeholder="Pseudo"
-                maxlength="24"
-            >
+<input
+class="retro-input"
+id="guestName"
+placeholder="Pseudo"
+maxlength="24"
 
-            <textarea
-                class="retro-textarea"
-                id="guestMessage"
-                placeholder="Message..."
-                maxlength="500"
-            ></textarea>
+>
 
-            <button
-                class="retro-btn"
-                onclick="addGuest()"
-            >
-                SIGN
-            </button>
+<textarea
+class="retro-textarea"
+id="guestMessage"
+placeholder="Message..."
+maxlength="500"
+></textarea>
 
-            <div id="guestList">
+<button
+class="retro-btn"
+onclick="addGuest()"
 
-                <div class="chat-message">
+>
 
-                    <span class="chat-user">
-                        admin
-                    </span>
+SIGN </button>
 
-                    <br>
+<div id="guestList">
 
-                    Bienvenue !
+<div class="chat-message">
 
-                </div>
+<span class="chat-user">
+admin
+</span>
 
-            </div>
+<br>
 
-        </div>
+Bienvenue !
 
-    </div>
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 </section>
-
-
-<!-- =====================================================
-     ACCOUNT
-===================================================== -->
 
 <section class="page" id="account">
 
-    <div class="panel">
+<div class="panel">
 
-        <div class="panel-title">
-            ACCOUNT // AUTHENTICATION
-        </div>
+<div class="panel-title">
+ACCOUNT // AUTHENTICATION
+</div>
 
-        <div class="panel-content">
+<div class="panel-content">
 
-            <!-- LOGGED OUT -->
+<div id="loggedOutAccount" class="auth-box">
 
-            <div id="loggedOutAccount" class="auth-box">
+<div class="auth-section">
 
-                <div class="auth-section">
+<h3>LOGIN</h3>
 
-                    <h3>
-                        LOGIN
-                    </h3>
+<label class="auth-label">
+USERNAME
+</label>
 
-                    <label class="auth-label">
-                        USERNAME
-                    </label>
+<input
+class="retro-input"
+id="loginUsername"
+placeholder="Username"
+maxlength="24"
+autocomplete="username"
 
-                    <input
-                        class="retro-input"
-                        id="loginUsername"
-                        placeholder="Username"
-                        maxlength="24"
-                        autocomplete="username"
-                    >
+>
 
-                    <label class="auth-label">
-                        PASSWORD
-                    </label>
+<label class="auth-label">
+PASSWORD
+</label>
 
-                    <input
-                        class="retro-input"
-                        id="loginPassword"
-                        type="password"
-                        placeholder="Password"
-                        autocomplete="current-password"
-                    >
+<input
+class="retro-input"
+id="loginPassword"
+type="password"
+placeholder="Password"
+autocomplete="current-password"
 
-                    <button
-                        class="retro-btn"
-                        id="loginButton"
-                        onclick="loginAccount()"
-                    >
-                        [ LOGIN ]
-                    </button>
+>
 
-                </div>
+<button
+class="retro-btn"
+id="loginButton"
+onclick="loginAccount()"
 
+>
 
-                <div class="auth-section">
+[ LOGIN ] </button>
 
-                    <h3>
-                        CREATE ACCOUNT
-                    </h3>
+</div>
 
-                    <label class="auth-label">
-                        USERNAME
-                    </label>
+<div class="auth-section">
 
-                    <input
-                        class="retro-input"
-                        id="registerUsername"
-                        placeholder="Username"
-                        maxlength="24"
-                        autocomplete="username"
-                    >
+<h3>CREATE ACCOUNT</h3>
 
-                    <label class="auth-label">
-                        PASSWORD
-                    </label>
+<label class="auth-label">
+USERNAME
+</label>
 
-                    <input
-                        class="retro-input"
-                        id="registerPassword"
-                        type="password"
-                        placeholder="Password"
-                        autocomplete="new-password"
-                    >
+<input
+class="retro-input"
+id="registerUsername"
+placeholder="Username"
+maxlength="24"
+autocomplete="username"
 
-                    <label class="auth-label">
-                        PROFILE PICTURE URL
-                    </label>
+>
 
-                    <input
-                        class="retro-input"
-                        id="profilePicture"
-                        type="url"
-                        placeholder="https://site.com/avatar.png"
-                        autocomplete="off"
-                    >
+<label class="auth-label">
+PASSWORD
+</label>
 
-                    <small>
-                        PNG / JPG / JPEG via URL.
-                    </small>
+<input
+class="retro-input"
+id="registerPassword"
+type="password"
+placeholder="Password"
+autocomplete="new-password"
 
-                    <br><br>
+>
 
-                    <button
-                        class="retro-btn"
-                        id="registerButton"
-                        onclick="registerAccount()"
-                    >
-                        [ REGISTER ]
-                    </button>
+<label class="auth-label">
+PROFILE PICTURE URL
+</label>
 
-                </div>
+<input
+class="retro-input"
+id="profilePicture"
+type="url"
+placeholder="https://site.com/avatar.png"
+autocomplete="off"
 
-                <div
-                    id="authStatus"
-                    class="auth-status"
-                >
-                    STATUS: NOT CONNECTED
-                </div>
+>
 
-            </div>
+<small>
+PNG / JPG / JPEG via URL.
+</small>
 
+<br><br>
 
-            <!-- LOGGED IN -->
+<button
+class="retro-btn"
+id="registerButton"
+onclick="registerAccount()"
 
-            <div
-                id="loggedInAccount"
-                class="account-card"
-                style="display:none;"
-            >
+>
 
-                <img
-                    id="accountAvatar"
-                    class="account-avatar"
-                    src=""
-                    alt="Profile picture"
-                >
+[ REGISTER ] </button>
 
-                <div
-                    id="accountUsername"
-                    class="account-username"
-                >
-                    USER
-                </div>
+</div>
 
-                <div
-                    id="accountId"
-                    class="account-id"
-                >
-                    ACCOUNT
-                </div>
+<div id="authStatus" class="auth-status">
+STATUS: NOT CONNECTED
+</div>
 
-                <div class="account-status">
-                    ● CONNECTED
-                </div>
+</div>
 
-                <div class="account-actions">
+<div
+id="loggedInAccount"
+class="account-card"
+style="display:none;"
+>
 
-                    <button
-                        class="retro-btn danger"
-                        id="logoutButton"
-                        onclick="logoutAccount()"
-                    >
-                        [ LOGOUT ]
-                    </button>
+<img
+id="accountAvatar"
+class="account-avatar"
+src=""
+alt="Profile picture"
 
-                </div>
+>
 
-                <div
-                    id="loggedInStatus"
-                    class="auth-status success"
-                >
-                    SESSION ACTIVE
-                </div>
+<div
+id="accountUsername"
+class="account-username"
+>
+USER
+</div>
 
-            </div>
+<div
+id="accountId"
+class="account-id"
+>
+ACCOUNT
+</div>
 
-        </div>
+<div class="account-status">
+● CONNECTED
+</div>
 
-    </div>
+<div class="account-actions">
+
+<button
+class="retro-btn danger"
+onclick="logoutAccount()"
+
+>
+
+[ LOGOUT ] </button>
+
+</div>
+
+<div
+id="loggedInStatus"
+class="auth-status success"
+>
+SESSION ACTIVE
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 </section>
 
-
-<!-- =====================================================
-     ABOUT
-===================================================== -->
-
 <section class="page" id="about">
 
-    <div class="panel">
+<div class="panel">
 
-        <div class="panel-title">
-            ABOUT // README.TXT
-        </div>
+<div class="panel-title">
+ABOUT // README.TXT
+</div>
 
-        <div class="panel-content">
+<div class="panel-content">
 
 <pre>
 ╔══════════════════════════════════╗
@@ -1407,15 +1355,15 @@ Type "help".
 ╚══════════════════════════════════╝
 </pre>
 
-            <p>
-                David Random est un site expérimental
-                inspiré des vieux sites Internet,
-                terminaux et forums.
-            </p>
+<p>
+David Random est un site expérimental
+inspiré des vieux sites Internet,
+terminaux et forums.
+</p>
 
-        </div>
+</div>
 
-    </div>
+</div>
 
 </section>
 
@@ -1425,24 +1373,23 @@ Type "help".
 
 <footer>
 
-    DAVID RANDOM // © 1999-2026
+DAVID RANDOM // © 1999-2026
 
-    <br><br>
+<br><br>
 
-    Best viewed at 800x600
+Best viewed at 800x600
 
-    <br><br>
+<br><br>
 
-    <span class="blink">█</span>
+<span class="blink">█</span>
 
-    END OF TRANSMISSION
+END OF TRANSMISSION
 
-    <span class="blink">█</span>
+<span class="blink">█</span>
 
 </footer>
 
 </div>
-
 
 <script>
 
@@ -1450,38 +1397,25 @@ Type "help".
    CONFIGURATION
 ========================================================= */
 
-const API =
-    "https://david-random.onrender.com";
+const API = "https://david-random.onrender.com";
+const SOCKET_URL = "wss://david-random.onrender.com";
 
-const SOCKET_URL =
-    "wss://david-random.onrender.com";
+const TOKEN_KEY = "david_random_token";
+const USER_KEY = "david_random_user";
 
-const TOKEN_KEY =
-    "david_random_token";
-
-const USER_KEY =
-    "david_random_user";
-
-let token =
-    localStorage.getItem(TOKEN_KEY) || null;
-
+let token = localStorage.getItem(TOKEN_KEY) || null;
 let currentUser = null;
 
 let socket = null;
-
 let socketConnected = false;
-
 let socketReconnectTimer = null;
 
 
 /* =========================================================
-   API HELPER
+   API
 ========================================================= */
 
-async function apiRequest(
-    endpoint,
-    options = {}
-) {
+async function apiRequest(endpoint, options = {}) {
 
     const headers = {
         ...(options.headers || {})
@@ -1491,74 +1425,45 @@ async function apiRequest(
         options.body &&
         typeof options.body !== "string"
     ) {
-
-        headers["Content-Type"] =
-            "application/json";
-
-        options.body =
-            JSON.stringify(options.body);
-
+        headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(options.body);
     }
 
-    else if (
-        options.body &&
-        !headers["Content-Type"]
-    ) {
-
-        headers["Content-Type"] =
-            "application/json";
-
+    if (options.body && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
     }
-
-    /*
-       Le token est envoyé dans Authorization.
-       Le serveur peut ainsi identifier la session.
-    */
 
     if (token) {
-
-        headers["Authorization"] =
-            "Bearer " + token;
-
+        headers["Authorization"] = "Bearer " + token;
     }
 
-    const response =
-        await fetch(
-            API + endpoint,
-            {
-                ...options,
-                headers,
-                cache: "no-store"
-            }
-        );
+    const response = await fetch(
+        API + endpoint,
+        {
+            ...options,
+            headers,
+            cache: "no-store"
+        }
+    );
 
     let data = {};
 
     try {
-
-        data =
-            await response.json();
-
+        data = await response.json();
     }
-
     catch {
-
         data = {};
-
     }
 
     if (!response.ok) {
-
         throw new Error(
             data.error ||
             data.message ||
             `HTTP ${response.status}`
         );
-
     }
 
     return data;
-
 }
 
 
@@ -1566,100 +1471,87 @@ async function apiRequest(
    NAVIGATION
 ========================================================= */
 
-const pages =
-    document.querySelectorAll(".page");
-
-const navButtons =
-    document.querySelectorAll("nav button");
-
-const sideLinks =
-    document.querySelectorAll(".side-link");
-
+const pages = document.querySelectorAll(".page");
+const navButtons = document.querySelectorAll("nav button");
+const sideLinks = document.querySelectorAll(".side-link");
 
 function showPage(name) {
 
-    pages.forEach(function(page) {
-
+    pages.forEach(page => {
         page.classList.remove("active");
-
     });
 
-    const target =
-        document.getElementById(name);
+    const target = document.getElementById(name);
 
     if (target) {
-
         target.classList.add("active");
-
     }
 
-    navButtons.forEach(function(button) {
-
+    navButtons.forEach(button => {
         button.classList.toggle(
             "active",
             button.dataset.page === name
         );
-
     });
 
-    if (name === "media") {
-
-        loadMedia();
-
-    }
+    /*
+       CHAT :
+       Un utilisateur non connecté ne peut pas utiliser le chat.
+    */
 
     if (name === "chat") {
+
+        if (!currentUser) {
+
+            showChatLoginRequired();
+
+            setTimeout(() => {
+                showPage("account");
+            }, 1200);
+
+            return;
+        }
 
         loadChat();
 
         if (!socketConnected) {
-
             connectSocket();
-
         }
+    }
 
+    if (name === "media") {
+        loadMedia();
     }
 
     if (name === "account") {
-
         updateAccountUI();
-
     }
 
     window.scrollTo({
         top: 0,
         behavior: "smooth"
     });
-
 }
 
 
-navButtons.forEach(function(button) {
+navButtons.forEach(button => {
 
     button.addEventListener(
         "click",
-        function() {
-
-            showPage(
-                button.dataset.page
-            );
-
+        () => {
+            showPage(button.dataset.page);
         }
     );
 
 });
 
 
-sideLinks.forEach(function(link) {
+sideLinks.forEach(link => {
 
     link.addEventListener(
         "click",
-        function() {
-
-            showPage(
-                link.dataset.page
-            );
-
+        () => {
+            showPage(link.dataset.page);
         }
     );
 
@@ -1672,23 +1564,15 @@ sideLinks.forEach(function(link) {
 
 function updateClock() {
 
-    const now =
-        new Date();
+    const clock = document.getElementById("clock");
 
-    document.getElementById(
-        "clock"
-    ).textContent =
-        now.toLocaleTimeString(
-            "fr-FR"
-        );
+    if (!clock) return;
 
+    clock.textContent =
+        new Date().toLocaleTimeString("fr-FR");
 }
 
-setInterval(
-    updateClock,
-    1000
-);
-
+setInterval(updateClock, 1000);
 updateClock();
 
 
@@ -1696,16 +1580,10 @@ updateClock();
    ACCOUNT STORAGE
 ========================================================= */
 
-function saveAccount(
-    newToken,
-    user
-) {
+function saveAccount(newToken, user) {
 
-    token =
-        newToken || null;
-
-    currentUser =
-        user || null;
+    token = newToken || null;
+    currentUser = user || null;
 
     if (token) {
 
@@ -1738,41 +1616,40 @@ function saveAccount(
         );
 
     }
-
 }
 
 
 function restoreAccount() {
 
-    const saved =
-        localStorage.getItem(
-            USER_KEY
-        );
+    const savedToken =
+        localStorage.getItem(TOKEN_KEY);
 
-    if (!saved) {
+    const savedUser =
+        localStorage.getItem(USER_KEY);
 
+    token =
+        savedToken || null;
+
+    if (!savedUser) {
+        currentUser = null;
         return;
-
     }
 
     try {
 
         currentUser =
-            JSON.parse(saved);
+            JSON.parse(savedUser);
 
     }
-
     catch {
 
-        currentUser =
-            null;
+        currentUser = null;
 
         localStorage.removeItem(
             USER_KEY
         );
 
     }
-
 }
 
 
@@ -1807,80 +1684,117 @@ function updateAccountUI() {
             "homeWhoami"
         );
 
+    if (!loggedOut || !loggedIn) {
+        return;
+    }
+
+
     if (currentUser) {
 
-        loggedOut.style.display =
-            "none";
-
-        loggedIn.style.display =
-            "block";
+        loggedOut.style.display = "none";
+        loggedIn.style.display = "block";
 
         const username =
-            currentUser.username ||
-            "USER";
+            currentUser.username || "USER";
 
         const profile =
             currentUser.profile_picture ||
             currentUser.profilePicture ||
             "";
 
-        document.getElementById(
-            "accountUsername"
-        ).textContent =
-            username;
+        const accountUsername =
+            document.getElementById(
+                "accountUsername"
+            );
 
-        document.getElementById(
-            "accountId"
-        ).textContent =
-            currentUser.id
-            ? "ID: " + currentUser.id
-            : "ACCOUNT ACTIVE";
+        const accountId =
+            document.getElementById(
+                "accountId"
+            );
 
-        const avatar =
+        const accountAvatar =
             document.getElementById(
                 "accountAvatar"
             );
 
-        avatar.src =
-            profile ||
-            createDefaultAvatar(
-                username
-            );
 
-        headerStatus.textContent =
-            username;
+        if (accountUsername) {
+            accountUsername.textContent =
+                username;
+        }
 
-        headerStatus.className =
-            "online";
 
-        sidebar.innerHTML = `
+        if (accountId) {
 
-            <div class="account-mini">
+            accountId.textContent =
+                currentUser.id
+                ? "ID: " + currentUser.id
+                : "ACCOUNT ACTIVE";
 
-                <img
-                    src="${escapeHTML(
-                        profile ||
-                        createDefaultAvatar(username)
-                    )}"
-                    alt="Avatar"
-                >
+        }
 
-                <div class="account-mini-name">
-                    ${escapeHTML(username)}
+
+        if (accountAvatar) {
+
+            accountAvatar.src =
+                profile ||
+                createDefaultAvatar(username);
+
+        }
+
+
+        if (headerStatus) {
+
+            headerStatus.textContent =
+                username;
+
+            headerStatus.className =
+                "online";
+
+        }
+
+
+        if (sidebar) {
+
+            const avatar =
+                profile ||
+                createDefaultAvatar(username);
+
+            sidebar.innerHTML = `
+
+                <div class="account-mini">
+
+                    <img
+                        src="${escapeHTML(avatar)}"
+                        alt="Avatar"
+                    >
+
+                    <div class="account-mini-name">
+                        ${escapeHTML(username)}
+                    </div>
+
+                    <br>
+
+                    <span class="online">
+                        CONNECTED
+                    </span>
+
                 </div>
 
-                <br>
+            `;
 
-                <span class="online">
-                    CONNECTED
-                </span>
+        }
 
-            </div>
 
-        `;
+        if (homeWhoami) {
+            homeWhoami.textContent =
+                username;
+        }
 
-        homeWhoami.textContent =
-            username;
+
+        /*
+           Le pseudo du chat est toujours celui du compte.
+        */
 
         const chatUsername =
             document.getElementById(
@@ -1891,6 +1805,12 @@ function updateAccountUI() {
 
             chatUsername.value =
                 username;
+
+            chatUsername.readOnly =
+                true;
+
+            chatUsername.disabled =
+                true;
 
         }
 
@@ -1904,26 +1824,56 @@ function updateAccountUI() {
         loggedIn.style.display =
             "none";
 
-        headerStatus.textContent =
-            "GUEST";
 
-        headerStatus.className =
-            "offline";
+        if (headerStatus) {
 
-        sidebar.textContent =
-            "GUEST";
+            headerStatus.textContent =
+                "GUEST";
 
-        homeWhoami.textContent =
-            "visitor";
+            headerStatus.className =
+                "offline";
+
+        }
+
+
+        if (sidebar) {
+            sidebar.textContent =
+                "GUEST";
+        }
+
+
+        if (homeWhoami) {
+            homeWhoami.textContent =
+                "visitor";
+        }
+
+
+        const chatUsername =
+            document.getElementById(
+                "chatUsername"
+            );
+
+        if (chatUsername) {
+
+            chatUsername.value =
+                "";
+
+            chatUsername.placeholder =
+                "Connexion requise";
+
+            chatUsername.readOnly =
+                true;
+
+            chatUsername.disabled =
+                true;
+
+        }
 
     }
-
 }
 
 
-function createDefaultAvatar(
-    username
-) {
+function createDefaultAvatar(username) {
 
     return (
         "https://ui-avatars.com/api/" +
@@ -1933,6 +1883,62 @@ function createDefaultAvatar(
         "&color=35ff5a" +
         "&bold=true"
     );
+
+}
+
+
+/* =========================================================
+   CHAT LOGIN REQUIRED
+========================================================= */
+
+function showChatLoginRequired() {
+
+    const box =
+        document.getElementById(
+            "chatBox"
+        );
+
+    const status =
+        document.getElementById(
+            "chatStatus"
+        );
+
+    if (box) {
+
+        box.innerHTML = `
+
+            <div class="chat-message">
+
+                <span class="chat-user">
+                    SYSTEM
+                </span>
+
+                <br><br>
+
+                ⚠ ACCÈS REFUSÉ
+
+                <br><br>
+
+                Tu dois être connecté à un compte
+                pour utiliser le chat.
+
+                <br><br>
+
+                Redirection vers ACCOUNT...
+
+            </div>
+
+        `;
+
+    }
+
+
+    if (status) {
+
+        status.textContent =
+            "Connexion requise. Redirection vers ACCOUNT...";
+
+    }
 
 }
 
@@ -1956,13 +1962,7 @@ async function registerAccount() {
     const profilePicture =
         document.getElementById(
             "profilePicture"
-        ).value.trim() ||
-        null;
-
-    const status =
-        document.getElementById(
-            "authStatus"
-        );
+        ).value.trim() || null;
 
 
     if (!username || !password) {
@@ -2001,14 +2001,19 @@ async function registerAccount() {
     }
 
 
-    status.textContent =
-        "CREATING ACCOUNT...";
-
-    status.className =
-        "auth-status";
+    setAuthStatus(
+        "CREATING ACCOUNT...",
+        false
+    );
 
 
     try {
+
+        /*
+           Nouvelle API.
+           Elle correspond à ton serveur actuel :
+           /api/account/register
+        */
 
         const data =
             await apiRequest(
@@ -2028,7 +2033,6 @@ async function registerAccount() {
                             profilePicture
 
                     }
-
                 }
             );
 
@@ -2044,37 +2048,35 @@ async function registerAccount() {
 
         saveAccount(
             data.token,
-            data.user
+            data.user || {
+                username: data.username,
+                profile_picture:
+                    profilePicture
+            }
         );
 
 
         updateAccountUI();
+
 
         setAuthStatus(
             "ACCOUNT CREATED ✓",
             false
         );
 
+
         document.getElementById(
             "registerPassword"
         ).value = "";
+
 
         document.getElementById(
             "loginUsername"
         ).value =
             username;
 
+
         connectSocket();
-
-
-        setTimeout(
-            function() {
-
-                updateAccountUI();
-
-            },
-            100
-        );
 
     }
 
@@ -2111,6 +2113,7 @@ async function loginAccount() {
             "loginPassword"
         ).value;
 
+
     if (!username || !password) {
 
         setAuthStatus(
@@ -2131,6 +2134,11 @@ async function loginAccount() {
 
     try {
 
+        /*
+           Nouvelle API :
+           /api/account/login
+        */
+
         const data =
             await apiRequest(
                 "/api/account/login",
@@ -2146,7 +2154,6 @@ async function loginAccount() {
                             password
 
                     }
-
                 }
             );
 
@@ -2162,7 +2169,10 @@ async function loginAccount() {
 
         saveAccount(
             data.token,
-            data.user
+            data.user || {
+                username:
+                    data.username
+            }
         );
 
 
@@ -2221,7 +2231,6 @@ async function logoutAccount() {
         }
 
     }
-
     catch(error) {
 
         console.warn(
@@ -2232,11 +2241,8 @@ async function logoutAccount() {
     }
 
 
-    token =
-        null;
-
-    currentUser =
-        null;
+    token = null;
+    currentUser = null;
 
 
     localStorage.removeItem(
@@ -2250,20 +2256,20 @@ async function logoutAccount() {
 
     if (socket) {
 
-        socket.close();
+        try {
+            socket.close();
+        }
+        catch {}
 
-        socket =
-            null;
+        socket = null;
 
     }
 
 
-    socketConnected =
-        false;
+    socketConnected = false;
 
 
     updateSocketUI();
-
     updateAccountUI();
 
 
@@ -2284,10 +2290,7 @@ async function logoutAccount() {
    AUTH STATUS
 ========================================================= */
 
-function setAuthStatus(
-    text,
-    error
-) {
+function setAuthStatus(text, error) {
 
     const status =
         document.getElementById(
@@ -2295,14 +2298,11 @@ function setAuthStatus(
         );
 
     if (!status) {
-
         return;
-
     }
 
     status.textContent =
-        "STATUS: " +
-        text;
+        "STATUS: " + text;
 
     status.className =
         error
@@ -2334,12 +2334,6 @@ async function checkServer() {
         );
 
 
-    status.textContent =
-        "CHECKING SERVER...";
-
-    status.className = "";
-
-
     try {
 
         const response =
@@ -2352,20 +2346,10 @@ async function checkServer() {
             );
 
 
-        if (response.status === 404) {
-
-            throw new Error(
-                "API /api/status introuvable"
-            );
-
-        }
-
-
         if (!response.ok) {
 
             throw new Error(
-                "HTTP " +
-                response.status
+                "HTTP " + response.status
             );
 
         }
@@ -2412,7 +2396,7 @@ async function checkServer() {
     catch(error) {
 
         console.error(
-            "[API] Server status:",
+            "[API]",
             error
         );
 
@@ -2425,7 +2409,7 @@ async function checkServer() {
 
 
         renderSide.textContent =
-            "ONLINE / API ERROR";
+            "API ERROR";
 
         renderSide.className =
             "offline";
@@ -2494,27 +2478,22 @@ function connectSocket() {
     if (
         socket &&
         (
-            socket.readyState ===
-            WebSocket.OPEN ||
-
-            socket.readyState ===
-            WebSocket.CONNECTING
+            socket.readyState === WebSocket.OPEN ||
+            socket.readyState === WebSocket.CONNECTING
         )
     ) {
-
         return;
-
     }
 
+
+    /*
+       Pas besoin d'être connecté au compte pour
+       ouvrir le WSS, mais le chat refusera l'envoi.
+    */
 
     console.log(
         "[WSS] Connexion à " +
         SOCKET_URL
-    );
-
-
-    updateChatStatus(
-        "Connexion WSS..."
     );
 
 
@@ -2526,7 +2505,6 @@ function connectSocket() {
             );
 
     }
-
     catch(error) {
 
         console.error(
@@ -2534,8 +2512,7 @@ function connectSocket() {
             error
         );
 
-        socketConnected =
-            false;
+        socketConnected = false;
 
         updateSocketUI();
 
@@ -2554,14 +2531,29 @@ function connectSocket() {
                 "[WSS] CONNECTÉ ✓"
             );
 
-            socketConnected =
-                true;
+            socketConnected = true;
 
             updateSocketUI();
 
-            addSystemMessage(
-                "Connexion à David Random réussie."
-            );
+
+            /*
+               Authentification WSS.
+               Le serveur pourra vérifier le token.
+            */
+
+            if (token) {
+
+                socket.send(
+                    JSON.stringify({
+
+                        type: "auth",
+
+                        token: token
+
+                    })
+                );
+
+            }
 
         }
     );
@@ -2580,8 +2572,7 @@ function connectSocket() {
 
 
                 if (
-                    data.type ===
-                    "chat"
+                    data.type === "chat"
                 ) {
 
                     displayChatMessage(
@@ -2591,8 +2582,7 @@ function connectSocket() {
                 }
 
                 else if (
-                    data.type ===
-                    "system"
+                    data.type === "system"
                 ) {
 
                     addSystemMessage(
@@ -2601,8 +2591,32 @@ function connectSocket() {
 
                 }
 
-            }
+                else if (
+                    data.type === "auth"
+                ) {
 
+                    console.log(
+                        "[WSS] Auth:",
+                        data
+                    );
+
+                }
+
+                else if (
+                    data.type === "error"
+                ) {
+
+                    updateChatStatus(
+                        "ERREUR : " +
+                        (
+                            data.message ||
+                            "Erreur serveur"
+                        )
+                    );
+
+                }
+
+            }
             catch(error) {
 
                 console.error(
@@ -2625,16 +2639,20 @@ function connectSocket() {
                 event.code
             );
 
-            socketConnected =
-                false;
+            socketConnected = false;
 
             updateSocketUI();
 
-            updateChatStatus(
-                "WSS déconnecté. Reconnexion..."
-            );
 
-            scheduleSocketReconnect();
+            /*
+               Évite de reconnecter en boucle après logout.
+            */
+
+            if (token) {
+
+                scheduleSocketReconnect();
+
+            }
 
         }
     );
@@ -2649,8 +2667,7 @@ function connectSocket() {
                 error
             );
 
-            socketConnected =
-                false;
+            socketConnected = false;
 
             updateSocketUI();
 
@@ -2666,12 +2683,13 @@ function connectSocket() {
 
 function scheduleSocketReconnect() {
 
-    if (
-        socketReconnectTimer
-    ) {
-
+    if (socketReconnectTimer) {
         return;
+    }
 
+
+    if (!token) {
+        return;
     }
 
 
@@ -2679,8 +2697,7 @@ function scheduleSocketReconnect() {
         setTimeout(
             function() {
 
-                socketReconnectTimer =
-                    null;
+                socketReconnectTimer = null;
 
                 connectSocket();
 
@@ -2691,6 +2708,10 @@ function scheduleSocketReconnect() {
 }
 
 
+/* =========================================================
+   CHAT UI
+========================================================= */
+
 function updateChatStatus(text) {
 
     const status =
@@ -2699,10 +2720,8 @@ function updateChatStatus(text) {
         );
 
     if (status) {
-
         status.textContent =
             text;
-
     }
 
 }
@@ -2716,9 +2735,7 @@ function addSystemMessage(message) {
         );
 
     if (!box) {
-
         return;
-
     }
 
 
@@ -2744,10 +2761,7 @@ function addSystemMessage(message) {
     `;
 
 
-    box.appendChild(
-        element
-    );
-
+    box.appendChild(element);
 
     box.scrollTop =
         box.scrollHeight;
@@ -2763,9 +2777,7 @@ function displayChatMessage(data) {
         );
 
     if (!box) {
-
         return;
-
     }
 
 
@@ -2781,7 +2793,7 @@ function displayChatMessage(data) {
     const username =
         escapeHTML(
             data.username ||
-            "Anonymous"
+            "USER"
         );
 
 
@@ -2807,7 +2819,6 @@ function displayChatMessage(data) {
                 );
 
         }
-
         catch {
 
             time = "";
@@ -2840,10 +2851,7 @@ function displayChatMessage(data) {
     `;
 
 
-    box.appendChild(
-        element
-    );
-
+    box.appendChild(element);
 
     box.scrollTop =
         box.scrollHeight;
@@ -2851,15 +2859,33 @@ function displayChatMessage(data) {
 }
 
 
-function sendSocketChat(
-    username,
-    message
-) {
+/* =========================================================
+   SEND CHAT
+========================================================= */
+
+function sendSocketChat(message) {
+
+    /*
+       SÉCURITÉ CÔTÉ CLIENT :
+       aucun message si pas connecté.
+    */
+
+    if (!currentUser || !token) {
+
+        showChatLoginRequired();
+
+        setTimeout(() => {
+            showPage("account");
+        }, 1200);
+
+        return false;
+
+    }
+
 
     if (
         !socket ||
-        socket.readyState !==
-        WebSocket.OPEN
+        socket.readyState !== WebSocket.OPEN
     ) {
 
         updateChatStatus(
@@ -2873,16 +2899,30 @@ function sendSocketChat(
     }
 
 
+    /*
+       IMPORTANT :
+       Le client n'envoie PLUS de pseudo choisi.
+       Le serveur devra récupérer le username
+       depuis le token.
+
+       On envoie quand même le username ici comme
+       information d'affichage, mais le serveur doit
+       TOUJOURS considérer le token comme autorité.
+    */
+
     socket.send(
         JSON.stringify({
 
             type: "chat",
 
-            username: username,
+            username:
+                currentUser.username,
 
-            message: message,
+            message:
+                message,
 
-            token: token
+            token:
+                token
 
         })
     );
@@ -2893,21 +2933,29 @@ function sendSocketChat(
 }
 
 
-/* =========================================================
-   CHAT
-========================================================= */
-
 function sendChat() {
 
-    let username =
-        document.getElementById(
-            "chatUsername"
-        ).value.trim();
+    /*
+       Impossible de parler en invité.
+    */
 
-    const message =
+    if (!currentUser || !token) {
+
+        showChatLoginRequired();
+
+        setTimeout(() => {
+            showPage("account");
+        }, 1200);
+
+        return;
+
+    }
+
+
+    const messageInput =
         document.getElementById(
             "chatMessage"
-        ).value.trim();
+        );
 
     const status =
         document.getElementById(
@@ -2915,41 +2963,14 @@ function sendChat() {
         );
 
 
-    if (
-        currentUser &&
-        currentUser.username
-    ) {
-
-        username =
-            currentUser.username;
-
-    }
-
-
-    if (!username) {
-
-        status.textContent =
-            "Entre un pseudo.";
-
-        return;
-
-    }
+    const message =
+        messageInput.value.trim();
 
 
     if (!message) {
 
         status.textContent =
             "Entre un message.";
-
-        return;
-
-    }
-
-
-    if (username.length > 24) {
-
-        status.textContent =
-            "Pseudo trop long.";
 
         return;
 
@@ -2968,22 +2989,16 @@ function sendChat() {
 
     const sent =
         sendSocketChat(
-            username,
             message
         );
 
 
     if (!sent) {
-
         return;
-
     }
 
 
-    document.getElementById(
-        "chatMessage"
-    ).value = "";
-
+    messageInput.value = "";
 
     status.textContent =
         "Message envoyé ✓";
@@ -2993,38 +3008,48 @@ function sendChat() {
 
 function loadChat() {
 
-    const box =
-        document.getElementById(
-            "chatBox"
-        );
+    if (!currentUser) {
 
-
-    if (!box) {
+        showChatLoginRequired();
 
         return;
 
     }
 
 
-    if (
-        currentUser &&
-        currentUser.username
-    ) {
+    const box =
+        document.getElementById(
+            "chatBox"
+        );
 
+
+    const username =
         document.getElementById(
             "chatUsername"
-        ).value =
+        );
+
+
+    if (username) {
+
+        username.value =
             currentUser.username;
+
+        username.readOnly =
+            true;
+
+        username.disabled =
+            true;
 
     }
 
 
     if (
+        box &&
         box.children.length === 0
     ) {
 
         addSystemMessage(
-            "Chat connecté à Render."
+            "Chat connecté à David Random."
         );
 
     }
@@ -3070,7 +3095,7 @@ async function uploadFile(type) {
 
     }
 
-    else if (type === "video") {
+    else {
 
         input =
             document.getElementById(
@@ -3086,9 +3111,7 @@ async function uploadFile(type) {
 
 
     if (!input || !status) {
-
         return;
-
     }
 
 
@@ -3120,6 +3143,22 @@ async function uploadFile(type) {
     }
 
 
+    /*
+       Upload réservé aux comptes connectés.
+    */
+
+    if (!currentUser || !token) {
+
+        status.textContent =
+            "Connecte-toi pour uploader.";
+
+        showPage("account");
+
+        return;
+
+    }
+
+
     status.textContent =
         "Lecture du fichier...";
 
@@ -3136,33 +3175,18 @@ async function uploadFile(type) {
                 "Upload vers GitHub...";
 
 
-            let folder;
-
-
-            if (type === "image") {
-
-                folder = "image";
-
-            }
-
-            else if (type === "music") {
-
-                folder = "music";
-
-            }
-
-            else {
-
-                folder = "video";
-
-            }
+            let folder =
+                type === "image"
+                ? "image"
+                : type === "music"
+                ? "music"
+                : "video";
 
 
             const response =
                 await apiRequest(
                     "/api/upload",
                     {
-
                         method: "POST",
 
                         body: {
@@ -3177,14 +3201,11 @@ async function uploadFile(type) {
                                 folder
 
                         }
-
                     }
                 );
 
 
-            if (
-                !response.success
-            ) {
+            if (!response.success) {
 
                 throw new Error(
                     response.error ||
@@ -3196,25 +3217,20 @@ async function uploadFile(type) {
 
             status.innerHTML =
                 "UPLOAD OK ✓<br>" +
-                `<a href="${escapeHTML(response.download)}" target="_blank" rel="noopener">` +
-                "Ouvrir le fichier" +
-                "</a>";
+                `<a href="${escapeHTML(response.download)}" target="_blank" rel="noopener">Ouvrir le fichier</a>`;
 
 
             input.value = "";
 
-
             await loadMedia();
 
         }
-
         catch(error) {
 
             console.error(
                 "[UPLOAD]",
                 error
             );
-
 
             status.textContent =
                 "ERREUR : " +
@@ -3283,9 +3299,7 @@ async function loadFolder(
 
 
     if (!container) {
-
         return;
-
     }
 
 
@@ -3325,14 +3339,11 @@ async function loadFolder(
         const files =
             Array.isArray(data.files)
             ? data.files.filter(
-                function(file) {
-
-                    return file.name &&
-                        !file.name
-                            .toLowerCase()
-                            .endsWith(".gitkeep");
-
-                }
+                file =>
+                    file.name &&
+                    !file.name
+                        .toLowerCase()
+                        .endsWith(".gitkeep")
             )
             : [];
 
@@ -3350,127 +3361,119 @@ async function loadFolder(
         container.innerHTML = "";
 
 
-        files.forEach(
-            function(file) {
+        files.forEach(file => {
 
-                const item =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                item.className =
-                    "media-item";
-
-
-                const safeName =
-                    escapeHTML(
-                        file.name
-                    );
-
-
-                const download =
-                    escapeHTML(
-                        file.download
-                    );
-
-
-                if (type === "image") {
-
-                    item.innerHTML = `
-
-                        <img
-                            src="${download}"
-                            alt="${safeName}"
-                            loading="lazy"
-                        >
-
-                        <br><br>
-
-                        <b>${safeName}</b>
-
-                        <br><br>
-
-                        <a
-                            href="${download}"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            OPEN
-                        </a>
-
-                    `;
-
-                }
-
-
-                else if (type === "music") {
-
-                    item.innerHTML = `
-
-                        <b>${safeName}</b>
-
-                        <br><br>
-
-                        <audio
-                            controls
-                            preload="metadata"
-                            src="${download}"
-                        ></audio>
-
-                        <br><br>
-
-                        <a
-                            href="${download}"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            OPEN
-                        </a>
-
-                    `;
-
-                }
-
-
-                else if (type === "video") {
-
-                    item.innerHTML = `
-
-                        <video
-                            controls
-                            preload="metadata"
-                            src="${download}"
-                        ></video>
-
-                        <br><br>
-
-                        <b>${safeName}</b>
-
-                        <br><br>
-
-                        <a
-                            href="${download}"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            OPEN
-                        </a>
-
-                    `;
-
-                }
-
-
-                container.appendChild(
-                    item
+            const item =
+                document.createElement(
+                    "div"
                 );
 
+            item.className =
+                "media-item";
+
+
+            const safeName =
+                escapeHTML(
+                    file.name
+                );
+
+
+            const download =
+                escapeHTML(
+                    file.download
+                );
+
+
+            if (type === "image") {
+
+                item.innerHTML = `
+
+                    <img
+                        src="${download}"
+                        alt="${safeName}"
+                        loading="lazy"
+                    >
+
+                    <br><br>
+
+                    <b>${safeName}</b>
+
+                    <br><br>
+
+                    <a
+                        href="${download}"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        OPEN
+                    </a>
+
+                `;
+
             }
-        );
+
+            else if (type === "music") {
+
+                item.innerHTML = `
+
+                    <b>${safeName}</b>
+
+                    <br><br>
+
+                    <audio
+                        controls
+                        preload="metadata"
+                        src="${download}"
+                    ></audio>
+
+                    <br><br>
+
+                    <a
+                        href="${download}"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        OPEN
+                    </a>
+
+                `;
+
+            }
+
+            else {
+
+                item.innerHTML = `
+
+                    <video
+                        controls
+                        preload="metadata"
+                        src="${download}"
+                    ></video>
+
+                    <br><br>
+
+                    <b>${safeName}</b>
+
+                    <br><br>
+
+                    <a
+                        href="${download}"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        OPEN
+                    </a>
+
+                `;
+
+            }
+
+
+            container.appendChild(item);
+
+        });
 
     }
-
     catch(error) {
 
         console.error(
@@ -3480,9 +3483,7 @@ async function loadFolder(
 
 
         container.innerHTML =
-            `<span class="offline">` +
-            `ERREUR : ${escapeHTML(error.message)}` +
-            `</span>`;
+            `<span class="offline">ERREUR : ${escapeHTML(error.message)}</span>`;
 
     }
 
@@ -3526,8 +3527,7 @@ const terminalOutput =
 function terminalPrint(text) {
 
     terminalOutput.textContent +=
-        "\n" +
-        text;
+        "\n" + text;
 
 }
 
@@ -3541,9 +3541,7 @@ function terminalCommand(command) {
 
 
     if (!cmd) {
-
         return;
-
     }
 
 
@@ -3587,8 +3585,7 @@ matrix     ???
 
         case "clear":
 
-            terminalOutput.textContent =
-                "";
+            terminalOutput.textContent = "";
 
             break;
 
@@ -3606,9 +3603,7 @@ matrix     ???
 
             terminalPrint(
                 new Date()
-                    .toLocaleDateString(
-                        "fr-FR"
-                    )
+                    .toLocaleDateString("fr-FR")
             );
 
             break;
@@ -3618,9 +3613,7 @@ matrix     ???
 
             terminalPrint(
                 new Date()
-                    .toLocaleTimeString(
-                        "fr-FR"
-                    )
+                    .toLocaleTimeString("fr-FR")
             );
 
             break;
@@ -3631,8 +3624,7 @@ matrix     ???
             terminalPrint(
                 "RANDOM = " +
                 Math.floor(
-                    Math.random() *
-                    999999
+                    Math.random() * 999999
                 )
             );
 
@@ -3652,18 +3644,14 @@ matrix     ???
 
         case "account":
 
-            showPage(
-                "account"
-            );
+            showPage("account");
 
             break;
 
 
         case "login":
 
-            showPage(
-                "account"
-            );
+            showPage("account");
 
             break;
 
@@ -3726,27 +3714,34 @@ package.json
 
         case "media":
 
-            showPage(
-                "media"
-            );
+            showPage("media");
 
             break;
 
 
         case "chat":
 
-            showPage(
-                "chat"
-            );
+            if (!currentUser) {
+
+                terminalPrint(
+                    "ACCESS DENIED : LOGIN REQUIRED"
+                );
+
+                showPage("account");
+
+            }
+            else {
+
+                showPage("chat");
+
+            }
 
             break;
 
 
         case "games":
 
-            showPage(
-                "games"
-            );
+            showPage("games");
 
             break;
 
@@ -3772,26 +3767,26 @@ package.json
 }
 
 
-terminalInput.addEventListener(
-    "keydown",
-    function(event) {
+if (terminalInput) {
 
-        if (
-            event.key ===
-            "Enter"
-        ) {
+    terminalInput.addEventListener(
+        "keydown",
+        function(event) {
 
-            terminalCommand(
-                terminalInput.value
-            );
+            if (event.key === "Enter") {
 
-            terminalInput.value =
-                "";
+                terminalCommand(
+                    terminalInput.value
+                );
+
+                terminalInput.value = "";
+
+            }
 
         }
+    );
 
-    }
-);
+}
 
 
 /* =========================================================
@@ -3799,6 +3794,11 @@ terminalInput.addEventListener(
 ========================================================= */
 
 function addGuest() {
+
+    /*
+       Le guestbook pourra également être sécurisé
+       côté serveur plus tard.
+    */
 
     const name =
         document.getElementById(
@@ -3811,10 +3811,7 @@ function addGuest() {
         ).value.trim();
 
 
-    if (
-        !name ||
-        !message
-    ) {
+    if (!name || !message) {
 
         alert(
             "Remplis les deux champs."
@@ -3829,7 +3826,6 @@ function addGuest() {
         document.createElement(
             "div"
         );
-
 
     guest.className =
         "chat-message";
@@ -3852,9 +3848,7 @@ function addGuest() {
         .getElementById(
             "guestList"
         )
-        .prepend(
-            guest
-        );
+        .prepend(guest);
 
 
     document.getElementById(
@@ -3874,33 +3868,26 @@ function addGuest() {
 ========================================================= */
 
 let score = 0;
-
 let gameRunning = false;
-
 let gameTimer = 10;
-
 let gameInterval = null;
 
 
 function startGame() {
 
     score = 0;
-
     gameTimer = 10;
-
     gameRunning = true;
 
 
     document.getElementById(
         "score"
-    ).textContent =
-        score;
+    ).textContent = score;
 
 
     document.getElementById(
         "gameTime"
-    ).textContent =
-        gameTimer;
+    ).textContent = gameTimer;
 
 
     const target =
@@ -3931,17 +3918,13 @@ function startGame() {
                     gameTimer;
 
 
-                if (
-                    gameTimer <= 0
-                ) {
+                if (gameTimer <= 0) {
 
                     clearInterval(
                         gameInterval
                     );
 
-
-                    gameRunning =
-                        false;
+                    gameRunning = false;
 
 
                     alert(
@@ -3961,9 +3944,7 @@ function startGame() {
 function gameClick() {
 
     if (!gameRunning) {
-
         return;
-
     }
 
 
@@ -3983,15 +3964,10 @@ function gameClick() {
 
 
     const x =
-        Math.random() *
-        120 -
-        60;
-
+        Math.random() * 120 - 60;
 
     const y =
-        Math.random() *
-        100 -
-        50;
+        Math.random() * 100 - 50;
 
 
     target.style.transform =
@@ -4033,7 +4009,47 @@ console.log(
 
 checkServer();
 
-connectSocket();
+/*
+   On connecte le WSS seulement si un compte
+   est déjà enregistré dans le navigateur.
+*/
+
+if (token && currentUser) {
+    connectSocket();
+}
+
+
+/* =========================================================
+   CHAT INPUT : ENTER
+========================================================= */
+
+const chatMessage =
+    document.getElementById(
+        "chatMessage"
+    );
+
+
+if (chatMessage) {
+
+    chatMessage.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                sendChat();
+
+            }
+
+        }
+    );
+
+}
 
 </script>
 
