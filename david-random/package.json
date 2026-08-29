@@ -1,0 +1,12 @@
+{
+  "name": "david-random",
+  "version": "1.0.0",
+  "description": "David Random retro internet website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
