@@ -1,6 +1,9 @@
+```js
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
+const fs = require("fs");
+const path = require("path");
 const crypto = require("crypto");
 
 const app = express();
@@ -27,13 +30,13 @@ const GITHUB_BRANCH =
     "main";
 
 const GITHUB_TOKEN =
-    process.env.GITHUB_TOKEN;
+    process.env.GITHUB_TOKEN || null;
 
 const CHAT_FOLDER =
     "chat-log";
 
 const CHAT_MAX_SIZE =
-    20 * 1024 * 1024; // 20 Mo
+    20 * 1024 * 1024;
 
 const MAX_MESSAGE_LENGTH =
     500;
@@ -48,9 +51,11 @@ EXPRESS
 =========================================================
 */
 
-app.use(express.json({
-    limit: "1mb"
-}));
+app.use(
+    express.json({
+        limit: "1mb"
+    })
+);
 
 
 /*
@@ -77,9 +82,7 @@ app.use(function(req, res, next) {
     );
 
     if (req.method === "OPTIONS") {
-
         return res.sendStatus(204);
-
     }
 
     next();
@@ -103,15 +106,17 @@ app.get(
 
             online: true,
 
-            server: "Render",
+            server:
+                "Render",
 
-            websocket: true,
+            websocket:
+                true,
 
-            github: Boolean(
-                GITHUB_TOKEN
-            ),
+            github:
+                Boolean(GITHUB_TOKEN),
 
-            chat: true,
+            chat:
+                true,
 
             chatFolder:
                 CHAT_FOLDER,
@@ -159,6 +164,124 @@ app.get(
 
 /*
 =========================================================
+MEDIA ROUTES
+=========================================================
+
+Ces routes évitent les erreurs 404 de ton ancien HTML.
+
+Les médias peuvent être stockés dans :
+
+media/image
+media/music
+media/video
+
+Le serveur renvoie simplement la liste des fichiers.
+=========================================================
+*/
+
+const MEDIA_ROOT =
+    path.join(
+        __dirname,
+        "media"
+    );
+
+
+const MEDIA_TYPES = [
+    "image",
+    "music",
+    "video"
+];
+
+
+for (const type of MEDIA_TYPES) {
+
+    app.get(
+        `/api/${type}`,
+        function(req, res) {
+
+            const folder =
+                path.join(
+                    MEDIA_ROOT,
+                    type
+                );
+
+            try {
+
+                if (!fs.existsSync(folder)) {
+
+                    fs.mkdirSync(
+                        folder,
+                        {
+                            recursive: true
+                        }
+                    );
+
+                    return res.json({
+                        success: true,
+                        files: []
+                    });
+
+                }
+
+
+                const files =
+                    fs.readdirSync(
+                        folder,
+                        {
+                            withFileTypes: true
+                        }
+                    )
+                    .filter(
+                        entry =>
+                            entry.isFile()
+                    )
+                    .map(
+                        entry =>
+                            entry.name
+                    );
+
+
+                res.json({
+
+                    success: true,
+
+                    type:
+                        type,
+
+                    files:
+                        files
+
+                });
+
+            }
+
+            catch(error) {
+
+                console.error(
+                    `[MEDIA ${type}]`,
+                    error
+                );
+
+                res.status(500).json({
+
+                    success:
+                        false,
+
+                    error:
+                        "Impossible de lire le dossier."
+
+                });
+
+            }
+
+        }
+    );
+
+}
+
+
+/*
+=========================================================
 WEBSOCKET
 =========================================================
 */
@@ -181,27 +304,26 @@ wss.on(
             "[WSS] Nouvelle connexion"
         );
 
+
         const client = {
 
-            ws: ws,
+            ws:
+                ws,
 
-            token: null,
+            token:
+                null,
 
-            username: null,
+            username:
+                null,
 
-            authenticated: false
+            authenticated:
+                false
 
         };
 
 
         clients.add(client);
 
-
-        /*
-        -------------------------------------------------
-        Message système
-        -------------------------------------------------
-        */
 
         sendSystem(
             ws,
@@ -210,9 +332,9 @@ wss.on(
 
 
         /*
-        -------------------------------------------------
+        =================================================
         MESSAGE
-        -------------------------------------------------
+        =================================================
         */
 
         ws.on(
@@ -228,9 +350,9 @@ wss.on(
 
 
                     /*
-                    =========================================
+                    =====================================
                     AUTH
-                    =========================================
+                    =====================================
                     */
 
                     if (
@@ -249,9 +371,9 @@ wss.on(
 
 
                     /*
-                    =========================================
+                    =====================================
                     CHAT
-                    =========================================
+                    =====================================
                     */
 
                     if (
@@ -270,9 +392,9 @@ wss.on(
 
 
                     /*
-                    =========================================
+                    =====================================
                     PING
-                    =========================================
+                    =====================================
                     */
 
                     if (
@@ -309,7 +431,7 @@ wss.on(
                 catch(error) {
 
                     console.error(
-                        "[WSS] Erreur message:",
+                        "[WSS] Erreur:",
                         error
                     );
 
@@ -325,9 +447,9 @@ wss.on(
 
 
         /*
-        -------------------------------------------------
+        =================================================
         CLOSE
-        -------------------------------------------------
+        =================================================
         */
 
         ws.on(
@@ -347,9 +469,9 @@ wss.on(
 
 
         /*
-        -------------------------------------------------
+        =================================================
         ERROR
-        -------------------------------------------------
+        =================================================
         */
 
         ws.on(
@@ -385,8 +507,7 @@ async function authenticateClient(
 
     if (
         typeof token !==
-        "string" ||
-        token.length < 10
+        "string"
     ) {
 
         sendError(
@@ -399,13 +520,24 @@ async function authenticateClient(
     }
 
 
-    /*
-    Ici on vérifie le token
-    avec le système de comptes.
-    
-    Cette fonction devra utiliser
-    ton système users.enc existant.
-    */
+    token =
+        token.trim();
+
+
+    if (
+        token.length < 10 ||
+        token.length > 10000
+    ) {
+
+        sendError(
+            client.ws,
+            "Token invalide."
+        );
+
+        return;
+
+    }
+
 
     const user =
         await findUserByToken(
@@ -425,11 +557,46 @@ async function authenticateClient(
     }
 
 
+    if (
+        typeof user.username !==
+        "string"
+    ) {
+
+        sendError(
+            client.ws,
+            "Compte invalide."
+        );
+
+        return;
+
+    }
+
+
+    const username =
+        user.username.trim();
+
+
+    if (
+        !username ||
+        username.length >
+        MAX_USERNAME_LENGTH
+    ) {
+
+        sendError(
+            client.ws,
+            "Pseudo invalide."
+        );
+
+        return;
+
+    }
+
+
     client.token =
         token;
 
     client.username =
-        user.username;
+        username;
 
     client.authenticated =
         true;
@@ -446,7 +613,7 @@ async function authenticateClient(
                 true,
 
             username:
-                user.username
+                username
 
         }
     );
@@ -455,13 +622,13 @@ async function authenticateClient(
     sendSystem(
         client.ws,
         "Authentifié en tant que " +
-        user.username
+        username
     );
 
 
     console.log(
         "[WSS] Auth:",
-        user.username
+        username
     );
 
 }
@@ -469,7 +636,7 @@ async function authenticateClient(
 
 /*
 =========================================================
-CHAT MESSAGE
+CHAT
 =========================================================
 */
 
@@ -480,7 +647,7 @@ async function handleChatMessage(
 
     /*
     -----------------------------------------------------
-    PAS CONNECTÉ
+    UTILISATEUR NON CONNECTÉ
     -----------------------------------------------------
     */
 
@@ -552,13 +719,12 @@ async function handleChatMessage(
 
     /*
     -----------------------------------------------------
-    IMPORTANT
+    LE PSEUDO DU CLIENT EST IGNORÉ
     -----------------------------------------------------
 
-    Le pseudo envoyé par le navigateur
-    est IGNORÉ.
+    Le navigateur ne peut PAS choisir le pseudo.
 
-    On utilise celui associé au token.
+    Le serveur utilise le pseudo lié au token.
     -----------------------------------------------------
     */
 
@@ -598,7 +764,7 @@ async function handleChatMessage(
 
     /*
     -----------------------------------------------------
-    SAUVEGARDE GITHUB
+    GITHUB
     -----------------------------------------------------
     */
 
@@ -613,7 +779,7 @@ async function handleChatMessage(
     catch(error) {
 
         console.error(
-            "[CHAT] Sauvegarde GitHub:",
+            "[CHAT] Erreur GitHub:",
             error
         );
 
@@ -629,7 +795,7 @@ async function handleChatMessage(
 
     /*
     -----------------------------------------------------
-    DIFFUSION À TOUS
+    DIFFUSION
     -----------------------------------------------------
     */
 
@@ -647,7 +813,7 @@ async function handleChatMessage(
 
 /*
 =========================================================
-GITHUB API
+GITHUB
 =========================================================
 */
 
@@ -673,7 +839,7 @@ function githubHeaders() {
 
 
 function githubURL(
-    path
+    filePath
 ) {
 
     return (
@@ -682,7 +848,12 @@ function githubURL(
         "/" +
         encodeURIComponent(GITHUB_REPO) +
         "/contents/" +
-        path
+        filePath
+            .split("/")
+            .map(
+                encodeURIComponent
+            )
+            .join("/")
     );
 
 }
@@ -727,7 +898,8 @@ async function githubRequest(
         );
 
 
-    let data = null;
+    let data =
+        null;
 
 
     try {
@@ -739,7 +911,8 @@ async function githubRequest(
 
     catch {
 
-        data = null;
+        data =
+            null;
 
     }
 
@@ -805,29 +978,19 @@ async function listChatFiles() {
 
 
         return data
-            .filter(function(file) {
-
-                return (
-                    file.type ===
-                    "file"
-                );
-
-            })
-            .filter(function(file) {
-
-                return /^chat(?:-\d+)?\.txt$/i
-                    .test(file.name);
-
-            });
+            .filter(
+                file =>
+                    file.type === "file"
+            )
+            .filter(
+                file =>
+                    /^chat(?:-\d+)?\.txt$/i
+                        .test(file.name)
+            );
 
     }
 
     catch(error) {
-
-        /*
-        Le dossier peut ne pas encore
-        exister.
-        */
 
         if (
             error.status ===
@@ -847,7 +1010,7 @@ async function listChatFiles() {
 
 /*
 =========================================================
-NUMÉRO DU FICHIER
+FILE NUMBER
 =========================================================
 */
 
@@ -862,16 +1025,12 @@ function getChatFileNumber(
 
 
     if (!match) {
-
         return 0;
-
     }
 
 
     if (!match[1]) {
-
         return 1;
-
     }
 
 
@@ -884,7 +1043,7 @@ function getChatFileNumber(
 
 /*
 =========================================================
-TROUVER LE DERNIER CHAT
+LATEST CHAT FILE
 =========================================================
 */
 
@@ -895,7 +1054,8 @@ async function getLatestChatFile() {
 
 
     if (
-        files.length === 0
+        files.length ===
+        0
     ) {
 
         return null;
@@ -922,7 +1082,7 @@ async function getLatestChatFile() {
 
 /*
 =========================================================
-LIRE UN FICHIER GITHUB
+READ GITHUB FILE
 =========================================================
 */
 
@@ -981,12 +1141,12 @@ async function readGithubFile(
 
 /*
 =========================================================
-CRÉER UN NOUVEAU FICHIER
+CREATE GITHUB FILE
 =========================================================
 */
 
 async function createGithubFile(
-    path,
+    filePath,
     content
 ) {
 
@@ -999,54 +1159,50 @@ async function createGithubFile(
         );
 
 
-    const data =
-        await githubRequest(
-            githubURL(
-                path
-            ),
-            {
+    return await githubRequest(
+        githubURL(
+            filePath
+        ),
+        {
 
-                method:
-                    "PUT",
+            method:
+                "PUT",
 
-                headers: {
+            headers: {
 
-                    "Content-Type":
-                        "application/json"
+                "Content-Type":
+                    "application/json"
 
-                },
+            },
 
-                body:
-                    JSON.stringify({
+            body:
+                JSON.stringify({
 
-                        message:
-                            "Add chat log",
+                    message:
+                        `Add ${filePath}`,
 
-                        content:
-                            encoded,
+                    content:
+                        encoded,
 
-                        branch:
-                            GITHUB_BRANCH
+                    branch:
+                        GITHUB_BRANCH
 
-                    })
+                })
 
-            }
-        );
-
-
-    return data;
+        }
+    );
 
 }
 
 
 /*
 =========================================================
-MODIFIER UN FICHIER
+UPDATE GITHUB FILE
 =========================================================
 */
 
 async function updateGithubFile(
-    path,
+    filePath,
     content,
     sha
 ) {
@@ -1060,57 +1216,52 @@ async function updateGithubFile(
         );
 
 
-    const data =
-        await githubRequest(
-            githubURL(
-                path
-            ),
-            {
+    return await githubRequest(
+        githubURL(
+            filePath
+        ),
+        {
 
-                method:
-                    "PUT",
+            method:
+                "PUT",
 
-                headers: {
+            headers: {
 
-                    "Content-Type":
-                        "application/json"
+                "Content-Type":
+                    "application/json"
 
-                },
+            },
 
-                body:
-                    JSON.stringify({
+            body:
+                JSON.stringify({
 
-                        message:
-                            "Update chat log",
+                    message:
+                        `Update ${filePath}`,
 
-                        content:
-                            encoded,
+                    content:
+                        encoded,
 
-                        sha:
-                            sha,
+                    sha:
+                        sha,
 
-                        branch:
-                            GITHUB_BRANCH
+                    branch:
+                        GITHUB_BRANCH
 
-                    })
+                })
 
-            }
-        );
-
-
-    return data;
+        }
+    );
 
 }
 
 
 /*
 =========================================================
-LOCK CHAT
+CHAT SAVE QUEUE
 =========================================================
 
-Empêche deux messages simultanés
-de modifier le même fichier GitHub
-en même temps.
+Empêche plusieurs messages simultanés
+de modifier le même fichier GitHub.
 =========================================================
 */
 
@@ -1142,7 +1293,7 @@ function queueChatSave(
 
 /*
 =========================================================
-SAUVEGARDER MESSAGE
+SAVE CHAT MESSAGE
 =========================================================
 */
 
@@ -1172,25 +1323,25 @@ function saveChatMessage(
 
             /*
             =============================================
-            Aucun fichier
+            PREMIER FICHIER
             =============================================
             */
 
             if (!latest) {
 
-                const path =
+                const filePath =
                     `${CHAT_FOLDER}/chat.txt`;
 
 
                 await createGithubFile(
-                    path,
+                    filePath,
                     line
                 );
 
 
                 console.log(
                     "[CHAT LOG] Créé:",
-                    path
+                    filePath
                 );
 
 
@@ -1201,7 +1352,7 @@ function saveChatMessage(
 
             /*
             =============================================
-            Lire dernier fichier
+            LIRE LE DERNIER
             =============================================
             */
 
@@ -1213,7 +1364,7 @@ function saveChatMessage(
 
             /*
             =============================================
-            Vérifier limite 20 Mo
+            ROTATION 20 MO
             =============================================
             */
 
@@ -1260,7 +1411,7 @@ function saveChatMessage(
 
             /*
             =============================================
-            Ajouter au fichier actuel
+            AJOUT
             =============================================
             */
 
@@ -1351,7 +1502,7 @@ function broadcast(
 
 /*
 =========================================================
-SEND SYSTEM
+SYSTEM MESSAGE
 =========================================================
 */
 
@@ -1378,7 +1529,7 @@ function sendSystem(
 
 /*
 =========================================================
-SEND ERROR
+ERROR
 =========================================================
 */
 
@@ -1477,20 +1628,31 @@ function safeSendRaw(
 
 /*
 =========================================================
-TOKEN / ACCOUNT
+ACCOUNT / TOKEN
 =========================================================
 
-IMPORTANT :
+Cette fonction recherche le token dans users.json.
 
-Cette fonction est volontairement séparée.
+Format attendu :
 
-Elle doit utiliser ton système
-accounts/users.enc + AES-256-GCM
-que nous avons déjà configuré.
+[
+    {
+        "username": "David",
+        "token": "TOKEN_ICI"
+    }
+]
 
-Pour l'instant elle vérifie le format
-du token et sera remplacée par la vraie
-lecture de users.enc.
+ou :
+
+{
+    "users": [
+        {
+            "username": "David",
+            "token": "TOKEN_ICI"
+        }
+    ]
+}
+
 =========================================================
 */
 
@@ -1500,20 +1662,245 @@ async function findUserByToken(
 
     /*
     -----------------------------------------------------
-    TODO :
-    lire accounts/users.enc
-    déchiffrer avec le secret serveur
-    rechercher le token
-    retourner l'utilisateur
+    1. Variable d'environnement
     -----------------------------------------------------
     */
 
-    /*
-    Pour éviter qu'un token soit accepté
-    sans vérification réelle, on retourne null.
+    if (
+        process.env.USERS_JSON
+    ) {
 
-    On branchera ici ton système de comptes.
+        try {
+
+            const database =
+                JSON.parse(
+                    process.env.USERS_JSON
+                );
+
+
+            return findUserInDatabase(
+                database,
+                token
+            );
+
+        }
+
+        catch(error) {
+
+            console.error(
+                "[AUTH] USERS_JSON invalide:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /*
+    -----------------------------------------------------
+    2. users.json local
+    -----------------------------------------------------
     */
+
+    const possibleFiles = [
+
+        path.join(
+            __dirname,
+            "users.json"
+        ),
+
+        path.join(
+            __dirname,
+            "accounts",
+            "users.json"
+        )
+
+    ];
+
+
+    for (
+        const filename of possibleFiles
+    ) {
+
+        if (
+            !fs.existsSync(
+                filename
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        try {
+
+            const raw =
+                fs.readFileSync(
+                    filename,
+                    "utf8"
+                );
+
+
+            const database =
+                JSON.parse(
+                    raw
+                );
+
+
+            const user =
+                findUserInDatabase(
+                    database,
+                    token
+                );
+
+
+            if (user) {
+                return user;
+            }
+
+        }
+
+        catch(error) {
+
+            console.error(
+                "[AUTH] Erreur users.json:",
+                error
+            );
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
+/*
+=========================================================
+SEARCH USER
+=========================================================
+*/
+
+function findUserInDatabase(
+    database,
+    token
+) {
+
+    let users =
+        database;
+
+
+    if (
+        database &&
+        Array.isArray(
+            database.users
+        )
+    ) {
+
+        users =
+            database.users;
+
+    }
+
+
+    if (
+        !Array.isArray(users)
+    ) {
+
+        return null;
+
+    }
+
+
+    for (
+        const user of users
+    ) {
+
+        if (
+            !user ||
+            typeof user !==
+                "object"
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            typeof user.token !==
+            "string"
+        ) {
+
+            continue;
+
+        }
+
+
+        /*
+        Comparaison sécurisée
+        */
+
+        if (
+            user.token.length !==
+            token.length
+        ) {
+
+            continue;
+
+        }
+
+
+        try {
+
+            const a =
+                Buffer.from(
+                    user.token
+                );
+
+            const b =
+                Buffer.from(
+                    token
+                );
+
+
+            if (
+                crypto.timingSafeEqual(
+                    a,
+                    b
+                )
+            ) {
+
+                if (
+                    typeof user.username ===
+                    "string"
+                ) {
+
+                    return {
+
+                        username:
+                            user.username.trim()
+
+                    };
+
+                }
+
+            }
+
+        }
+
+        catch {
+
+            continue;
+
+        }
+
+    }
+
 
     return null;
 
@@ -1596,8 +1983,14 @@ server.listen(
         );
 
         console.log(
+            "Authentication:",
+            "ENABLED"
+        );
+
+        console.log(
             "========================================"
         );
 
     }
 );
+```
