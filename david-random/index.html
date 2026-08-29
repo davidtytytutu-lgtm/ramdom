@@ -15,6 +15,7 @@
     --green-soft: #8cff9d;
     --text: #d5ffd9;
     --red: #ff4444;
+    --yellow: #ffff55;
 }
 
 * {
@@ -140,6 +141,10 @@ header {
     color: var(--red);
 }
 
+.warning {
+    color: var(--yellow);
+}
+
 nav {
     margin-top: 10px;
     border: 2px solid var(--green-dark);
@@ -232,6 +237,25 @@ nav button.active {
     font-size: 12px;
 }
 
+.account-mini {
+    text-align: center;
+}
+
+.account-mini img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border: 2px solid var(--green);
+    background: #000;
+    margin-bottom: 8px;
+}
+
+.account-mini-name {
+    color: var(--green);
+    font-weight: bold;
+    word-break: break-word;
+}
+
 .page {
     display: none;
 }
@@ -309,6 +333,16 @@ nav button.active {
     color: #001500;
 }
 
+.retro-btn.danger {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.retro-btn.danger:hover {
+    background: var(--red);
+    color: #200000;
+}
+
 .retro-input,
 .retro-textarea {
     width: 100%;
@@ -320,9 +354,93 @@ nav button.active {
     color: var(--green-soft);
 }
 
+.retro-input:focus,
+.retro-textarea:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 8px rgba(53,255,90,.15);
+}
+
 .retro-textarea {
     min-height: 120px;
     resize: vertical;
+}
+
+.auth-box {
+    max-width: 600px;
+    margin: auto;
+}
+
+.auth-section {
+    padding: 15px;
+    border: 1px solid var(--green-dark);
+    background: #080d08;
+    margin-bottom: 10px;
+}
+
+.auth-section h3 {
+    margin-top: 0;
+    color: var(--green);
+}
+
+.auth-label {
+    display: block;
+    color: var(--green-soft);
+    margin-bottom: 5px;
+}
+
+.auth-status {
+    min-height: 22px;
+    margin-top: 12px;
+    padding: 8px;
+    border: 1px dashed var(--green-dark);
+    background: #020502;
+}
+
+.auth-status.success {
+    color: var(--green);
+}
+
+.auth-status.error {
+    color: var(--red);
+}
+
+.account-card {
+    text-align: center;
+    max-width: 500px;
+    margin: auto;
+}
+
+.account-avatar {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 3px solid var(--green);
+    background: #000;
+    box-shadow: 0 0 20px rgba(53,255,90,.2);
+}
+
+.account-username {
+    margin: 15px 0 5px;
+    color: var(--green);
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.account-id {
+    color: #58745c;
+    font-size: 12px;
+}
+
+.account-status {
+    margin: 15px 0;
+    color: var(--green);
+}
+
+.account-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .upload-box {
@@ -480,6 +598,13 @@ footer {
             <span id="visitors">1337</span>
         </span>
 
+        <span>
+            ACCOUNT:
+            <span id="headerAccountStatus" class="offline">
+                GUEST
+            </span>
+        </span>
+
     </div>
 
 </header>
@@ -492,6 +617,7 @@ footer {
     <button data-page="terminal">[ TERMINAL ]</button>
     <button data-page="games">[ GAMES ]</button>
     <button data-page="guestbook">[ GUESTBOOK ]</button>
+    <button data-page="account">[ ACCOUNT ]</button>
     <button data-page="about">[ ABOUT ]</button>
 
 </nav>
@@ -503,6 +629,7 @@ footer {
         *** RENDER SERVER ***
         *** GITHUB STORAGE ***
         *** WSS CHAT ***
+        *** ACCOUNT SYSTEM ***
         *** RANDOM INTERNET TERMINAL ***
         *** WELCOME ***
     </span>
@@ -521,6 +648,7 @@ footer {
     <div class="side-link" data-page="terminal">$_ Terminal</div>
     <div class="side-link" data-page="games">★ Games</div>
     <div class="side-link" data-page="guestbook">✎ Guestbook</div>
+    <div class="side-link" data-page="account">♙ Account</div>
     <div class="side-link" data-page="about">ⓘ About</div>
 
     <div class="side-box">
@@ -548,6 +676,18 @@ footer {
         <span id="sidebarSocket" class="offline">
             CONNECTING
         </span>
+
+    </div>
+
+    <div class="side-box">
+
+        <b>ACCOUNT</b>
+
+        <br><br>
+
+        <div id="sidebarAccount">
+            GUEST
+        </div>
 
     </div>
 
@@ -581,7 +721,7 @@ footer {
                 whoami
             </p>
 
-            <p>visitor</p>
+            <p id="homeWhoami">visitor</p>
 
             <p>
                 <span class="prompt">root@david:~$</span>
@@ -645,15 +785,15 @@ footer {
 
         <div class="card">
 
-            <h3>$_ TERMINAL</h3>
+            <h3>♙ ACCOUNT</h3>
 
             <p>
-                Un terminal complètement inutile.
+                Crée ton compte ou connecte-toi.
             </p>
 
             <button
                 class="retro-btn"
-                onclick="showPage('terminal')"
+                onclick="showPage('account')"
             >
                 OPEN
             </button>
@@ -663,6 +803,11 @@ footer {
     </div>
 
 </section>
+
+
+<!-- =====================================================
+     CHAT
+===================================================== -->
 
 <section class="page" id="chat">
 
@@ -724,6 +869,11 @@ footer {
     </div>
 
 </section>
+
+
+<!-- =====================================================
+     MEDIA
+===================================================== -->
 
 <section class="page" id="media">
 
@@ -867,6 +1017,11 @@ footer {
 
 </section>
 
+
+<!-- =====================================================
+     TERMINAL
+===================================================== -->
+
 <section class="page" id="terminal">
 
     <div class="panel">
@@ -891,6 +1046,8 @@ Render server detected.
 GitHub storage detected.
 
 WSS system detected.
+
+ACCOUNT SYSTEM detected.
 
 SYSTEM READY.
 
@@ -919,6 +1076,11 @@ Type "help".
     </div>
 
 </section>
+
+
+<!-- =====================================================
+     GAMES
+===================================================== -->
 
 <section class="page" id="games">
 
@@ -968,6 +1130,11 @@ Type "help".
     </div>
 
 </section>
+
+
+<!-- =====================================================
+     GUESTBOOK
+===================================================== -->
 
 <section class="page" id="guestbook">
 
@@ -1022,6 +1189,199 @@ Type "help".
 
 </section>
 
+
+<!-- =====================================================
+     ACCOUNT
+===================================================== -->
+
+<section class="page" id="account">
+
+    <div class="panel">
+
+        <div class="panel-title">
+            ACCOUNT // AUTHENTICATION
+        </div>
+
+        <div class="panel-content">
+
+            <!-- LOGGED OUT -->
+
+            <div id="loggedOutAccount" class="auth-box">
+
+                <div class="auth-section">
+
+                    <h3>
+                        LOGIN
+                    </h3>
+
+                    <label class="auth-label">
+                        USERNAME
+                    </label>
+
+                    <input
+                        class="retro-input"
+                        id="loginUsername"
+                        placeholder="Username"
+                        maxlength="24"
+                        autocomplete="username"
+                    >
+
+                    <label class="auth-label">
+                        PASSWORD
+                    </label>
+
+                    <input
+                        class="retro-input"
+                        id="loginPassword"
+                        type="password"
+                        placeholder="Password"
+                        autocomplete="current-password"
+                    >
+
+                    <button
+                        class="retro-btn"
+                        id="loginButton"
+                        onclick="loginAccount()"
+                    >
+                        [ LOGIN ]
+                    </button>
+
+                </div>
+
+
+                <div class="auth-section">
+
+                    <h3>
+                        CREATE ACCOUNT
+                    </h3>
+
+                    <label class="auth-label">
+                        USERNAME
+                    </label>
+
+                    <input
+                        class="retro-input"
+                        id="registerUsername"
+                        placeholder="Username"
+                        maxlength="24"
+                        autocomplete="username"
+                    >
+
+                    <label class="auth-label">
+                        PASSWORD
+                    </label>
+
+                    <input
+                        class="retro-input"
+                        id="registerPassword"
+                        type="password"
+                        placeholder="Password"
+                        autocomplete="new-password"
+                    >
+
+                    <label class="auth-label">
+                        PROFILE PICTURE URL
+                    </label>
+
+                    <input
+                        class="retro-input"
+                        id="profilePicture"
+                        type="url"
+                        placeholder="https://site.com/avatar.png"
+                        autocomplete="off"
+                    >
+
+                    <small>
+                        PNG / JPG / JPEG via URL.
+                    </small>
+
+                    <br><br>
+
+                    <button
+                        class="retro-btn"
+                        id="registerButton"
+                        onclick="registerAccount()"
+                    >
+                        [ REGISTER ]
+                    </button>
+
+                </div>
+
+                <div
+                    id="authStatus"
+                    class="auth-status"
+                >
+                    STATUS: NOT CONNECTED
+                </div>
+
+            </div>
+
+
+            <!-- LOGGED IN -->
+
+            <div
+                id="loggedInAccount"
+                class="account-card"
+                style="display:none;"
+            >
+
+                <img
+                    id="accountAvatar"
+                    class="account-avatar"
+                    src=""
+                    alt="Profile picture"
+                >
+
+                <div
+                    id="accountUsername"
+                    class="account-username"
+                >
+                    USER
+                </div>
+
+                <div
+                    id="accountId"
+                    class="account-id"
+                >
+                    ACCOUNT
+                </div>
+
+                <div class="account-status">
+                    ● CONNECTED
+                </div>
+
+                <div class="account-actions">
+
+                    <button
+                        class="retro-btn danger"
+                        id="logoutButton"
+                        onclick="logoutAccount()"
+                    >
+                        [ LOGOUT ]
+                    </button>
+
+                </div>
+
+                <div
+                    id="loggedInStatus"
+                    class="auth-status success"
+                >
+                    SESSION ACTIVE
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     ABOUT
+===================================================== -->
+
 <section class="page" id="about">
 
     <div class="panel">
@@ -1041,6 +1401,7 @@ Type "help".
 ║ Storage : GitHub                 ║
 ║ Engine  : HTML/CSS/JS            ║
 ║ WebSocket : WSS                  ║
+║ Accounts : Express API           ║
 ║                                  ║
 ║ STATUS : ONLINE                  ║
 ╚══════════════════════════════════╝
@@ -1082,6 +1443,7 @@ Type "help".
 
 </div>
 
+
 <script>
 
 /* =========================================================
@@ -1094,11 +1456,110 @@ const API =
 const SOCKET_URL =
     "wss://david-random.onrender.com";
 
+const TOKEN_KEY =
+    "david_random_token";
+
+const USER_KEY =
+    "david_random_user";
+
+let token =
+    localStorage.getItem(TOKEN_KEY) || null;
+
+let currentUser = null;
+
 let socket = null;
 
 let socketConnected = false;
 
 let socketReconnectTimer = null;
+
+
+/* =========================================================
+   API HELPER
+========================================================= */
+
+async function apiRequest(
+    endpoint,
+    options = {}
+) {
+
+    const headers = {
+        ...(options.headers || {})
+    };
+
+    if (
+        options.body &&
+        typeof options.body !== "string"
+    ) {
+
+        headers["Content-Type"] =
+            "application/json";
+
+        options.body =
+            JSON.stringify(options.body);
+
+    }
+
+    else if (
+        options.body &&
+        !headers["Content-Type"]
+    ) {
+
+        headers["Content-Type"] =
+            "application/json";
+
+    }
+
+    /*
+       Le token est envoyé dans Authorization.
+       Le serveur peut ainsi identifier la session.
+    */
+
+    if (token) {
+
+        headers["Authorization"] =
+            "Bearer " + token;
+
+    }
+
+    const response =
+        await fetch(
+            API + endpoint,
+            {
+                ...options,
+                headers,
+                cache: "no-store"
+            }
+        );
+
+    let data = {};
+
+    try {
+
+        data =
+            await response.json();
+
+    }
+
+    catch {
+
+        data = {};
+
+    }
+
+    if (!response.ok) {
+
+        throw new Error(
+            data.error ||
+            data.message ||
+            `HTTP ${response.status}`
+        );
+
+    }
+
+    return data;
+
+}
 
 
 /* =========================================================
@@ -1156,6 +1617,12 @@ function showPage(name) {
             connectSocket();
 
         }
+
+    }
+
+    if (name === "account") {
+
+        updateAccountUI();
 
     }
 
@@ -1226,6 +1693,626 @@ updateClock();
 
 
 /* =========================================================
+   ACCOUNT STORAGE
+========================================================= */
+
+function saveAccount(
+    newToken,
+    user
+) {
+
+    token =
+        newToken || null;
+
+    currentUser =
+        user || null;
+
+    if (token) {
+
+        localStorage.setItem(
+            TOKEN_KEY,
+            token
+        );
+
+    }
+    else {
+
+        localStorage.removeItem(
+            TOKEN_KEY
+        );
+
+    }
+
+    if (currentUser) {
+
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(currentUser)
+        );
+
+    }
+    else {
+
+        localStorage.removeItem(
+            USER_KEY
+        );
+
+    }
+
+}
+
+
+function restoreAccount() {
+
+    const saved =
+        localStorage.getItem(
+            USER_KEY
+        );
+
+    if (!saved) {
+
+        return;
+
+    }
+
+    try {
+
+        currentUser =
+            JSON.parse(saved);
+
+    }
+
+    catch {
+
+        currentUser =
+            null;
+
+        localStorage.removeItem(
+            USER_KEY
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   ACCOUNT UI
+========================================================= */
+
+function updateAccountUI() {
+
+    const loggedOut =
+        document.getElementById(
+            "loggedOutAccount"
+        );
+
+    const loggedIn =
+        document.getElementById(
+            "loggedInAccount"
+        );
+
+    const headerStatus =
+        document.getElementById(
+            "headerAccountStatus"
+        );
+
+    const sidebar =
+        document.getElementById(
+            "sidebarAccount"
+        );
+
+    const homeWhoami =
+        document.getElementById(
+            "homeWhoami"
+        );
+
+    if (currentUser) {
+
+        loggedOut.style.display =
+            "none";
+
+        loggedIn.style.display =
+            "block";
+
+        const username =
+            currentUser.username ||
+            "USER";
+
+        const profile =
+            currentUser.profile_picture ||
+            currentUser.profilePicture ||
+            "";
+
+        document.getElementById(
+            "accountUsername"
+        ).textContent =
+            username;
+
+        document.getElementById(
+            "accountId"
+        ).textContent =
+            currentUser.id
+            ? "ID: " + currentUser.id
+            : "ACCOUNT ACTIVE";
+
+        const avatar =
+            document.getElementById(
+                "accountAvatar"
+            );
+
+        avatar.src =
+            profile ||
+            createDefaultAvatar(
+                username
+            );
+
+        headerStatus.textContent =
+            username;
+
+        headerStatus.className =
+            "online";
+
+        sidebar.innerHTML = `
+
+            <div class="account-mini">
+
+                <img
+                    src="${escapeHTML(
+                        profile ||
+                        createDefaultAvatar(username)
+                    )}"
+                    alt="Avatar"
+                >
+
+                <div class="account-mini-name">
+                    ${escapeHTML(username)}
+                </div>
+
+                <br>
+
+                <span class="online">
+                    CONNECTED
+                </span>
+
+            </div>
+
+        `;
+
+        homeWhoami.textContent =
+            username;
+
+        const chatUsername =
+            document.getElementById(
+                "chatUsername"
+            );
+
+        if (chatUsername) {
+
+            chatUsername.value =
+                username;
+
+        }
+
+    }
+
+    else {
+
+        loggedOut.style.display =
+            "block";
+
+        loggedIn.style.display =
+            "none";
+
+        headerStatus.textContent =
+            "GUEST";
+
+        headerStatus.className =
+            "offline";
+
+        sidebar.textContent =
+            "GUEST";
+
+        homeWhoami.textContent =
+            "visitor";
+
+    }
+
+}
+
+
+function createDefaultAvatar(
+    username
+) {
+
+    return (
+        "https://ui-avatars.com/api/" +
+        "?name=" +
+        encodeURIComponent(username) +
+        "&background=020502" +
+        "&color=35ff5a" +
+        "&bold=true"
+    );
+
+}
+
+
+/* =========================================================
+   REGISTER
+========================================================= */
+
+async function registerAccount() {
+
+    const username =
+        document.getElementById(
+            "registerUsername"
+        ).value.trim();
+
+    const password =
+        document.getElementById(
+            "registerPassword"
+        ).value;
+
+    const profilePicture =
+        document.getElementById(
+            "profilePicture"
+        ).value.trim() ||
+        null;
+
+    const status =
+        document.getElementById(
+            "authStatus"
+        );
+
+
+    if (!username || !password) {
+
+        setAuthStatus(
+            "USERNAME AND PASSWORD REQUIRED",
+            true
+        );
+
+        return;
+
+    }
+
+
+    if (username.length < 3) {
+
+        setAuthStatus(
+            "USERNAME TOO SHORT",
+            true
+        );
+
+        return;
+
+    }
+
+
+    if (username.length > 24) {
+
+        setAuthStatus(
+            "USERNAME TOO LONG",
+            true
+        );
+
+        return;
+
+    }
+
+
+    status.textContent =
+        "CREATING ACCOUNT...";
+
+    status.className =
+        "auth-status";
+
+
+    try {
+
+        const data =
+            await apiRequest(
+                "/api/account/register",
+                {
+                    method: "POST",
+
+                    body: {
+
+                        username:
+                            username,
+
+                        password:
+                            password,
+
+                        profile_picture:
+                            profilePicture
+
+                    }
+
+                }
+            );
+
+
+        if (!data.token) {
+
+            throw new Error(
+                "TOKEN NOT RECEIVED"
+            );
+
+        }
+
+
+        saveAccount(
+            data.token,
+            data.user
+        );
+
+
+        updateAccountUI();
+
+        setAuthStatus(
+            "ACCOUNT CREATED ✓",
+            false
+        );
+
+        document.getElementById(
+            "registerPassword"
+        ).value = "";
+
+        document.getElementById(
+            "loginUsername"
+        ).value =
+            username;
+
+        connectSocket();
+
+
+        setTimeout(
+            function() {
+
+                updateAccountUI();
+
+            },
+            100
+        );
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "[REGISTER]",
+            error
+        );
+
+        setAuthStatus(
+            error.message,
+            true
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+async function loginAccount() {
+
+    const username =
+        document.getElementById(
+            "loginUsername"
+        ).value.trim();
+
+    const password =
+        document.getElementById(
+            "loginPassword"
+        ).value;
+
+    if (!username || !password) {
+
+        setAuthStatus(
+            "USERNAME AND PASSWORD REQUIRED",
+            true
+        );
+
+        return;
+
+    }
+
+
+    setAuthStatus(
+        "AUTHENTICATING...",
+        false
+    );
+
+
+    try {
+
+        const data =
+            await apiRequest(
+                "/api/account/login",
+                {
+                    method: "POST",
+
+                    body: {
+
+                        username:
+                            username,
+
+                        password:
+                            password
+
+                    }
+
+                }
+            );
+
+
+        if (!data.token) {
+
+            throw new Error(
+                "TOKEN NOT RECEIVED"
+            );
+
+        }
+
+
+        saveAccount(
+            data.token,
+            data.user
+        );
+
+
+        document.getElementById(
+            "loginPassword"
+        ).value = "";
+
+
+        updateAccountUI();
+
+
+        setAuthStatus(
+            "LOGIN SUCCESSFUL ✓",
+            false
+        );
+
+
+        connectSocket();
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "[LOGIN]",
+            error
+        );
+
+        setAuthStatus(
+            error.message,
+            true
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+async function logoutAccount() {
+
+    try {
+
+        if (token) {
+
+            await apiRequest(
+                "/api/account/logout",
+                {
+                    method: "POST"
+                }
+            );
+
+        }
+
+    }
+
+    catch(error) {
+
+        console.warn(
+            "[LOGOUT]",
+            error
+        );
+
+    }
+
+
+    token =
+        null;
+
+    currentUser =
+        null;
+
+
+    localStorage.removeItem(
+        TOKEN_KEY
+    );
+
+    localStorage.removeItem(
+        USER_KEY
+    );
+
+
+    if (socket) {
+
+        socket.close();
+
+        socket =
+            null;
+
+    }
+
+
+    socketConnected =
+        false;
+
+
+    updateSocketUI();
+
+    updateAccountUI();
+
+
+    setAuthStatus(
+        "LOGGED OUT ✓",
+        false
+    );
+
+
+    updateChatStatus(
+        "WSS déconnecté."
+    );
+
+}
+
+
+/* =========================================================
+   AUTH STATUS
+========================================================= */
+
+function setAuthStatus(
+    text,
+    error
+) {
+
+    const status =
+        document.getElementById(
+            "authStatus"
+        );
+
+    if (!status) {
+
+        return;
+
+    }
+
+    status.textContent =
+        "STATUS: " +
+        text;
+
+    status.className =
+        error
+        ? "auth-status error"
+        : "auth-status success";
+
+}
+
+
+/* =========================================================
    SERVER STATUS
 ========================================================= */
 
@@ -1246,10 +2333,12 @@ async function checkServer() {
             "apiSide"
         );
 
+
     status.textContent =
         "CHECKING SERVER...";
 
     status.className = "";
+
 
     try {
 
@@ -1262,18 +2351,15 @@ async function checkServer() {
                 }
             );
 
-        console.log(
-            "[API] /api/status HTTP:",
-            response.status
-        );
 
         if (response.status === 404) {
 
             throw new Error(
-                "API /api/status introuvable (HTTP 404)"
+                "API /api/status introuvable"
             );
 
         }
+
 
         if (!response.ok) {
 
@@ -1284,13 +2370,10 @@ async function checkServer() {
 
         }
 
+
         const data =
             await response.json();
 
-        console.log(
-            "[API] Status:",
-            data
-        );
 
         if (data.online === true) {
 
@@ -1300,27 +2383,23 @@ async function checkServer() {
             status.className =
                 "online";
 
-            if (renderSide) {
 
-                renderSide.textContent =
-                    "ONLINE";
+            renderSide.textContent =
+                "ONLINE";
 
-                renderSide.className =
-                    "online";
+            renderSide.className =
+                "online";
 
-            }
 
-            if (apiSide) {
+            apiSide.textContent =
+                "ONLINE";
 
-                apiSide.textContent =
-                    "ONLINE";
+            apiSide.className =
+                "online";
 
-                apiSide.className =
-                    "online";
+        }
 
-            }
-
-        } else {
+        else {
 
             throw new Error(
                 "online:true absent"
@@ -1337,31 +2416,26 @@ async function checkServer() {
             error
         );
 
+
         status.textContent =
             "API OFFLINE";
 
         status.className =
             "offline";
 
-        if (renderSide) {
 
-            renderSide.textContent =
-                "ONLINE / API ERROR";
+        renderSide.textContent =
+            "ONLINE / API ERROR";
 
-            renderSide.className =
-                "offline";
+        renderSide.className =
+            "offline";
 
-        }
 
-        if (apiSide) {
+        apiSide.textContent =
+            "ERROR";
 
-            apiSide.textContent =
-                "ERROR";
-
-            apiSide.className =
-                "offline";
-
-        }
+        apiSide.className =
+            "offline";
 
     }
 
@@ -1379,6 +2453,7 @@ function updateSocketUI() {
             "sidebarSocket"
         );
 
+
     if (socketConnected) {
 
         if (sidebar) {
@@ -1395,7 +2470,9 @@ function updateSocketUI() {
             "WSS connecté ✓"
         );
 
-    } else {
+    }
+
+    else {
 
         if (sidebar) {
 
@@ -1429,14 +2506,17 @@ function connectSocket() {
 
     }
 
+
     console.log(
         "[WSS] Connexion à " +
         SOCKET_URL
     );
 
+
     updateChatStatus(
         "Connexion WSS..."
     );
+
 
     try {
 
@@ -1498,10 +2578,6 @@ function connectSocket() {
                         event.data
                     );
 
-                console.log(
-                    "[WSS] Message reçu :",
-                    data
-                );
 
                 if (
                     data.type ===
@@ -1598,6 +2674,7 @@ function scheduleSocketReconnect() {
 
     }
 
+
     socketReconnectTimer =
         setTimeout(
             function() {
@@ -1644,6 +2721,7 @@ function addSystemMessage(message) {
 
     }
 
+
     const element =
         document.createElement(
             "div"
@@ -1651,6 +2729,7 @@ function addSystemMessage(message) {
 
     element.className =
         "chat-message";
+
 
     element.innerHTML = `
 
@@ -1664,9 +2743,11 @@ function addSystemMessage(message) {
 
     `;
 
+
     box.appendChild(
         element
     );
+
 
     box.scrollTop =
         box.scrollHeight;
@@ -1687,6 +2768,7 @@ function displayChatMessage(data) {
 
     }
 
+
     const element =
         document.createElement(
             "div"
@@ -1695,11 +2777,13 @@ function displayChatMessage(data) {
     element.className =
         "chat-message";
 
+
     const username =
         escapeHTML(
             data.username ||
             "Anonymous"
         );
+
 
     const message =
         escapeHTML(
@@ -1707,7 +2791,9 @@ function displayChatMessage(data) {
             ""
         );
 
+
     let time = "";
+
 
     if (data.time) {
 
@@ -1729,6 +2815,7 @@ function displayChatMessage(data) {
         }
 
     }
+
 
     element.innerHTML = `
 
@@ -1752,9 +2839,11 @@ function displayChatMessage(data) {
 
     `;
 
+
     box.appendChild(
         element
     );
+
 
     box.scrollTop =
         box.scrollHeight;
@@ -1783,6 +2872,7 @@ function sendSocketChat(
 
     }
 
+
     socket.send(
         JSON.stringify({
 
@@ -1790,10 +2880,13 @@ function sendSocketChat(
 
             username: username,
 
-            message: message
+            message: message,
+
+            token: token
 
         })
     );
+
 
     return true;
 
@@ -1806,7 +2899,7 @@ function sendSocketChat(
 
 function sendChat() {
 
-    const username =
+    let username =
         document.getElementById(
             "chatUsername"
         ).value.trim();
@@ -1820,6 +2913,17 @@ function sendChat() {
         document.getElementById(
             "chatStatus"
         );
+
+
+    if (
+        currentUser &&
+        currentUser.username
+    ) {
+
+        username =
+            currentUser.username;
+
+    }
 
 
     if (!username) {
@@ -1880,6 +2984,7 @@ function sendChat() {
         "chatMessage"
     ).value = "";
 
+
     status.textContent =
         "Message envoyé ✓";
 
@@ -1893,11 +2998,26 @@ function loadChat() {
             "chatBox"
         );
 
+
     if (!box) {
 
         return;
 
     }
+
+
+    if (
+        currentUser &&
+        currentUser.username
+    ) {
+
+        document.getElementById(
+            "chatUsername"
+        ).value =
+            currentUser.username;
+
+    }
+
 
     if (
         box.children.length === 0
@@ -1920,6 +3040,7 @@ async function uploadFile(type) {
 
     let input;
     let status;
+
 
     if (type === "image") {
 
@@ -1963,14 +3084,17 @@ async function uploadFile(type) {
 
     }
 
+
     if (!input || !status) {
 
         return;
 
     }
 
+
     const file =
         input.files[0];
+
 
     if (!file) {
 
@@ -1981,8 +3105,10 @@ async function uploadFile(type) {
 
     }
 
+
     const maxSize =
         25 * 1024 * 1024;
+
 
     if (file.size > maxSize) {
 
@@ -1993,11 +3119,14 @@ async function uploadFile(type) {
 
     }
 
+
     status.textContent =
         "Lecture du fichier...";
 
+
     const reader =
         new FileReader();
+
 
     reader.onload = async function() {
 
@@ -2006,7 +3135,9 @@ async function uploadFile(type) {
             status.textContent =
                 "Upload vers GitHub...";
 
+
             let folder;
+
 
             if (type === "image") {
 
@@ -2026,59 +3157,52 @@ async function uploadFile(type) {
 
             }
 
+
             const response =
-                await fetch(
-                    API + "/api/upload",
+                await apiRequest(
+                    "/api/upload",
                     {
 
                         method: "POST",
 
-                        headers: {
+                        body: {
 
-                            "Content-Type":
-                                "application/json"
+                            filename:
+                                file.name,
 
-                        },
+                            content:
+                                reader.result,
 
-                        body:
-                            JSON.stringify({
+                            folder:
+                                folder
 
-                                filename:
-                                    file.name,
-
-                                content:
-                                    reader.result,
-
-                                folder:
-                                    folder
-
-                            })
+                        }
 
                     }
                 );
 
-            const data =
-                await response.json();
 
             if (
-                !response.ok ||
-                !data.success
+                !response.success
             ) {
 
                 throw new Error(
-                    data.error ||
+                    response.error ||
                     "Upload failed"
                 );
 
             }
 
+
             status.innerHTML =
                 "UPLOAD OK ✓<br>" +
-                `<a href="${escapeHTML(data.download)}" target="_blank" rel="noopener">` +
+                `<a href="${escapeHTML(response.download)}" target="_blank" rel="noopener">` +
                 "Ouvrir le fichier" +
                 "</a>";
 
+
             input.value = "";
+
 
             await loadMedia();
 
@@ -2091,6 +3215,7 @@ async function uploadFile(type) {
                 error
             );
 
+
             status.textContent =
                 "ERREUR : " +
                 error.message;
@@ -2099,6 +3224,7 @@ async function uploadFile(type) {
 
     };
 
+
     reader.onerror =
         function() {
 
@@ -2106,6 +3232,7 @@ async function uploadFile(type) {
                 "Impossible de lire le fichier.";
 
         };
+
 
     reader.readAsDataURL(file);
 
@@ -2154,14 +3281,17 @@ async function loadFolder(
             elementId
         );
 
+
     if (!container) {
 
         return;
 
     }
 
+
     container.innerHTML =
         "Chargement...";
+
 
     try {
 
@@ -2174,8 +3304,10 @@ async function loadFolder(
                 }
             );
 
+
         const data =
             await response.json();
+
 
         if (
             !response.ok ||
@@ -2188,6 +3320,7 @@ async function loadFolder(
             );
 
         }
+
 
         const files =
             Array.isArray(data.files)
@@ -2203,6 +3336,7 @@ async function loadFolder(
             )
             : [];
 
+
         if (files.length === 0) {
 
             container.innerHTML =
@@ -2212,7 +3346,9 @@ async function loadFolder(
 
         }
 
+
         container.innerHTML = "";
+
 
         files.forEach(
             function(file) {
@@ -2222,18 +3358,22 @@ async function loadFolder(
                         "div"
                     );
 
+
                 item.className =
                     "media-item";
+
 
                 const safeName =
                     escapeHTML(
                         file.name
                     );
 
+
                 const download =
                     escapeHTML(
                         file.download
                     );
+
 
                 if (type === "image") {
 
@@ -2263,6 +3403,7 @@ async function loadFolder(
 
                 }
 
+
                 else if (type === "music") {
 
                     item.innerHTML = `
@@ -2290,6 +3431,7 @@ async function loadFolder(
                     `;
 
                 }
+
 
                 else if (type === "video") {
 
@@ -2319,6 +3461,7 @@ async function loadFolder(
 
                 }
 
+
                 container.appendChild(
                     item
                 );
@@ -2334,6 +3477,7 @@ async function loadFolder(
             `[MEDIA ${folder}]`,
             error
         );
+
 
         container.innerHTML =
             `<span class="offline">` +
@@ -2395,16 +3539,19 @@ function terminalCommand(command) {
             .trim()
             .toLowerCase();
 
+
     if (!cmd) {
 
         return;
 
     }
 
+
     terminalPrint(
         "\nguest@david:~$ " +
         command
     );
+
 
     switch(cmd) {
 
@@ -2421,6 +3568,9 @@ date       date
 time       heure
 random     nombre random
 whoami     utilisateur
+account    compte
+login      connexion
+logout     déconnexion
 ls         fichiers
 status     serveur
 media      médias
@@ -2492,8 +3642,35 @@ matrix     ???
         case "whoami":
 
             terminalPrint(
-                "guest"
+                currentUser
+                ? currentUser.username
+                : "guest"
             );
+
+            break;
+
+
+        case "account":
+
+            showPage(
+                "account"
+            );
+
+            break;
+
+
+        case "login":
+
+            showPage(
+                "account"
+            );
+
+            break;
+
+
+        case "logout":
+
+            logoutAccount();
 
             break;
 
@@ -2633,6 +3810,7 @@ function addGuest() {
             "guestMessage"
         ).value.trim();
 
+
     if (
         !name ||
         !message
@@ -2646,13 +3824,16 @@ function addGuest() {
 
     }
 
+
     const guest =
         document.createElement(
             "div"
         );
 
+
     guest.className =
         "chat-message";
+
 
     guest.innerHTML = `
 
@@ -2666,6 +3847,7 @@ function addGuest() {
 
     `;
 
+
     document
         .getElementById(
             "guestList"
@@ -2674,9 +3856,11 @@ function addGuest() {
             guest
         );
 
+
     document.getElementById(
         "guestName"
     ).value = "";
+
 
     document.getElementById(
         "guestMessage"
@@ -2706,27 +3890,33 @@ function startGame() {
 
     gameRunning = true;
 
+
     document.getElementById(
         "score"
     ).textContent =
         score;
+
 
     document.getElementById(
         "gameTime"
     ).textContent =
         gameTimer;
 
+
     const target =
         document.getElementById(
             "clickTarget"
         );
 
+
     target.style.transform =
         "translate(0, 0)";
+
 
     clearInterval(
         gameInterval
     );
+
 
     gameInterval =
         setInterval(
@@ -2734,10 +3924,12 @@ function startGame() {
 
                 gameTimer--;
 
+
                 document.getElementById(
                     "gameTime"
                 ).textContent =
                     gameTimer;
+
 
                 if (
                     gameTimer <= 0
@@ -2747,8 +3939,10 @@ function startGame() {
                         gameInterval
                     );
 
+
                     gameRunning =
                         false;
+
 
                     alert(
                         "GAME OVER\n\nScore: " +
@@ -2772,27 +3966,33 @@ function gameClick() {
 
     }
 
+
     score++;
+
 
     document.getElementById(
         "score"
     ).textContent =
         score;
 
+
     const target =
         document.getElementById(
             "clickTarget"
         );
+
 
     const x =
         Math.random() *
         120 -
         60;
 
+
     const y =
         Math.random() *
         100 -
         50;
+
 
     target.style.transform =
         `translate(${x}px, ${y}px)`;
@@ -2803,6 +4003,10 @@ function gameClick() {
 /* =========================================================
    START
 ========================================================= */
+
+restoreAccount();
+
+updateAccountUI();
 
 console.log(
     "%cDAVID RANDOM V2",
@@ -2818,6 +4022,14 @@ console.log(
     "WSS:",
     SOCKET_URL
 );
+
+console.log(
+    "Account token:",
+    token
+        ? "PRESENT"
+        : "NONE"
+);
+
 
 checkServer();
 
