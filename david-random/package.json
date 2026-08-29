@@ -1,16 +1,14 @@
 {
-  "name": "david-random",
+  "name": "david-random-server",
   "version": "2.0.0",
-  "description": "David Random - Render + GitHub + WebSocket",
+  "description": "David Random server - Render + GitHub + WebSocket + accounts",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "ws": "^8.18.3"
-  },
-  "engines": {
-    "node": ">=18"
+    "bcryptjs": "^3.0.2",
+    "express": "^5.1.0",
+    "ws": "^8.18.0"
   }
 }
