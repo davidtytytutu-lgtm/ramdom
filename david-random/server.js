@@ -395,13 +395,11 @@ app.post("/api/upload", async (req, res) => {
 
         }
 
-        const allowedFolders = [
-
-            "images",
-            "music",
-            "videos"
-
-        ];
+const allowedFolders = [
+    "image",
+    "music",
+    "video"
+       ];
 
         if (
             !allowedFolders.includes(folder)
