@@ -3,84 +3,297 @@ const path = require("path");
 
 const app = express();
 
-const PORT = process.env.PORT || 10000;
+/* =========================================================
+   CONFIGURATION
+========================================================= */
 
-const GITHUB_OWNER =
-    process.env.GITHUB_OWNER || "davidtytytutu-lgtm";
-
-const GITHUB_REPO =
-    process.env.GITHUB_REPO || "ramdom";
-
-const GITHUB_BRANCH =
-    process.env.GITHUB_BRANCH || "main";
+const PORT = Number(process.env.PORT) || 10000;
 
 const GITHUB_TOKEN =
     process.env.GITHUB_TOKEN;
 
+const GITHUB_OWNER =
+    process.env.GITHUB_OWNER ||
+    "davidtytytutu-lgtm";
 
-/* =========================================================
-   CONFIG
-========================================================= */
+const GITHUB_REPO =
+    process.env.GITHUB_REPO ||
+    "ramdom";
 
-const ALLOWED_FOLDERS = [
-    "image",
-    "music",
-    "video",
-    "chat-log"
-];
+const GITHUB_BRANCH =
+    process.env.GITHUB_BRANCH ||
+    "main";
+
+/*
+    Si tes dossiers sont :
+
+    david-random/image
+    david-random/music
+    david-random/video
+    david-random/chat-log
+
+    mets dans Render :
+
+    GITHUB_MEDIA_ROOT=david-random
+
+    Si tes dossiers sont directement :
+
+    image
+    music
+    video
+    chat-log
+
+    mets :
+
+    GITHUB_MEDIA_ROOT=
+
+*/
+
+const GITHUB_MEDIA_ROOT =
+    process.env.GITHUB_MEDIA_ROOT || "";
 
 
 /* =========================================================
    EXPRESS
 ========================================================= */
 
-app.use(express.json({
-    limit: "35mb"
-}));
-
-app.use(express.urlencoded({
-    extended: true,
-    limit: "35mb"
-}));
-
-
-app.use(express.static(
-    path.join(__dirname)
-));
+app.use(
+    express.json({
+        limit: "30mb"
+    })
+);
 
 
 /* =========================================================
-   GITHUB HELPER
+   FICHIERS STATIQUES
 ========================================================= */
 
-function githubHeaders() {
+/*
+    Permet :
 
-    return {
+    https://david-random.onrender.com/
 
-        "Authorization":
-            `Bearer ${GITHUB_TOKEN}`,
+    de charger index.html.
+*/
 
-        "Accept":
-            "application/vnd.github+json",
+app.use(
+    express.static(__dirname)
+);
 
-        "X-GitHub-Api-Version":
-            "2022-11-28",
 
-        "User-Agent":
-            "David-Random"
+/* =========================================================
+   GITHUB CONFIG
+========================================================= */
 
-    };
+const githubHeaders = {
+
+    "Accept":
+        "application/vnd.github+json",
+
+    "Authorization":
+        `Bearer ${GITHUB_TOKEN}`,
+
+    "X-GitHub-Api-Version":
+        "2022-11-28",
+
+    "User-Agent":
+        "David-Random-Server"
+
+};
+
+
+/* =========================================================
+   UTILITAIRES
+========================================================= */
+
+function githubPath(...parts) {
+
+    return parts
+        .filter(
+            part =>
+                part !== undefined &&
+                part !== null &&
+                String(part).trim() !== ""
+        )
+        .map(
+            part =>
+                String(part)
+                    .replace(/^\/+/, "")
+                    .replace(/\/+$/, "")
+        )
+        .join("/");
+
+}
+
+
+function mediaPath(folder) {
+
+    return githubPath(
+        GITHUB_MEDIA_ROOT,
+        folder
+    );
+
+}
+
+
+function safeFilename(filename) {
+
+    if (!filename) {
+
+        return "file";
+
+    }
+
+    /*
+        On empêche les chemins du genre :
+
+        ../../server.js
+
+        ou :
+
+        folder/file.txt
+    */
+
+    return String(filename)
+        .replace(/\\/g, "_")
+        .replace(/\//g, "_")
+        .replace(/\.\./g, "_")
+        .replace(/[<>:"|?*\x00-\x1F]/g, "_")
+        .trim()
+        .substring(0, 180) || "file";
+
+}
+
+
+async function githubRequest(
+    url,
+    options = {}
+) {
+
+    if (!GITHUB_TOKEN) {
+
+        throw new Error(
+            "GITHUB_TOKEN n'est pas configuré dans Render."
+        );
+
+    }
+
+
+    const response =
+        await fetch(
+            url,
+            {
+                ...options,
+
+                headers: {
+                    ...githubHeaders,
+                    ...(options.headers || {})
+                }
+            }
+        );
+
+
+    const text =
+        await response.text();
+
+
+    let data = null;
+
+
+    try {
+
+        data =
+            text
+                ? JSON.parse(text)
+                : null;
+
+    }
+
+    catch {
+
+        data = {
+            message: text
+        };
+
+    }
+
+
+    if (!response.ok) {
+
+        const error =
+            new Error(
+                `GitHub API ${response.status}: ` +
+                `${data?.message || "Erreur inconnue"}`
+            );
+
+
+        error.status =
+            response.status;
+
+
+        error.github =
+            data;
+
+
+        throw error;
+
+    }
+
+
+    return data;
 
 }
 
 
 /* =========================================================
-   STATUS
+   ROOT
+========================================================= */
+
+app.get(
+    "/",
+    (req, res) => {
+
+        const indexPath =
+            path.join(
+                __dirname,
+                "index.html"
+            );
+
+
+        res.sendFile(
+            indexPath,
+            error => {
+
+                if (error) {
+
+                    console.error(
+                        "Impossible de servir index.html :",
+                        error
+                    );
+
+
+                    res
+                        .status(500)
+                        .send(
+                            "index.html introuvable sur le serveur."
+                        );
+
+                }
+
+            }
+        );
+
+    }
+);
+
+
+/* =========================================================
+   API STATUS
 ========================================================= */
 
 app.get(
     "/api/status",
-    async (req, res) => {
+    (req, res) => {
 
         res.json({
 
@@ -101,6 +314,9 @@ app.get(
             branch:
                 GITHUB_BRANCH,
 
+            mediaRoot:
+                GITHUB_MEDIA_ROOT || "(racine)",
+
             time:
                 new Date().toISOString()
 
@@ -111,65 +327,21 @@ app.get(
 
 
 /* =========================================================
-   GITHUB TEST
+   API GITHUB TEST
 ========================================================= */
 
 app.get(
-    "/api/github-test",
+    "/api/github",
     async (req, res) => {
 
         try {
 
-            if (!GITHUB_TOKEN) {
-
-                return res.status(500).json({
-
-                    success: false,
-
-                    error:
-                        "GITHUB_TOKEN manquant"
-
-                });
-
-            }
-
-
-            const url =
-                `https://api.github.com/repos/` +
-                `${GITHUB_OWNER}/` +
-                `${GITHUB_REPO}`;
-
-
-            const response =
-                await fetch(
-                    url,
-                    {
-
-                        headers:
-                            githubHeaders()
-
-                    }
-                );
-
-
             const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                return res.status(
-                    response.status
-                ).json({
-
-                    success: false,
-
-                    error:
-                        `GitHub API ${response.status}: ${data.message || "Erreur"}`
-
-                });
-
-            }
+                await githubRequest(
+                    `https://api.github.com/repos/` +
+                    `${encodeURIComponent(GITHUB_OWNER)}/` +
+                    `${encodeURIComponent(GITHUB_REPO)}`
+                );
 
 
             res.json({
@@ -185,7 +357,8 @@ app.get(
                         data.name,
 
                     owner:
-                        data.owner.login,
+                        data.owner?.login ||
+                        GITHUB_OWNER,
 
                     private:
                         data.private,
@@ -202,17 +375,22 @@ app.get(
         catch (error) {
 
             console.error(
-                "GitHub test:",
+                "GitHub test error:",
                 error
             );
 
 
-            res.status(500).json({
+            res.status(
+                error.status || 500
+            ).json({
 
                 success: false,
 
                 error:
-                    error.message
+                    error.message,
+
+                details:
+                    "Regarde également les logs Render."
 
             });
 
@@ -223,159 +401,82 @@ app.get(
 
 
 /* =========================================================
-   LIST FILES
+   LISTE DES FICHIERS
 ========================================================= */
 
 app.get(
     "/api/files/:folder",
     async (req, res) => {
 
-        try {
-
-            const folder =
-                req.params.folder;
-
-
-            console.log(
-                `[FILES] Requested folder: ${folder}`
-            );
+        const folder =
+            String(
+                req.params.folder || ""
+            ).toLowerCase();
 
 
-            /*
-               Sécurité
-            */
+        const allowedFolders = [
+            "image",
+            "music",
+            "video",
+            "chat-log"
+        ];
 
-            if (
-                !ALLOWED_FOLDERS.includes(
-                    folder
-                )
-            ) {
 
-                return res.status(403).json({
+        if (
+            !allowedFolders.includes(folder)
+        ) {
+
+            return res
+                .status(400)
+                .json({
 
                     success: false,
 
                     error:
-                        "Dossier interdit",
-
-                    allowed:
-                        ALLOWED_FOLDERS
+                        "Dossier interdit"
 
                 });
 
-            }
+        }
 
+
+        const folderPath =
+            mediaPath(folder);
+
+
+        try {
 
             const url =
                 `https://api.github.com/repos/` +
-                `${GITHUB_OWNER}/` +
-                `${GITHUB_REPO}/contents/` +
-                `${folder}?ref=${encodeURIComponent(GITHUB_BRANCH)}`;
+                `${encodeURIComponent(GITHUB_OWNER)}/` +
+                `${encodeURIComponent(GITHUB_REPO)}/` +
+                `contents/${folderPath}?ref=` +
+                `${encodeURIComponent(GITHUB_BRANCH)}`;
 
 
-            console.log(
-                `[GITHUB] GET ${url}`
-            );
-
-
-            const response =
-                await fetch(
-                    url,
-                    {
-
-                        headers:
-                            githubHeaders()
-
-                    }
+            const data =
+                await githubRequest(
+                    url
                 );
 
 
             /*
-               GitHub retourne 404 lorsqu'un dossier
-               n'existe pas encore.
-
-               On transforme donc le 404 en dossier vide.
+                GitHub renvoie un tableau
+                lorsqu'on demande un dossier.
             */
 
-            if (
-                response.status === 404
-            ) {
-
-                console.log(
-                    `[GITHUB] Folder ${folder} does not exist yet`
-                );
-
-
-                return res.json({
-
-                    success: true,
-
-                    folder:
-
-                        folder,
-
-                    files: []
-
-                });
-
-            }
-
-
-            const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                return res.status(
-                    response.status
-                ).json({
-
-                    success: false,
-
-                    error:
-                        `GitHub API ${response.status}: ${data.message || "Not Found"}`,
-
-                    details:
-                        "Vérifie le dépôt, la branche et le token Render."
-
-                });
-
-            }
-
-
-            if (!Array.isArray(data)) {
-
-                return res.json({
-
-                    success: true,
-
-                    folder:
-
-                        folder,
-
-                    files: []
-
-                });
-
-            }
-
-
             const files =
-                data
+                Array.isArray(data)
+                    ? data
+                    : [];
 
+
+            const result =
+                files
                     .filter(
                         file =>
                             file.type === "file"
                     )
-
-                    .filter(
-                        file =>
-                            !file.name
-                                .toLowerCase()
-                                .endsWith(".gitkeep")
-                    )
-
                     .map(
                         file => ({
 
@@ -388,27 +489,32 @@ app.get(
                             size:
                                 file.size,
 
-                            download:
-                                file.download_url,
+                            sha:
+                                file.sha,
 
-                            github:
-                                file.html_url
+                            download:
+                                file.download_url ||
+                                `https://raw.githubusercontent.com/` +
+                                `${GITHUB_OWNER}/` +
+                                `${GITHUB_REPO}/` +
+                                `${encodeURIComponent(file.path)}` +
+                                `?raw=1`
 
                         })
                     );
 
 
-            res.json({
+            return res.json({
 
                 success: true,
 
-                folder:
+                folder,
 
-                    folder,
+                githubPath:
+                    folderPath,
 
                 files:
-
-                    files
+                    result
 
             });
 
@@ -416,20 +522,55 @@ app.get(
 
         catch (error) {
 
+            /*
+                Un dossier GitHub qui n'existe pas
+                donne 404.
+
+                Pour notre site, on considère
+                simplement qu'il est vide.
+            */
+
+            if (
+                error.status === 404
+            ) {
+
+                return res.json({
+
+                    success: true,
+
+                    folder,
+
+                    githubPath:
+                        folderPath,
+
+                    files: []
+
+                });
+
+            }
+
+
             console.error(
-                "[FILES ERROR]",
+                `Erreur lecture /${folderPath}/ :`,
                 error
             );
 
 
-            res.status(500).json({
+            return res
+                .status(
+                    error.status || 500
+                )
+                .json({
 
-                success: false,
+                    success: false,
 
-                error:
-                    error.message
+                    error:
+                        error.message,
 
-            });
+                    details:
+                        error.github || null
+
+                });
 
         }
 
@@ -438,7 +579,138 @@ app.get(
 
 
 /* =========================================================
-   UPLOAD
+   RÉCUPÉRER UN FICHIER
+========================================================= */
+
+app.get(
+    "/api/file/:folder/:filename",
+    async (req, res) => {
+
+        const folder =
+            String(
+                req.params.folder || ""
+            ).toLowerCase();
+
+
+        const filename =
+            safeFilename(
+                req.params.filename
+            );
+
+
+        const allowedFolders = [
+            "image",
+            "music",
+            "video",
+            "chat-log"
+        ];
+
+
+        if (
+            !allowedFolders.includes(folder)
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    error:
+                        "Dossier interdit"
+
+                });
+
+        }
+
+
+        try {
+
+            const filePath =
+                githubPath(
+                    mediaPath(folder),
+                    filename
+                );
+
+
+            const url =
+                `https://api.github.com/repos/` +
+                `${encodeURIComponent(GITHUB_OWNER)}/` +
+                `${encodeURIComponent(GITHUB_REPO)}/` +
+                `contents/${filePath}?ref=` +
+                `${encodeURIComponent(GITHUB_BRANCH)}`;
+
+
+            const data =
+                await githubRequest(
+                    url
+                );
+
+
+            res.json({
+
+                success: true,
+
+                name:
+                    data.name,
+
+                path:
+                    data.path,
+
+                sha:
+                    data.sha,
+
+                download:
+                    data.download_url,
+
+                content:
+                    data.content
+                        ? Buffer
+                            .from(
+                                data.content.replace(
+                                    /\n/g,
+                                    ""
+                                ),
+                                "base64"
+                            )
+                            .toString(
+                                "utf8"
+                            )
+                        : null
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "File error:",
+                error
+            );
+
+
+            res
+                .status(
+                    error.status || 500
+                )
+                .json({
+
+                    success: false,
+
+                    error:
+                        error.message
+
+                });
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   UPLOAD GITHUB
 ========================================================= */
 
 app.post(
@@ -448,181 +720,208 @@ app.post(
         try {
 
             const {
-
                 filename,
-
                 content,
-
                 folder
-
             } = req.body;
 
 
-            console.log(
-                `[UPLOAD] ${folder}/${filename}`
-            );
+            const allowedFolders = [
+                "image",
+                "music",
+                "video"
+            ];
 
-
-            /*
-               Vérifications
-            */
 
             if (
-                !ALLOWED_FOLDERS.includes(
+                !allowedFolders.includes(
                     folder
                 )
             ) {
 
-                return res.status(403).json({
+                return res
+                    .status(400)
+                    .json({
 
-                    success: false,
+                        success: false,
 
-                    error:
-                        "Dossier interdit"
+                        error:
+                            "Dossier interdit"
 
-                });
+                    });
 
             }
 
 
             if (!filename) {
 
-                return res.status(400).json({
+                return res
+                    .status(400)
+                    .json({
 
-                    success: false,
+                        success: false,
 
-                    error:
-                        "Nom de fichier manquant"
+                        error:
+                            "Nom de fichier manquant"
 
-                });
+                    });
 
             }
 
 
             if (!content) {
 
-                return res.status(400).json({
-
-                    success: false,
-
-                    error:
-                        "Fichier manquant"
-
-                });
-
-            }
-
-
-            /*
-               Empêche les chemins dangereux.
-            */
-
-            const cleanFilename =
-                path.basename(
-                    filename
-                );
-
-
-            /*
-               Convertit le Data URL Base64
-               envoyé par le HTML.
-            */
-
-            let base64;
-
-
-            if (
-                content.startsWith(
-                    "data:"
-                )
-            ) {
-
-                const comma =
-                    content.indexOf(",");
-
-
-                if (comma === -1) {
-
-                    return res.status(400).json({
+                return res
+                    .status(400)
+                    .json({
 
                         success: false,
 
                         error:
-                            "Format Base64 invalide"
+                            "Contenu du fichier manquant"
 
                     });
 
-                }
-
-
-                base64 =
-                    content.substring(
-                        comma + 1
-                    );
-
             }
-
-            else {
-
-                base64 =
-                    content;
-
-            }
-
-
-            const githubPath =
-                `${folder}/${cleanFilename}`;
-
-
-            const url =
-                `https://api.github.com/repos/` +
-                `${GITHUB_OWNER}/` +
-                `${GITHUB_REPO}/contents/` +
-                `${githubPath}`;
 
 
             /*
-               Vérifie si le fichier existe déjà.
-               Si oui, GitHub demande son SHA pour
-               pouvoir le remplacer.
+                Le HTML envoie un Data URL :
+
+                data:image/png;base64,AAAA...
+
+                On récupère seulement le Base64.
             */
 
-            let sha =
-                undefined;
+            let base64 =
+                String(content);
 
 
-            const existing =
-                await fetch(
-                    `${url}?ref=${encodeURIComponent(GITHUB_BRANCH)}`,
-                    {
+            if (
+                base64.includes(",")
+            ) {
 
-                        headers:
-                            githubHeaders()
+                base64 =
+                    base64.split(",")[1];
 
-                    }
+            }
+
+
+            base64 =
+                base64.replace(
+                   (/\s/g),
+                    ""
                 );
 
 
-            if (existing.ok) {
+            if (!base64) {
 
-                const existingData =
-                    await existing.json();
+                return res
+                    .status(400)
+                    .json({
 
+                        success: false,
 
-                sha =
-                    existingData.sha;
+                        error:
+                            "Contenu Base64 vide"
+
+                    });
 
             }
 
 
             /*
-               Création / modification GitHub
+                Limite de sécurité :
+                environ 25 MB décodés.
             */
+
+            const estimatedSize =
+                Math.floor(
+                    base64.length * 0.75
+                );
+
+
+            const MAX_SIZE =
+                25 * 1024 * 1024;
+
+
+            if (
+                estimatedSize >
+                MAX_SIZE
+            ) {
+
+                return res
+                    .status(413)
+                    .json({
+
+                        success: false,
+
+                        error:
+                            "Fichier trop gros. Maximum 25 MB."
+
+                    });
+
+            }
+
+
+            const cleanFilename =
+                safeFilename(
+                    filename
+                );
+
+
+            const filePath =
+                githubPath(
+                    mediaPath(folder),
+                    cleanFilename
+                );
+
+
+            /*
+                On vérifie si le fichier existe
+                déjà afin de récupérer son SHA.
+            */
+
+            let existingSha =
+                null;
+
+
+            try {
+
+                const existing =
+                    await githubRequest(
+                        `https://api.github.com/repos/` +
+                        `${encodeURIComponent(GITHUB_OWNER)}/` +
+                        `${encodeURIComponent(GITHUB_REPO)}/` +
+                        `contents/${filePath}?ref=` +
+                        `${encodeURIComponent(GITHUB_BRANCH)}`
+                    );
+
+
+                existingSha =
+                    existing.sha || null;
+
+            }
+
+            catch (error) {
+
+                if (
+                    error.status !== 404
+                ) {
+
+                    throw error;
+
+                }
+
+            }
+
 
             const body = {
 
                 message:
-                    `Upload ${githubPath}`,
+                    existingSha
+                        ? `Update ${filePath}`
+                        : `Upload ${filePath}`,
 
                 content:
                     base64,
@@ -633,71 +932,43 @@ app.post(
             };
 
 
-            if (sha) {
+            if (existingSha) {
 
                 body.sha =
-                    sha;
+                    existingSha;
 
             }
 
 
-            const response =
-                await fetch(
-                    url,
+            const result =
+                await githubRequest(
+                    `https://api.github.com/repos/` +
+                    `${encodeURIComponent(GITHUB_OWNER)}/` +
+                    `${encodeURIComponent(GITHUB_REPO)}/` +
+                    `contents/${filePath}`,
                     {
 
                         method:
                             "PUT",
 
-                        headers: {
-
-                            ...githubHeaders(),
-
-                            "Content-Type":
-                                "application/json"
-
-                        },
-
                         body:
-                            JSON.stringify(
-                                body
-                            )
+                            JSON.stringify(body)
 
                     }
                 );
 
 
-            const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                console.error(
-                    "[GITHUB UPLOAD ERROR]",
-                    data
-                );
-
-
-                return res.status(
-                    response.status
-                ).json({
-
-                    success: false,
-
-                    error:
-                        `GitHub API ${response.status}: ${data.message || "Upload impossible"}`,
-
-                    details:
-                        data
-
-                });
-
-            }
+            const download =
+                result.content?.download_url ||
+                `https://raw.githubusercontent.com/` +
+                `${GITHUB_OWNER}/` +
+                `${GITHUB_REPO}/` +
+                `${filePath}`;
 
 
             console.log(
-                `[UPLOAD OK] ${githubPath}`
+                "UPLOAD OK:",
+                filePath
             );
 
 
@@ -708,20 +979,19 @@ app.post(
                 message:
                     "Fichier envoyé sur GitHub",
 
-                folder:
-                    folder,
-
-                filename:
-                    cleanFilename,
+                folder,
 
                 path:
-                    githubPath,
+                    filePath,
 
-                download:
-                    data.content.download_url,
+                name:
+                    cleanFilename,
 
-                github:
-                    data.content.html_url
+                sha:
+                    result.content?.sha ||
+                    null,
+
+                download
 
             });
 
@@ -730,19 +1000,26 @@ app.post(
         catch (error) {
 
             console.error(
-                "[UPLOAD ERROR]",
+                "UPLOAD ERROR:",
                 error
             );
 
 
-            res.status(500).json({
+            res
+                .status(
+                    error.status || 500
+                )
+                .json({
 
-                success: false,
+                    success: false,
 
-                error:
-                    error.message
+                    error:
+                        error.message,
 
-            });
+                    details:
+                        error.github || null
+
+                });
 
         }
 
@@ -754,6 +1031,118 @@ app.post(
    CHAT
 ========================================================= */
 
+app.get(
+    "/api/chat",
+    async (req, res) => {
+
+        const folder =
+            mediaPath(
+                "chat-log"
+            );
+
+
+        try {
+
+            const url =
+                `https://api.github.com/repos/` +
+                `${encodeURIComponent(GITHUB_OWNER)}/` +
+                `${encodeURIComponent(GITHUB_REPO)}/` +
+                `contents/${folder}?ref=` +
+                `${encodeURIComponent(GITHUB_BRANCH)}`;
+
+
+            const data =
+                await githubRequest(
+                    url
+                );
+
+
+            const files =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+
+            const logs =
+                files
+                    .filter(
+                        file =>
+                            file.type ===
+                            "file"
+                    )
+                    .map(
+                        file => ({
+
+                            name:
+                                file.name,
+
+                            path:
+                                file.path,
+
+                            download:
+                                file.download_url
+
+                        })
+                    );
+
+
+            res.json({
+
+                success: true,
+
+                files:
+                    logs
+
+            });
+
+        }
+
+        catch (error) {
+
+            if (
+                error.status === 404
+            ) {
+
+                return res.json({
+
+                    success: true,
+
+                    files: []
+
+                });
+
+            }
+
+
+            console.error(
+                "CHAT GET ERROR:",
+                error
+            );
+
+
+            res
+                .status(
+                    error.status || 500
+                )
+                .json({
+
+                    success: false,
+
+                    error:
+                        error.message
+
+                });
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   ENVOI CHAT
+========================================================= */
+
 app.post(
     "/api/chat",
     async (req, res) => {
@@ -763,211 +1152,144 @@ app.post(
             const username =
                 String(
                     req.body.username || ""
-                ).trim();
+                )
+                .trim()
+                .substring(
+                    0,
+                    24
+                );
 
 
             const message =
                 String(
                     req.body.message || ""
-                ).trim();
+                )
+                .trim()
+                .substring(
+                    0,
+                    500
+                );
 
 
             if (!username) {
 
-                return res.status(400).json({
+                return res
+                    .status(400)
+                    .json({
 
-                    success: false,
+                        success: false,
 
-                    error:
-                        "Pseudo manquant"
+                        error:
+                            "Pseudo manquant"
 
-                });
+                    });
 
             }
 
 
             if (!message) {
 
-                return res.status(400).json({
+                return res
+                    .status(400)
+                    .json({
 
-                    success: false,
+                        success: false,
 
-                    error:
-                        "Message manquant"
+                        error:
+                            "Message manquant"
 
-                });
+                    });
 
             }
+
+
+            const now =
+                new Date();
 
 
             const timestamp =
-                new Date().toISOString();
-
-
-            const safeUsername =
-                username
-                    .replace(
-                        /[^a-zA-Z0-9_-]/g,
-                        "_"
-                    )
-                    .substring(
-                        0,
-                        24
-                    );
-
-
-            const line =
-                `[${timestamp}] ` +
-                `${safeUsername}: ` +
-                `${message}\n`;
-
-
-            const filename =
-                `${new Date()
-                    .toISOString()
-                    .slice(0, 10)}.txt`;
-
-
-            const githubPath =
-                `chat-log/${filename}`;
-
-
-            const url =
-                `https://api.github.com/repos/` +
-                `${GITHUB_OWNER}/` +
-                `${GITHUB_REPO}/contents/` +
-                `${githubPath}`;
+                now.toISOString();
 
 
             /*
-               Cherche le log actuel.
+                Nom unique du log.
+
+                Exemple :
+
+                2026-08-29T15-40-12-123Z.txt
             */
 
-            let oldContent =
-                "";
+            const filename =
+                timestamp
+                    .replace(
+                        /[:.]/g,
+                        "-"
+                    ) +
+                "-" +
+                Math.random()
+                    .toString(36)
+                    .substring(
+                        2,
+                        8
+                    ) +
+                ".txt";
 
 
-            let sha =
-                undefined;
-
-
-            const existing =
-                await fetch(
-                    `${url}?ref=${encodeURIComponent(GITHUB_BRANCH)}`,
-                    {
-
-                        headers:
-                            githubHeaders()
-
-                    }
+            const filePath =
+                githubPath(
+                    mediaPath(
+                        "chat-log"
+                    ),
+                    filename
                 );
 
 
-            if (existing.ok) {
-
-                const data =
-                    await existing.json();
-
-
-                sha =
-                    data.sha;
+            const text =
+`[${timestamp}]
+USER: ${username}
+MESSAGE: ${message}
+----------------------------------------
+`;
 
 
-                if (data.content) {
-
-                    oldContent =
-                        Buffer
-                            .from(
-                                data.content,
-                                "base64"
-                            )
-                            .toString(
-                                "utf8"
-                            );
-
-                }
-
-            }
+            const base64 =
+                Buffer
+                    .from(
+                        text,
+                        "utf8"
+                    )
+                    .toString(
+                        "base64"
+                    );
 
 
-            const newContent =
-                oldContent +
-                line;
-
-
-            const body = {
-
-                message:
-                    `Chat log ${filename}`,
-
-                content:
-                    Buffer
-                        .from(
-                            newContent,
-                            "utf8"
-                        )
-                        .toString(
-                            "base64"
-                        ),
-
-                branch:
-                    GITHUB_BRANCH
-
-            };
-
-
-            if (sha) {
-
-                body.sha =
-                    sha;
-
-            }
-
-
-            const response =
-                await fetch(
-                    url,
+            const result =
+                await githubRequest(
+                    `https://api.github.com/repos/` +
+                    `${encodeURIComponent(GITHUB_OWNER)}/` +
+                    `${encodeURIComponent(GITHUB_REPO)}/` +
+                    `contents/${filePath}`,
                     {
 
                         method:
                             "PUT",
 
-                        headers: {
-
-                            ...githubHeaders(),
-
-                            "Content-Type":
-                                "application/json"
-
-                        },
-
                         body:
-                            JSON.stringify(
-                                body
-                            )
+                            JSON.stringify({
+
+                                message:
+                                    `Chat message ${username}`,
+
+                                content:
+                                    base64,
+
+                                branch:
+                                    GITHUB_BRANCH
+
+                            })
 
                     }
                 );
-
-
-            const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                return res.status(
-                    response.status
-                ).json({
-
-                    success: false,
-
-                    error:
-                        `GitHub API ${response.status}: ${data.message || "Erreur chat"}`
-
-                });
-
-            }
 
 
             res.json({
@@ -977,8 +1299,12 @@ app.post(
                 message:
                     "Message enregistré",
 
-                log:
-                    githubPath
+                path:
+                    filePath,
+
+                sha:
+                    result.content?.sha ||
+                    null
 
             });
 
@@ -987,19 +1313,26 @@ app.post(
         catch (error) {
 
             console.error(
-                "[CHAT ERROR]",
+                "CHAT POST ERROR:",
                 error
             );
 
 
-            res.status(500).json({
+            res
+                .status(
+                    error.status || 500
+                )
+                .json({
 
-                success: false,
+                    success: false,
 
-                error:
-                    error.message
+                    error:
+                        error.message,
 
-            });
+                    details:
+                        error.github || null
+
+                });
 
         }
 
@@ -1008,24 +1341,81 @@ app.post(
 
 
 /* =========================================================
-   404 API
+   ROUTE API 404
 ========================================================= */
+
+/*
+    IMPORTANT :
+
+    Les routes /api/... doivent renvoyer
+    du JSON et PAS index.html.
+
+    Cela empêche l'erreur :
+
+    Unexpected token '<'
+*/
 
 app.use(
     "/api",
     (req, res) => {
 
-        res.status(404).json({
+        res
+            .status(404)
+            .json({
 
-            success: false,
+                success: false,
 
-            error:
-                "API endpoint introuvable",
+                error:
+                    "API route introuvable",
 
-            path:
-                req.originalUrl
+                path:
+                    req.originalUrl
 
-        });
+            });
+
+    }
+);
+
+
+/* =========================================================
+   ERREUR GÉNÉRALE
+========================================================= */
+
+app.use(
+    (err, req, res, next) => {
+
+        console.error(
+            "SERVER ERROR:",
+            err
+        );
+
+
+        if (
+            req.originalUrl.startsWith(
+                "/api/"
+            )
+        ) {
+
+            return res
+                .status(500)
+                .json({
+
+                    success: false,
+
+                    error:
+                        err.message ||
+                        "Erreur serveur"
+
+                });
+
+        }
+
+
+        res
+            .status(500)
+            .send(
+                "Erreur serveur."
+            );
 
     }
 );
@@ -1053,33 +1443,30 @@ app.listen(
         );
 
         console.log(
-            `Server running on port ${PORT}`
+            "Server running on port " +
+            PORT
         );
 
         console.log(
-            `GitHub repository: ${GITHUB_OWNER}/${GITHUB_REPO}`
+            "Repository: " +
+            `${GITHUB_OWNER}/${GITHUB_REPO}`
         );
 
         console.log(
-            `GitHub branch: ${GITHUB_BRANCH}`
+            "Branch: " +
+            GITHUB_BRANCH
         );
 
         console.log(
-            `GitHub token: ${
-                GITHUB_TOKEN
-                    ? "OK"
-                    : "MISSING"
-            }`
+            "Media root: " +
+            (GITHUB_MEDIA_ROOT || "(racine)")
         );
 
         console.log(
-            "Folders:"
-        );
-
-        console.log(
-            ALLOWED_FOLDERS.join(
-                ", "
-            )
+            "GitHub token: " +
+            (GITHUB_TOKEN
+                ? "CONFIGURED"
+                : "MISSING")
         );
 
     }
