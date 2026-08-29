@@ -12,8 +12,7 @@ const app = express();
 
 const PORT = process.env.PORT || 10000;
 
-const GITHUB_TOKEN =
-    process.env.GITHUB_TOKEN;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 const GITHUB_OWNER =
     process.env.GITHUB_OWNER ||
@@ -52,34 +51,29 @@ app.use(
    CORS
 ========================================================= */
 
-app.use(
-    (req, res, next) => {
+app.use((req, res, next) => {
 
-        res.setHeader(
-            "Access-Control-Allow-Origin",
-            "*"
-        );
+    res.setHeader(
+        "Access-Control-Allow-Origin",
+        "*"
+    );
 
-        res.setHeader(
-            "Access-Control-Allow-Methods",
-            "GET,POST,OPTIONS"
-        );
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET,POST,OPTIONS"
+    );
 
-        res.setHeader(
-            "Access-Control-Allow-Headers",
-            "Content-Type"
-        );
+    res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+    );
 
-        if (req.method === "OPTIONS") {
-
-            return res.sendStatus(204);
-
-        }
-
-        next();
-
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(204);
     }
-);
+
+    next();
+});
 
 
 /* =========================================================
@@ -100,140 +94,123 @@ const wss =
     });
 
 
-wss.on(
-    "connection",
-    (socket) => {
+wss.on("connection", (socket) => {
+
+    console.log(
+        "[WSS] Nouveau client connecté"
+    );
+
+    socket.send(
+        JSON.stringify({
+            type: "system",
+            message:
+                "Connexion à David Random réussie."
+        })
+    );
+
+
+    socket.on("message", (rawMessage) => {
+
+        try {
+
+            const data =
+                JSON.parse(
+                    rawMessage.toString()
+                );
+
+
+            if (
+                data.type !== "chat"
+            ) {
+                return;
+            }
+
+
+            const username =
+                String(
+                    data.username ||
+                    "Anonymous"
+                )
+                .trim()
+                .substring(0, 24);
+
+
+            const message =
+                String(
+                    data.message ||
+                    ""
+                )
+                .trim()
+                .substring(0, 500);
+
+
+            if (!message) {
+                return;
+            }
+
+
+            const chatMessage = {
+
+                type: "chat",
+
+                username:
+                    username ||
+                    "Anonymous",
+
+                message,
+
+                time:
+                    new Date()
+                        .toISOString()
+
+            };
+
+
+            broadcast(
+                chatMessage
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "[WSS] Message invalide:",
+                error
+            );
+
+            socket.send(
+                JSON.stringify({
+                    type: "system",
+                    message:
+                        "Message invalide."
+                })
+            );
+
+        }
+
+    });
+
+
+    socket.on("close", () => {
 
         console.log(
-            "[WSS] Nouveau client connecté"
+            "[WSS] Client déconnecté"
         );
 
-        socket.send(
-            JSON.stringify({
-                type: "system",
-                message:
-                    "Connexion à David Random réussie."
-            })
+    });
+
+
+    socket.on("error", (error) => {
+
+        console.error(
+            "[WSS] Socket error:",
+            error
         );
 
+    });
 
-        socket.on(
-            "message",
-            (rawMessage) => {
-
-                try {
-
-                    const data =
-                        JSON.parse(
-                            rawMessage.toString()
-                        );
-
-
-                    if (
-                        data.type !==
-                        "chat"
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    const username =
-                        String(
-                            data.username ||
-                            "Anonymous"
-                        )
-                        .trim()
-                        .substring(0, 24);
-
-
-                    const message =
-                        String(
-                            data.message ||
-                            ""
-                        )
-                        .trim()
-                        .substring(0, 500);
-
-
-                    if (!message) {
-
-                        return;
-
-                    }
-
-
-                    const chatMessage = {
-
-                        type: "chat",
-
-                        username:
-                            username ||
-                            "Anonymous",
-
-                        message,
-
-                        time:
-                            new Date()
-                                .toISOString()
-
-                    };
-
-
-                    broadcast(
-                        chatMessage
-                    );
-
-                }
-
-                catch (error) {
-
-                    console.error(
-                        "[WSS] Message invalide:",
-                        error
-                    );
-
-                    socket.send(
-                        JSON.stringify({
-                            type: "system",
-                            message:
-                                "Message invalide."
-                        })
-                    );
-
-                }
-
-            }
-        );
-
-
-        socket.on(
-            "close",
-            () => {
-
-                console.log(
-                    "[WSS] Client déconnecté"
-                );
-
-            }
-        );
-
-
-        socket.on(
-            "error",
-            (error) => {
-
-                console.error(
-                    "[WSS] Socket error:",
-                    error
-                );
-
-            }
-        );
-
-    }
-);
+});
 
 
 /* =========================================================
@@ -330,6 +307,7 @@ async function githubRequest(
 
     let data = null;
 
+
     try {
 
         data =
@@ -406,17 +384,6 @@ function accountsConfigured() {
    ENCRYPTION KEY
 ========================================================= */
 
-/*
-   La clé doit être exactement 32 octets.
-
-   On accepte :
-   - Base64 URL-safe
-   - Base64 classique
-   - hexadécimal de 64 caractères
-
-   La valeur générée précédemment est Base64 URL-safe.
-*/
-
 function getEncryptionKey() {
 
     if (!ACCOUNTS_ENCRYPTION_KEY) {
@@ -432,9 +399,10 @@ function getEncryptionKey() {
         ACCOUNTS_ENCRYPTION_KEY.trim();
 
 
-    /* -----------------------------------------
-       HEX 64 caractères
-    ----------------------------------------- */
+    /*
+       HEX
+       64 caractères = 32 octets
+    */
 
     if (
         /^[0-9a-fA-F]{64}$/.test(value)
@@ -448,17 +416,15 @@ function getEncryptionKey() {
 
 
         if (key.length === 32) {
-
             return key;
-
         }
 
     }
 
 
-    /* -----------------------------------------
-       BASE64
-    ----------------------------------------- */
+    /*
+       BASE64 / BASE64URL
+    */
 
     try {
 
@@ -485,17 +451,13 @@ function getEncryptionKey() {
 
 
         if (key.length === 32) {
-
             return key;
-
         }
 
     }
 
     catch {
-
-        // continuer vers l'erreur
-
+        // erreur plus bas
     }
 
 
@@ -548,12 +510,6 @@ function encryptAccounts(accounts) {
         cipher.getAuthTag();
 
 
-    /*
-       Format :
-
-       DR1:IV:AUTH_TAG:DATA
-    */
-
     return [
         "DR1",
         iv.toString("base64url"),
@@ -568,7 +524,9 @@ function encryptAccounts(accounts) {
    DECRYPTION
 ========================================================= */
 
-function decryptAccounts(encryptedText) {
+function decryptAccounts(
+    encryptedText
+) {
 
     const key =
         getEncryptionKey();
@@ -577,7 +535,9 @@ function decryptAccounts(encryptedText) {
     const parts =
         String(
             encryptedText || ""
-        ).trim().split(":");
+        )
+        .trim()
+        .split(":");
 
 
     if (
@@ -672,12 +632,6 @@ function decryptAccounts(encryptedText) {
 /* =========================================================
    PASSWORD HASH
 ========================================================= */
-
-/*
-   Le mot de passe n'est jamais stocké.
-
-   scrypt + salt unique par compte.
-*/
 
 function hashPassword(password) {
 
@@ -809,9 +763,7 @@ function verifyPassword(
 
             catch (error) {
 
-                reject(
-                    error
-                );
+                reject(error);
 
             }
 
@@ -822,7 +774,7 @@ function verifyPassword(
 
 
 /* =========================================================
-   USERNAME VALIDATION
+   USERNAME
 ========================================================= */
 
 function normalizeUsername(username) {
@@ -839,15 +791,13 @@ function normalizeUsername(username) {
 function validUsername(username) {
 
     return /^[a-zA-Z0-9_-]{3,24}$/
-        .test(
-            username
-        );
+        .test(username);
 
 }
 
 
 /* =========================================================
-   PASSWORD VALIDATION
+   PASSWORD
 ========================================================= */
 
 function validPassword(password) {
@@ -862,7 +812,7 @@ function validPassword(password) {
 
 
 /* =========================================================
-   GET USERS FILE FROM GITHUB
+   GET USERS
 ========================================================= */
 
 async function getUsersFile() {
@@ -911,7 +861,8 @@ async function getUsersFile() {
         const encoded =
             String(
                 data.content
-            ).replace(
+            )
+            .replace(
                 /\s/g,
                 ""
             );
@@ -921,7 +872,8 @@ async function getUsersFile() {
             Buffer.from(
                 encoded,
                 "base64"
-            ).toString(
+            )
+            .toString(
                 "utf8"
             );
 
@@ -944,10 +896,6 @@ async function getUsersFile() {
     }
 
     catch (error) {
-
-        /*
-           Le fichier n'existe pas encore.
-        */
 
         if (
             error.status === 404
@@ -972,7 +920,7 @@ async function getUsersFile() {
 
 
 /* =========================================================
-   SAVE USERS FILE TO GITHUB
+   SAVE USERS
 ========================================================= */
 
 async function saveUsersFile(
@@ -999,7 +947,8 @@ async function saveUsersFile(
         Buffer.from(
             encrypted,
             "utf8"
-        ).toString(
+        )
+        .toString(
             "base64"
         );
 
@@ -1037,31 +986,109 @@ async function saveUsersFile(
         );
 
 
-    const result =
-        await githubRequest(
-            url,
-            {
+    return await githubRequest(
+        url,
+        {
 
-                method:
-                    "PUT",
+            method:
+                "PUT",
 
-                headers: {
+            headers: {
 
-                    "Content-Type":
-                        "application/json"
+                "Content-Type":
+                    "application/json"
 
-                },
+            },
 
-                body:
-                    JSON.stringify(
-                        body
-                    )
+            body:
+                JSON.stringify(
+                    body
+                )
 
-            }
+        }
+    );
+
+}
+
+
+/* =========================================================
+   SESSION TOKENS
+========================================================= */
+
+/*
+   Les tokens sont conservés uniquement en mémoire
+   du serveur.
+
+   Si Render redémarre :
+   les anciennes sessions sont invalidées.
+*/
+
+const sessions =
+    new Map();
+
+
+function createSession(username) {
+
+    const token =
+        crypto.randomBytes(32)
+            .toString("base64url");
+
+
+    sessions.set(
+        token,
+        {
+            username,
+            createdAt:
+                Date.now()
+        }
+    );
+
+
+    return token;
+
+}
+
+
+function getSessionUser(req) {
+
+    const authorization =
+        String(
+            req.headers.authorization || ""
         );
 
 
-    return result;
+    if (
+        !authorization.startsWith(
+            "Bearer "
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    const token =
+        authorization
+            .slice(7)
+            .trim();
+
+
+    if (!token) {
+        return null;
+    }
+
+
+    const session =
+        sessions.get(token);
+
+
+    if (!session) {
+        return null;
+    }
+
+
+    return session.username;
 
 }
 
@@ -1104,9 +1131,7 @@ app.post(
 
 
             if (
-                !validUsername(
-                    username
-                )
+                !validUsername(username)
             ) {
 
                 return res.status(400).json({
@@ -1122,9 +1147,7 @@ app.post(
 
 
             if (
-                !validPassword(
-                    password
-                )
+                !validPassword(password)
             ) {
 
                 return res.status(400).json({
@@ -1205,20 +1228,28 @@ app.post(
             );
 
 
+            const token =
+                createSession(
+                    username
+                );
+
+
             console.log(
                 "[ACCOUNT] Compte créé:",
                 username
             );
 
 
-            res.json({
+            return res.json({
 
                 success: true,
 
                 message:
                     "Compte créé avec succès.",
 
-                username
+                username,
+
+                token
 
             });
 
@@ -1232,7 +1263,7 @@ app.post(
             );
 
 
-            res.status(
+            return res.status(
                 error.status || 500
             )
             .json({
@@ -1320,11 +1351,6 @@ app.post(
                 );
 
 
-            /*
-               Même réponse dans les deux cas :
-               cela évite de révéler si le compte existe.
-            */
-
             if (!user) {
 
                 return res.status(401).json({
@@ -1361,20 +1387,28 @@ app.post(
             }
 
 
+            const token =
+                createSession(
+                    username
+                );
+
+
             console.log(
                 "[ACCOUNT] Connexion réussie:",
                 username
             );
 
 
-            res.json({
+            return res.json({
 
                 success: true,
 
                 message:
                     "Connexion réussie.",
 
-                username
+                username,
+
+                token
 
             });
 
@@ -1388,7 +1422,7 @@ app.post(
             );
 
 
-            res.status(
+            return res.status(
                 error.status || 500
             )
             .json({
@@ -1402,6 +1436,90 @@ app.post(
             });
 
         }
+
+    }
+);
+
+
+/* =========================================================
+   ACCOUNT ME
+========================================================= */
+
+app.get(
+    "/api/account/me",
+    (req, res) => {
+
+        const username =
+            getSessionUser(req);
+
+
+        if (!username) {
+
+            return res.status(401).json({
+
+                success: false,
+
+                error:
+                    "Session invalide ou absente."
+
+            });
+
+        }
+
+
+        return res.json({
+
+            success: true,
+
+            username
+
+        });
+
+    }
+);
+
+
+/* =========================================================
+   ACCOUNT LOGOUT
+========================================================= */
+
+app.post(
+    "/api/account/logout",
+    (req, res) => {
+
+        const authorization =
+            String(
+                req.headers.authorization || ""
+            );
+
+
+        if (
+            authorization.startsWith(
+                "Bearer "
+            )
+        ) {
+
+            const token =
+                authorization
+                    .slice(7)
+                    .trim();
+
+
+            sessions.delete(
+                token
+            );
+
+        }
+
+
+        return res.json({
+
+            success: true,
+
+            message:
+                "Déconnexion réussie."
+
+        });
 
     }
 );
@@ -1429,7 +1547,10 @@ app.get(
                 "AES-256-GCM",
 
             passwordHash:
-                "scrypt"
+                "scrypt",
+
+            sessions:
+                sessions.size
 
         });
 
@@ -1464,10 +1585,7 @@ function safeFilename(filename) {
 
 
     if (!name) {
-
-        name =
-            "file";
-
+        name = "file";
     }
 
 
@@ -1527,11 +1645,9 @@ app.get(
                         )}/${encodeURIComponent(
                             GITHUB_REPO
                         )}`
-                    ),
-                    {
-                        method: "GET"
-                    }
+                    )
                 );
+
 
                 githubOnline =
                     true;
@@ -1582,6 +1698,9 @@ app.get(
             passwordHash:
                 "scrypt",
 
+            activeSessions:
+                sessions.size,
+
             repository:
                 `${GITHUB_OWNER}/${GITHUB_REPO}`,
 
@@ -1614,7 +1733,8 @@ app.get(
         const folder =
             String(
                 req.params.folder || ""
-            ).toLowerCase();
+            )
+            .toLowerCase();
 
 
         if (!validFolder(folder)) {
@@ -1714,8 +1834,7 @@ app.get(
 
 
             if (
-                error.status ===
-                404
+                error.status === 404
             ) {
 
                 return res.json({
@@ -1916,8 +2035,7 @@ app.post(
             catch (error) {
 
                 if (
-                    error.status !==
-                    404
+                    error.status !== 404
                 ) {
 
                     throw error;
@@ -2058,6 +2176,9 @@ app.get(
 
 <meta charset="UTF-8">
 
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
 <title>David Random Server</title>
 
 <style>
@@ -2065,8 +2186,11 @@ app.get(
 body {
 
     background:#050505;
+
     color:#35ff5a;
+
     font-family:monospace;
+
     padding:30px;
 
 }
@@ -2080,6 +2204,18 @@ h1 {
 .ok {
 
     color:#35ff5a;
+
+}
+
+.bad {
+
+    color:#ff4444;
+
+}
+
+a {
+
+    color:#00ffff;
 
 }
 
@@ -2103,8 +2239,13 @@ API : ONLINE
 WebSocket : ONLINE
 </p>
 
-<p class="ok">
-Encrypted Accounts : ${
+<p class="${
+    accountsConfigured()
+        ? "ok"
+        : "bad"
+}">
+Encrypted Accounts :
+${
     accountsConfigured()
         ? "ONLINE"
         : "NOT CONFIGURED"
@@ -2120,6 +2261,8 @@ ${GITHUB_OWNER}/${GITHUB_REPO}
 Encrypted file :
 ${USERS_FILE}
 </p>
+
+<hr>
 
 <p>
 <a href="/api/status">
@@ -2238,6 +2381,11 @@ server.listen(
         console.log(
             "Encrypted accounts :",
             USERS_FILE
+        );
+
+        console.log(
+            "Active sessions :",
+            sessions.size
         );
 
         console.log(
