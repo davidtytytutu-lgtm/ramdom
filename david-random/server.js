@@ -1,79 +1,82 @@
+"use strict";
+
+/*
+=========================================================
+ DAVID RANDOM V2
+ Render + GitHub Storage + WebSocket + Accounts
+=========================================================
+*/
+
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
+const crypto = require("crypto");
 
 const app = express();
 const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+/*
+=========================================================
+ CONFIGURATION
+=========================================================
+*/
 
 const PORT = process.env.PORT || 10000;
 
-/*
-=========================================================
-CONFIGURATION
-=========================================================
-*/
-
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OWNER =
-    process.env.GITHUB_OWNER ||
-    "davidtytytutu-lgtm";
+    process.env.GITHUB_OWNER || "davidtytytutu-lgtm";
 
 const GITHUB_REPO =
-    process.env.GITHUB_REPO ||
-    "ramdom";
+    process.env.GITHUB_REPO || "ramdom";
 
 const GITHUB_BRANCH =
-    process.env.GITHUB_BRANCH ||
-    "main";
+    process.env.GITHUB_BRANCH || "main";
 
-const GITHUB_TOKEN =
-    process.env.GITHUB_TOKEN;
+const SESSION_SECRET =
+    process.env.SESSION_SECRET ||
+    crypto.randomBytes(32).toString("hex");
 
-const CHAT_FOLDER =
-    "chat-log";
+const MAX_FILE_SIZE =
+    25 * 1024 * 1024;
 
-const CHAT_MAX_SIZE =
-    20 * 1024 * 1024; // 20 Mo
+const MAX_MESSAGE_LENGTH = 500;
 
-const MAX_MESSAGE_LENGTH =
-    500;
+const ALLOWED_FOLDERS = [
+    "image",
+    "music",
+    "video",
+    "chat-log"
+];
 
-const MAX_USERNAME_LENGTH =
-    24;
-
-
-/*
-=========================================================
-DOSSIERS MEDIA
-=========================================================
-*/
-
-const MEDIA_FOLDERS = {
-    image: "image",
-    music: "music",
-    video: "video"
-};
+const MEDIA_FOLDERS = [
+    "image",
+    "music",
+    "video"
+];
 
 
 /*
 =========================================================
-EXPRESS
+ EXPRESS
 =========================================================
 */
 
-app.use(
-    express.json({
-        limit: "1mb"
-    })
-);
+app.use(express.json({
+    limit: "35mb"
+}));
 
+app.use(express.urlencoded({
+    extended: true,
+    limit: "35mb"
+}));
 
 /*
-=========================================================
-CORS
-=========================================================
+ CORS
 */
 
-app.use(function(req, res, next) {
+app.use((req, res, next) => {
 
     res.setHeader(
         "Access-Control-Allow-Origin",
@@ -82,7 +85,7 @@ app.use(function(req, res, next) {
 
     res.setHeader(
         "Access-Control-Allow-Methods",
-        "GET,POST,PUT,OPTIONS"
+        "GET,POST,PUT,DELETE,OPTIONS"
     );
 
     res.setHeader(
@@ -101,11 +104,273 @@ app.use(function(req, res, next) {
 
 /*
 =========================================================
-GITHUB HEADERS
+ UTILITAIRES
+=========================================================
+*/
+
+function nowISO() {
+    return new Date().toISOString();
+}
+
+
+function cleanUsername(username) {
+
+    return String(username || "")
+        .trim();
+
+}
+
+
+function safeFilename(filename) {
+
+    return String(filename || "")
+        .replace(/\\/g, "_")
+        .replace(/\//g, "_")
+        .replace(/\.\./g, "_")
+        .trim();
+
+}
+
+
+function normalizeFolder(folder) {
+
+    return String(folder || "")
+        .trim()
+        .replace(/^\/+/, "")
+        .replace(/\/+$/, "");
+
+}
+
+
+function base64Encode(buffer) {
+
+    return Buffer
+        .from(buffer)
+        .toString("base64");
+
+}
+
+
+function base64Decode(data) {
+
+    return Buffer
+        .from(data, "base64");
+
+}
+
+
+/*
+=========================================================
+ PASSWORD HASH
+=========================================================
+*/
+
+function hashPassword(password) {
+
+    const salt =
+        crypto.randomBytes(16).toString("hex");
+
+    const hash =
+        crypto.scryptSync(
+            password,
+            salt,
+            64
+        ).toString("hex");
+
+    return `${salt}:${hash}`;
+
+}
+
+
+function verifyPassword(password, stored) {
+
+    try {
+
+        const parts =
+            String(stored).split(":");
+
+        if (parts.length !== 2) {
+            return false;
+        }
+
+        const salt = parts[0];
+        const originalHash = parts[1];
+
+        const hash =
+            crypto.scryptSync(
+                password,
+                salt,
+                64
+            ).toString("hex");
+
+        return crypto.timingSafeEqual(
+            Buffer.from(hash, "hex"),
+            Buffer.from(originalHash, "hex")
+        );
+
+    }
+    catch {
+
+        return false;
+
+    }
+
+}
+
+
+/*
+=========================================================
+ SESSION TOKENS
+=========================================================
+*/
+
+function createToken(user) {
+
+    const payload = {
+        id: user.id,
+        username: user.username,
+        iat: Date.now()
+    };
+
+    const encoded =
+        Buffer
+            .from(JSON.stringify(payload))
+            .toString("base64url");
+
+    const signature =
+        crypto
+            .createHmac(
+                "sha256",
+                SESSION_SECRET
+            )
+            .update(encoded)
+            .digest("base64url");
+
+    return `${encoded}.${signature}`;
+
+}
+
+
+function verifyToken(token) {
+
+    try {
+
+        if (!token) {
+            return null;
+        }
+
+        const parts =
+            String(token).split(".");
+
+        if (parts.length !== 2) {
+            return null;
+        }
+
+        const encoded = parts[0];
+        const signature = parts[1];
+
+        const expected =
+            crypto
+                .createHmac(
+                    "sha256",
+                    SESSION_SECRET
+                )
+                .update(encoded)
+                .digest("base64url");
+
+        if (
+            signature.length !== expected.length ||
+            !crypto.timingSafeEqual(
+                Buffer.from(signature),
+                Buffer.from(expected)
+            )
+        ) {
+            return null;
+        }
+
+        const payload =
+            JSON.parse(
+                Buffer
+                    .from(encoded, "base64url")
+                    .toString("utf8")
+            );
+
+        return payload;
+
+    }
+    catch {
+
+        return null;
+
+    }
+
+}
+
+
+function getBearerToken(req) {
+
+    const header =
+        req.headers.authorization || "";
+
+    if (!header.startsWith("Bearer ")) {
+        return null;
+    }
+
+    return header.slice(7).trim();
+
+}
+
+
+function getUserFromRequest(req) {
+
+    const token =
+        getBearerToken(req);
+
+    if (!token) {
+        return null;
+    }
+
+    return verifyToken(token);
+
+}
+
+
+function requireAuth(req, res, next) {
+
+    const user =
+        getUserFromRequest(req);
+
+    if (!user) {
+
+        return res.status(401).json({
+            success: false,
+            error: "Authentication required"
+        });
+
+    }
+
+    req.user = user;
+
+    next();
+
+}
+
+
+/*
+=========================================================
+ GITHUB API
 =========================================================
 */
 
 function githubHeaders() {
+
+    if (!GITHUB_TOKEN) {
+
+        throw new Error(
+            "GITHUB_TOKEN is missing"
+        );
+
+    }
 
     return {
 
@@ -119,28 +384,25 @@ function githubHeaders() {
             "2022-11-28",
 
         "User-Agent":
-            "David-Random-Server"
+            "David-Random-V2"
 
     };
 
 }
 
 
-/*
-=========================================================
-GITHUB URL
-=========================================================
-*/
+function githubContentsURL(path = "") {
 
-function githubURL(path) {
+    const cleanPath =
+        String(path)
+            .replace(/^\/+/, "");
 
     return (
-        "https://api.github.com/repos/" +
-        encodeURIComponent(GITHUB_OWNER) +
-        "/" +
-        encodeURIComponent(GITHUB_REPO) +
-        "/contents/" +
-        path
+        `https://api.github.com/repos/` +
+        `${encodeURIComponent(GITHUB_OWNER)}/` +
+        `${encodeURIComponent(GITHUB_REPO)}/` +
+        `contents/` +
+        cleanPath
     );
 
 }
@@ -148,74 +410,98 @@ function githubURL(path) {
 
 /*
 =========================================================
-GITHUB REQUEST
+ GITHUB GET
 =========================================================
 */
 
-async function githubRequest(
-    url,
-    options = {}
-) {
+async function githubGet(path) {
 
-    if (!GITHUB_TOKEN) {
+    const response =
+        await fetch(
+            githubContentsURL(path),
+            {
+                method: "GET",
+                headers: githubHeaders(),
+                cache: "no-store"
+            }
+        );
+
+    if (response.status === 404) {
+        return null;
+    }
+
+    if (!response.ok) {
+
+        const text =
+            await response.text();
 
         throw new Error(
-            "GITHUB_TOKEN manquant."
+            `GitHub GET ${response.status}: ${text}`
         );
 
     }
 
+    return await response.json();
+
+}
+
+
+/*
+=========================================================
+ GITHUB PUT
+=========================================================
+*/
+
+async function githubPut(
+    path,
+    content,
+    message,
+    sha = null
+) {
+
+    const body = {
+
+        message,
+
+        content
+
+    };
+
+    if (sha) {
+        body.sha = sha;
+    }
+
+    body.branch =
+        GITHUB_BRANCH;
+
     const response =
         await fetch(
-            url,
+            githubContentsURL(path),
             {
-
-                ...options,
+                method: "PUT",
 
                 headers: {
-
                     ...githubHeaders(),
+                    "Content-Type":
+                        "application/json"
+                },
 
-                    ...(options.headers || {})
-
-                }
-
+                body:
+                    JSON.stringify(body)
             }
         );
 
 
-    let data = null;
-
-    try {
-
-        data =
-            await response.json();
-
-    }
-
-    catch {
-
-        data = null;
-
-    }
+    const data =
+        await response.json();
 
 
     if (!response.ok) {
 
-        const error =
-            new Error(
-                data && data.message
-                    ? data.message
-                    : `GitHub HTTP ${response.status}`
-            );
-
-        error.status =
-            response.status;
-
-        error.data =
-            data;
-
-        throw error;
+        throw new Error(
+            data.message ||
+            `GitHub PUT ${response.status}`
+        );
 
     }
 
@@ -227,53 +513,212 @@ async function githubRequest(
 
 /*
 =========================================================
-ROOT
+ GITHUB DELETE
+=========================================================
+*/
+
+async function githubDelete(
+    path,
+    sha,
+    message
+) {
+
+    const response =
+        await fetch(
+            githubContentsURL(path),
+            {
+                method: "DELETE",
+
+                headers: {
+                    ...githubHeaders(),
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify({
+
+                        message,
+
+                        sha,
+
+                        branch:
+                            GITHUB_BRANCH
+
+                    })
+            }
+        );
+
+
+    const data =
+        await response.json();
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            data.message ||
+            `GitHub DELETE ${response.status}`
+        );
+
+    }
+
+
+    return data;
+
+}
+
+
+/*
+=========================================================
+ GITHUB DIRECTORY
+=========================================================
+*/
+
+async function githubListFolder(folder) {
+
+    const result =
+        await githubGet(folder);
+
+    if (result === null) {
+
+        /*
+           Le dossier peut être vide ou ne pas
+           encore exister.
+        */
+
+        return [];
+
+    }
+
+    if (!Array.isArray(result)) {
+
+        throw new Error(
+            "GitHub path is not a directory"
+        );
+
+    }
+
+    return result;
+
+}
+
+
+/*
+=========================================================
+ ACCOUNT DATABASE
+=========================================================
+
+ accounts.json sera stocké dans le dépôt GitHub.
+
+=========================================================
+*/
+
+const ACCOUNTS_FILE = "accounts.json";
+
+
+async function getAccountsFile() {
+
+    const file =
+        await githubGet(
+            ACCOUNTS_FILE
+        );
+
+    if (!file) {
+
+        return {
+
+            sha: null,
+
+            accounts: []
+
+        };
+
+    }
+
+
+    try {
+
+        const decoded =
+            Buffer
+                .from(
+                    file.content.replace(/\n/g, ""),
+                    "base64"
+                )
+                .toString("utf8");
+
+        const accounts =
+            JSON.parse(decoded);
+
+        return {
+
+            sha: file.sha,
+
+            accounts:
+                Array.isArray(accounts)
+                ? accounts
+                : []
+
+        };
+
+    }
+    catch {
+
+        return {
+
+            sha: file.sha,
+
+            accounts: []
+
+        };
+
+    }
+
+}
+
+
+async function saveAccounts(
+    accounts,
+    sha
+) {
+
+    const content =
+        Buffer
+            .from(
+                JSON.stringify(
+                    accounts,
+                    null,
+                    2
+                ),
+                "utf8"
+            )
+            .toString("base64");
+
+
+    return await githubPut(
+        ACCOUNTS_FILE,
+        content,
+        "Update accounts",
+        sha
+    );
+
+}
+
+
+/*
+=========================================================
+ STATUS
 =========================================================
 */
 
 app.get(
     "/",
-    function(req, res) {
+    (req, res) => {
 
         res.json({
-
-            success: true,
 
             name:
                 "DAVID RANDOM V2",
-
-            server:
-                "Render",
-
-            websocket:
-                true,
-
-            chat:
-                true,
-
-            media:
-                true
-
-        });
-
-    }
-);
-
-
-/*
-=========================================================
-STATUS
-=========================================================
-*/
-
-app.get(
-    "/api/status",
-    function(req, res) {
-
-        res.json({
-
-            success:
-                true,
 
             online:
                 true,
@@ -281,30 +726,46 @@ app.get(
             server:
                 "Render",
 
+            storage:
+                "GitHub",
+
             websocket:
                 true,
 
-            github:
-                Boolean(
-                    GITHUB_TOKEN
-                ),
+            time:
+                nowISO()
 
-            chat:
+        });
+
+    }
+);
+
+
+app.get(
+    "/api/status",
+    (req, res) => {
+
+        res.json({
+
+            online: true,
+
+            name:
+                "DAVID RANDOM V2",
+
+            server:
+                "Render",
+
+            storage:
+                "GitHub",
+
+            websocket:
                 true,
 
-            chatFolder:
-                CHAT_FOLDER,
+            repository:
+                `${GITHUB_OWNER}/${GITHUB_REPO}`,
 
-            chatMaxSize:
-                CHAT_MAX_SIZE,
-
-            media:
-                true,
-
-            mediaFolders:
-                Object.keys(
-                    MEDIA_FOLDERS
-                )
+            time:
+                nowISO()
 
         });
 
@@ -314,200 +775,184 @@ app.get(
 
 /*
 =========================================================
-MEDIA
+ ACCOUNT REGISTER
 =========================================================
 */
 
-/*
-URL :
-
-/api/media/image
-/api/media/music
-/api/media/video
-*/
-
-app.get(
-    "/api/media/:folder",
-    async function(req, res) {
-
-        const folderName =
-            String(
-                req.params.folder || ""
-            ).toLowerCase();
-
-
-        /*
-        -------------------------------------------------
-        Vérifier le dossier
-        -------------------------------------------------
-        */
-
-        if (
-            !MEDIA_FOLDERS[
-                folderName
-            ]
-        ) {
-
-            return res.status(400).json({
-
-                success:
-                    false,
-
-                error:
-                    "Dossier média invalide.",
-
-                allowed:
-                    Object.keys(
-                        MEDIA_FOLDERS
-                    )
-
-            });
-
-        }
-
-
-        const folder =
-            MEDIA_FOLDERS[
-                folderName
-            ];
-
-
-        console.log(
-            `[MEDIA ${folderName}] Chargement de ${folder}/`
-        );
-
+app.post(
+    "/api/account/register",
+    async (req, res) => {
 
         try {
 
-            const files =
-                await githubRequest(
-                    githubURL(
-                        folder
-                    )
+            const username =
+                cleanUsername(
+                    req.body.username
                 );
+
+            const password =
+                String(
+                    req.body.password || ""
+                );
+
+            const profilePicture =
+                req.body.profile_picture
+                ? String(
+                    req.body.profile_picture
+                ).trim()
+                : null;
 
 
             if (
-                !Array.isArray(files)
+                username.length < 3 ||
+                username.length > 24
             ) {
 
-                return res.json({
+                return res.status(400).json({
 
-                    success:
-                        true,
+                    success: false,
 
-                    folder:
-                        folder,
-
-                    files:
-                        []
+                    error:
+                        "Username must contain 3-24 characters"
 
                 });
 
             }
 
 
-            const result =
-                files
-                    .filter(function(file) {
+            if (
+                password.length < 1
+            ) {
 
-                        return (
-                            file.type ===
-                            "file"
-                        );
+                return res.status(400).json({
 
-                    })
-                    .map(function(file) {
+                    success: false,
 
-                        return {
+                    error:
+                        "Password required"
 
-                            name:
-                                file.name,
+                });
 
-                            path:
-                                file.path,
-
-                            size:
-                                file.size,
-
-                            download_url:
-                                file.download_url,
-
-                            html_url:
-                                file.html_url,
-
-                            sha:
-                                file.sha
-
-                        };
-
-                    });
+            }
 
 
-            console.log(
-                `[MEDIA ${folderName}] ${result.length} fichier(s)`
+            if (
+                !/^[a-zA-Z0-9_.-]+$/.test(username)
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Invalid username"
+
+                });
+
+            }
+
+
+            const database =
+                await getAccountsFile();
+
+
+            const exists =
+                database.accounts.some(
+                    account =>
+                        account.username.toLowerCase() ===
+                        username.toLowerCase()
+                );
+
+
+            if (exists) {
+
+                return res.status(409).json({
+
+                    success: false,
+
+                    error:
+                        "Username already exists"
+
+                });
+
+            }
+
+
+            const user = {
+
+                id:
+                    crypto
+                        .randomUUID(),
+
+                username,
+
+                password:
+                    hashPassword(password),
+
+                profile_picture:
+                    profilePicture,
+
+                created_at:
+                    nowISO()
+
+            };
+
+
+            database.accounts.push(
+                user
             );
 
 
-            return res.json({
+            await saveAccounts(
+                database.accounts,
+                database.sha
+            );
 
-                success:
-                    true,
 
-                folder:
-                    folder,
+            const publicUser = {
 
-                files:
-                    result
+                id:
+                    user.id,
+
+                username:
+                    user.username,
+
+                profile_picture:
+                    user.profile_picture
+
+            };
+
+
+            const token =
+                createToken(
+                    publicUser
+                );
+
+
+            res.json({
+
+                success: true,
+
+                token,
+
+                user:
+                    publicUser
 
             });
 
         }
-
         catch(error) {
 
             console.error(
-                `[MEDIA ${folderName}] Erreur:`,
+                "[REGISTER]",
                 error
             );
 
+            res.status(500).json({
 
-            /*
-            -------------------------------------------------
-            Dossier inexistant
-            -------------------------------------------------
-            */
-
-            if (
-                error.status ===
-                404
-            ) {
-
-                return res.json({
-
-                    success:
-                        true,
-
-                    folder:
-                        folder,
-
-                    files:
-                        []
-
-                });
-
-            }
-
-
-            return res.status(500).json({
-
-                success:
-                    false,
+                success: false,
 
                 error:
-                    "Impossible de charger le dossier média.",
-
-                details:
                     error.message
 
             });
@@ -520,536 +965,717 @@ app.get(
 
 /*
 =========================================================
-LIST CHAT FILES
+ ACCOUNT LOGIN
 =========================================================
 */
 
-async function listChatFiles() {
+app.post(
+    "/api/account/login",
+    async (req, res) => {
 
-    const url =
-        githubURL(
-            CHAT_FOLDER
-        );
+        try {
 
-
-    try {
-
-        const data =
-            await githubRequest(
-                url
-            );
-
-
-        if (
-            !Array.isArray(data)
-        ) {
-
-            return [];
-
-        }
-
-
-        return data
-
-            .filter(function(file) {
-
-                return (
-                    file.type ===
-                    "file"
+            const username =
+                cleanUsername(
+                    req.body.username
                 );
 
-            })
+            const password =
+                String(
+                    req.body.password || ""
+                );
 
-            .filter(function(file) {
 
-                return /^chat(?:-\d+)?\.txt$/i
-                    .test(
-                        file.name
-                    );
+            const database =
+                await getAccountsFile();
+
+
+            const user =
+                database.accounts.find(
+                    account =>
+                        account.username.toLowerCase() ===
+                        username.toLowerCase()
+                );
+
+
+            if (
+                !user ||
+                !verifyPassword(
+                    password,
+                    user.password
+                )
+            ) {
+
+                return res.status(401).json({
+
+                    success: false,
+
+                    error:
+                        "Invalid username or password"
+
+                });
+
+            }
+
+
+            const publicUser = {
+
+                id:
+                    user.id,
+
+                username:
+                    user.username,
+
+                profile_picture:
+                    user.profile_picture || null
+
+            };
+
+
+            const token =
+                createToken(
+                    publicUser
+                );
+
+
+            res.json({
+
+                success: true,
+
+                token,
+
+                user:
+                    publicUser
 
             });
 
-    }
+        }
+        catch(error) {
 
-    catch(error) {
+            console.error(
+                "[LOGIN]",
+                error
+            );
 
-        if (
-            error.status ===
-            404
-        ) {
+            res.status(500).json({
 
-            return [];
+                success: false,
+
+                error:
+                    error.message
+
+            });
 
         }
 
-        throw error;
-
     }
-
-}
+);
 
 
 /*
 =========================================================
-NUMÉRO DU CHAT
+ ACCOUNT LOGOUT
 =========================================================
 */
 
-function getChatFileNumber(
-    filename
-) {
+app.post(
+    "/api/account/logout",
+    requireAuth,
+    (req, res) => {
 
-    const match =
-        filename.match(
-            /^chat(?:-(\d+))?\.txt$/i
-        );
+        res.json({
 
+            success: true
 
-    if (!match) {
-
-        return 0;
+        });
 
     }
-
-
-    if (!match[1]) {
-
-        return 1;
-
-    }
-
-
-    return Number(
-        match[1]
-    );
-
-}
+);
 
 
 /*
 =========================================================
-DERNIER FICHIER CHAT
+ ACCOUNT ME
 =========================================================
 */
 
-async function getLatestChatFile() {
+app.get(
+    "/api/account/me",
+    requireAuth,
+    (req, res) => {
 
-    const files =
-        await listChatFiles();
+        res.json({
 
+            success: true,
 
-    if (
-        files.length ===
-        0
-    ) {
+            user:
+                req.user
 
-        return null;
+        });
 
     }
+);
 
 
-    files.sort(
-        function(a, b) {
+/*
+=========================================================
+ LIST FILES
+=========================================================
 
-            return (
-                getChatFileNumber(
-                    b.name
-                ) -
-                getChatFileNumber(
-                    a.name
+ IMPORTANT :
+
+ /api/files/image
+ /api/files/music
+ /api/files/video
+ /api/files/chat-log
+
+=========================================================
+*/
+
+app.get(
+    "/api/files/:folder",
+    async (req, res) => {
+
+        try {
+
+            const folder =
+                normalizeFolder(
+                    req.params.folder
+                );
+
+
+            if (
+                !ALLOWED_FOLDERS.includes(
+                    folder
                 )
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Invalid folder"
+
+                });
+
+            }
+
+
+            console.log(
+                `[FILES] Listing GitHub folder: ${folder}`
             );
 
+
+            const githubFiles =
+                await githubListFolder(
+                    folder
+                );
+
+
+            const files =
+                githubFiles
+                    .filter(
+                        file =>
+                            file.type === "file"
+                    )
+                    .filter(
+                        file =>
+                            file.name &&
+                            !file.name
+                                .toLowerCase()
+                                .endsWith(".gitkeep")
+                    )
+                    .map(
+                        file => {
+
+                            const rawURL =
+                                `https://raw.githubusercontent.com/` +
+                                `${encodeURIComponent(GITHUB_OWNER)}/` +
+                                `${encodeURIComponent(GITHUB_REPO)}/` +
+                                `${encodeURIComponent(GITHUB_BRANCH)}/` +
+                                `${folder}/` +
+                                file.name
+                                    .split("/")
+                                    .map(
+                                        encodeURIComponent
+                                    )
+                                    .join("/");
+
+
+                            return {
+
+                                name:
+                                    file.name,
+
+                                path:
+                                    file.path,
+
+                                size:
+                                    file.size || 0,
+
+                                sha:
+                                    file.sha,
+
+                                download:
+                                    rawURL,
+
+                                html_url:
+                                    file.html_url,
+
+                                type:
+                                    file.type
+
+                            };
+
+                        }
+                    );
+
+
+            res.json({
+
+                success: true,
+
+                folder,
+
+                files
+
+            });
+
         }
-    );
+        catch(error) {
+
+            console.error(
+                `[FILES ${req.params.folder}]`,
+                error
+            );
 
 
-    return files[0];
+            res.status(500).json({
 
-}
+                success: false,
 
+                error:
+                    error.message
 
-/*
-=========================================================
-LIRE FICHIER GITHUB
-=========================================================
-*/
+            });
 
-async function readGithubFile(
-    file
-) {
-
-    const data =
-        await githubRequest(
-            githubURL(
-                file.path
-            )
-        );
-
-
-    if (
-        !data.content
-    ) {
-
-        throw new Error(
-            "Contenu GitHub absent."
-        );
+        }
 
     }
-
-
-    const content =
-        data.content
-            .replace(
-                /\n/g,
-                ""
-            );
-
-
-    const buffer =
-        Buffer.from(
-            content,
-            "base64"
-        );
-
-
-    return {
-
-        content:
-            buffer.toString(
-                "utf8"
-            ),
-
-        size:
-            buffer.length,
-
-        sha:
-            data.sha
-
-    };
-
-}
+);
 
 
 /*
 =========================================================
-CRÉER FICHIER GITHUB
+ UPLOAD
 =========================================================
 */
 
-async function createGithubFile(
-    path,
-    content
-) {
+app.post(
+    "/api/upload",
+    requireAuth,
+    async (req, res) => {
 
-    const encoded =
-        Buffer.from(
-            content,
-            "utf8"
-        ).toString(
-            "base64"
-        );
+        try {
 
+            const folder =
+                normalizeFolder(
+                    req.body.folder
+                );
 
-    return await githubRequest(
-        githubURL(
-            path
-        ),
-        {
+            const filename =
+                safeFilename(
+                    req.body.filename
+                );
 
-            method:
-                "PUT",
-
-            headers: {
-
-                "Content-Type":
-                    "application/json"
-
-            },
-
-            body:
-                JSON.stringify({
-
-                    message:
-                        "Add chat log",
-
-                    content:
-                        encoded,
-
-                    branch:
-                        GITHUB_BRANCH
-
-                })
-
-        }
-    );
-
-}
-
-
-/*
-=========================================================
-MODIFIER FICHIER GITHUB
-=========================================================
-*/
-
-async function updateGithubFile(
-    path,
-    content,
-    sha
-) {
-
-    const encoded =
-        Buffer.from(
-            content,
-            "utf8"
-        ).toString(
-            "base64"
-        );
-
-
-    return await githubRequest(
-        githubURL(
-            path
-        ),
-        {
-
-            method:
-                "PUT",
-
-            headers: {
-
-                "Content-Type":
-                    "application/json"
-
-            },
-
-            body:
-                JSON.stringify({
-
-                    message:
-                        "Update chat log",
-
-                    content:
-                        encoded,
-
-                    sha:
-                        sha,
-
-                    branch:
-                        GITHUB_BRANCH
-
-                })
-
-        }
-    );
-
-}
-
-
-/*
-=========================================================
-QUEUE CHAT
-=========================================================
-*/
-
-let chatSaveQueue =
-    Promise.resolve();
-
-
-function queueChatSave(
-    task
-) {
-
-    const next =
-        chatSaveQueue.then(
-            task,
-            task
-        );
-
-
-    chatSaveQueue =
-        next.catch(
-            function() {}
-        );
-
-
-    return next;
-
-}
-
-
-/*
-=========================================================
-FORMAT MESSAGE
-=========================================================
-*/
-
-function formatChatLine(
-    data
-) {
-
-    const time =
-        data.time ||
-        new Date()
-            .toISOString();
-
-
-    return (
-        `[${time}] ` +
-        `${data.username}: ` +
-        `${data.message}\n`
-    );
-
-}
-
-
-/*
-=========================================================
-SAUVEGARDER CHAT
-=========================================================
-*/
-
-function saveChatMessage(
-    chatMessage
-) {
-
-    return queueChatSave(
-        async function() {
-
-            const line =
-                formatChatLine(
-                    chatMessage
+            const content =
+                String(
+                    req.body.content || ""
                 );
 
 
-            const lineSize =
-                Buffer.byteLength(
-                    line,
-                    "utf8"
-                );
+            if (
+                !MEDIA_FOLDERS.includes(
+                    folder
+                )
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Invalid media folder"
+
+                });
+
+            }
 
 
-            let latest =
-                await getLatestChatFile();
+            if (!filename) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Filename required"
+
+                });
+
+            }
+
+
+            if (!content) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "File content required"
+
+                });
+
+            }
 
 
             /*
-            -------------------------------------------------
-            Aucun fichier
-            -------------------------------------------------
+               Le navigateur envoie :
+
+               data:image/png;base64,AAAA...
+
+               ou
+
+               data:audio/mpeg;base64,AAAA...
             */
 
-            if (!latest) {
-
-                const path =
-                    `${CHAT_FOLDER}/chat.txt`;
-
-
-                await createGithubFile(
-                    path,
-                    line
+            const match =
+                content.match(
+                    /^data:[^;]+;base64,(.+)$/s
                 );
 
 
-                console.log(
-                    "[CHAT LOG] Créé:",
+            if (!match) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Invalid Base64 data"
+
+                });
+
+            }
+
+
+            const base64 =
+                match[1];
+
+
+            const buffer =
+                base64Decode(
+                    base64
+                );
+
+
+            if (
+                buffer.length >
+                MAX_FILE_SIZE
+            ) {
+
+                return res.status(413).json({
+
+                    success: false,
+
+                    error:
+                        "File too large. Maximum is 25 MB."
+
+                });
+
+            }
+
+
+            const githubPath =
+                `${folder}/${filename}`;
+
+
+            /*
+               Vérifie si le fichier existe déjà.
+               Si oui, GitHub exige son SHA pour
+               pouvoir le remplacer.
+            */
+
+            const existing =
+                await githubGet(
+                    githubPath
+                );
+
+
+            const result =
+                await githubPut(
+
+                    githubPath,
+
+                    base64,
+
+                    `${existing ? "Update" : "Add"} ${githubPath}`,
+
+                    existing
+                    ? existing.sha
+                    : null
+
+                );
+
+
+            const download =
+                `https://raw.githubusercontent.com/` +
+                `${encodeURIComponent(GITHUB_OWNER)}/` +
+                `${encodeURIComponent(GITHUB_REPO)}/` +
+                `${encodeURIComponent(GITHUB_BRANCH)}/` +
+                `${folder}/` +
+                filename
+                    .split("/")
+                    .map(
+                        encodeURIComponent
+                    )
+                    .join("/");
+
+
+            console.log(
+                `[UPLOAD] ${githubPath} by ${req.user.username}`
+            );
+
+
+            res.json({
+
+                success: true,
+
+                filename,
+
+                folder,
+
+                path:
+                    githubPath,
+
+                download,
+
+                url:
+                    download,
+
+                sha:
+                    result.content
+                    ? result.content.sha
+                    : null
+
+            });
+
+        }
+        catch(error) {
+
+            console.error(
+                "[UPLOAD]",
+                error
+            );
+
+
+            res.status(500).json({
+
+                success: false,
+
+                error:
+                    error.message
+
+            });
+
+        }
+
+    }
+);
+
+
+/*
+=========================================================
+ DELETE MEDIA
+=========================================================
+*/
+
+app.delete(
+    "/api/files/:folder/:filename",
+    requireAuth,
+    async (req, res) => {
+
+        try {
+
+            const folder =
+                normalizeFolder(
+                    req.params.folder
+                );
+
+            const filename =
+                safeFilename(
+                    req.params.filename
+                );
+
+
+            if (
+                !MEDIA_FOLDERS.includes(
+                    folder
+                )
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Invalid folder"
+
+                });
+
+            }
+
+
+            const path =
+                `${folder}/${filename}`;
+
+
+            const file =
+                await githubGet(
                     path
                 );
 
 
-                return;
+            if (!file) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    error:
+                        "File not found"
+
+                });
 
             }
 
 
-            /*
-            -------------------------------------------------
-            Lire le dernier fichier
-            -------------------------------------------------
-            */
+            await githubDelete(
 
-            const file =
-                await readGithubFile(
-                    latest
-                );
+                path,
 
+                file.sha,
 
-            /*
-            -------------------------------------------------
-            Vérifier les 20 Mo
-            -------------------------------------------------
-            */
+                `Delete ${path}`
 
-            if (
-                file.size +
-                lineSize >
-                CHAT_MAX_SIZE
-            ) {
-
-                const currentNumber =
-                    getChatFileNumber(
-                        latest.name
-                    );
-
-
-                const nextNumber =
-                    currentNumber + 1;
-
-
-                const nextFilename =
-                    `chat-${nextNumber}.txt`;
-
-
-                const nextPath =
-                    `${CHAT_FOLDER}/${nextFilename}`;
-
-
-                await createGithubFile(
-                    nextPath,
-                    line
-                );
-
-
-                console.log(
-                    "[CHAT LOG] Limite atteinte."
-                );
-
-                console.log(
-                    "[CHAT LOG] Nouveau fichier:",
-                    nextPath
-                );
-
-
-                return;
-
-            }
-
-
-            /*
-            -------------------------------------------------
-            Ajouter au fichier
-            -------------------------------------------------
-            */
-
-            const newContent =
-                file.content +
-                line;
-
-
-            await updateGithubFile(
-                latest.path,
-                newContent,
-                file.sha
             );
 
 
-            console.log(
-                "[CHAT LOG] Message enregistré:",
-                latest.path
-            );
+            res.json({
+
+                success: true
+
+            });
 
         }
+        catch(error) {
+
+            console.error(
+                "[DELETE]",
+                error
+            );
+
+
+            res.status(500).json({
+
+                success: false,
+
+                error:
+                    error.message
+
+            });
+
+        }
+
+    }
+);
+
+
+/*
+=========================================================
+ CHAT LOG
+=========================================================
+*/
+
+async function saveChatLog(
+    username,
+    message
+) {
+
+    const date =
+        new Date()
+            .toISOString()
+            .slice(0, 10);
+
+    const path =
+        `chat-log/${date}.txt`;
+
+
+    const existing =
+        await githubGet(
+            path
+        );
+
+
+    let oldText = "";
+
+
+    if (existing) {
+
+        oldText =
+            Buffer
+                .from(
+                    existing.content
+                        .replace(/\n/g, ""),
+                    "base64"
+                )
+                .toString("utf8");
+
+    }
+
+
+    const line =
+        `[${new Date().toISOString()}] ` +
+        `${username}: ${message}\n`;
+
+
+    const newText =
+        oldText + line;
+
+
+    const encoded =
+        Buffer
+            .from(
+                newText,
+                "utf8"
+            )
+            .toString("base64");
+
+
+    await githubPut(
+
+        path,
+
+        encoded,
+
+        `Update chat log ${date}`,
+
+        existing
+        ? existing.sha
+        : null
+
     );
 
 }
@@ -1057,73 +1683,140 @@ function saveChatMessage(
 
 /*
 =========================================================
-WEBSOCKET
+ CHAT HISTORY API
 =========================================================
 */
 
-const wss =
-    new WebSocket.Server({
-        server:
-            server
-    });
+app.get(
+    "/api/chat/history",
+    requireAuth,
+    async (req, res) => {
+
+        try {
+
+            const files =
+                await githubListFolder(
+                    "chat-log"
+                );
 
 
-const clients =
-    new Set();
+            const logs =
+                files
+                    .filter(
+                        file =>
+                            file.type === "file" &&
+                            file.name.endsWith(".txt")
+                    )
+                    .sort(
+                        (a, b) =>
+                            b.name.localeCompare(
+                                a.name
+                            )
+                    );
 
+
+            res.json({
+
+                success: true,
+
+                files:
+                    logs.map(
+                        file => ({
+
+                            name:
+                                file.name,
+
+                            download:
+                                `https://raw.githubusercontent.com/` +
+                                `${GITHUB_OWNER}/` +
+                                `${GITHUB_REPO}/` +
+                                `${GITHUB_BRANCH}/` +
+                                `chat-log/` +
+                                encodeURIComponent(
+                                    file.name
+                                )
+
+                        })
+                    )
+
+            });
+
+        }
+        catch(error) {
+
+            console.error(
+                "[CHAT HISTORY]",
+                error
+            );
+
+
+            res.status(500).json({
+
+                success: false,
+
+                error:
+                    error.message
+
+            });
+
+        }
+
+    }
+);
+
+
+/*
+=========================================================
+ WEBSOCKET AUTH
+=========================================================
+*/
+
+function getSocketToken(ws) {
+
+    if (ws.authToken) {
+        return ws.authToken;
+    }
+
+    return null;
+
+}
+
+
+/*
+=========================================================
+ WEBSOCKET
+=========================================================
+*/
 
 wss.on(
     "connection",
-    function(ws, req) {
+    (ws, request) => {
 
         console.log(
-            "[WSS] Nouvelle connexion"
+            "[WSS] Client connected"
         );
 
 
-        const client = {
-
-            ws:
-                ws,
-
-            token:
-                null,
-
-            username:
-                null,
-
-            authenticated:
-                false
-
-        };
+        ws.user = null;
+        ws.authToken = null;
 
 
-        clients.add(
-            client
+        ws.send(
+            JSON.stringify({
+
+                type:
+                    "system",
+
+                message:
+                    "WSS connected."
+
+            })
         );
 
-
-        /*
-        -------------------------------------------------
-        CONNEXION
-        -------------------------------------------------
-        */
-
-        sendSystem(
-            ws,
-            "Connexion au serveur réussie."
-        );
-
-
-        /*
-        -------------------------------------------------
-        MESSAGE
-        -------------------------------------------------
-        */
 
         ws.on(
             "message",
-            async function(raw) {
+            async raw => {
 
                 try {
 
@@ -1135,19 +1828,68 @@ wss.on(
 
                     /*
                     =========================================
-                    AUTH
+                     AUTH
                     =========================================
                     */
 
                     if (
-                        data.type ===
-                        "auth"
+                        data.type === "auth"
                     ) {
 
-                        await authenticateClient(
-                            client,
-                            data.token
+                        const user =
+                            verifyToken(
+                                data.token
+                            );
+
+
+                        if (!user) {
+
+                            ws.send(
+                                JSON.stringify({
+
+                                    type:
+                                        "auth",
+
+                                    success:
+                                        false,
+
+                                    message:
+                                        "Invalid token"
+
+                                })
+                            );
+
+                            return;
+
+                        }
+
+
+                        ws.user =
+                            user;
+
+                        ws.authToken =
+                            data.token;
+
+
+                        ws.send(
+                            JSON.stringify({
+
+                                type:
+                                    "auth",
+
+                                success:
+                                    true,
+
+                                user
+
+                            })
                         );
+
+
+                        console.log(
+                            `[WSS] Authenticated: ${user.username}`
+                        );
+
 
                         return;
 
@@ -1156,19 +1898,126 @@ wss.on(
 
                     /*
                     =========================================
-                    CHAT
+                     CHAT
                     =========================================
                     */
 
                     if (
-                        data.type ===
-                        "chat"
+                        data.type === "chat"
                     ) {
 
-                        await handleChatMessage(
-                            client,
-                            data
+                        /*
+                           IMPORTANT :
+                           Le pseudo envoyé par le navigateur
+                           n'est PAS considéré comme fiable.
+
+                           Le serveur utilise le compte
+                           authentifié.
+                        */
+
+                        if (!ws.user) {
+
+                            ws.send(
+                                JSON.stringify({
+
+                                    type:
+                                        "error",
+
+                                    message:
+                                        "Authentication required"
+
+                                })
+                            );
+
+                            return;
+
+                        }
+
+
+                        const message =
+                            String(
+                                data.message || ""
+                            ).trim();
+
+
+                        if (!message) {
+
+                            return;
+
+                        }
+
+
+                        if (
+                            message.length >
+                            MAX_MESSAGE_LENGTH
+                        ) {
+
+                            ws.send(
+                                JSON.stringify({
+
+                                    type:
+                                        "error",
+
+                                    message:
+                                        "Message too long"
+
+                                })
+                            );
+
+                            return;
+
+                        }
+
+
+                        const chatData = {
+
+                            type:
+                                "chat",
+
+                            username:
+                                ws.user.username,
+
+                            message,
+
+                            time:
+                                nowISO()
+
+                        };
+
+
+                        /*
+                           Sauvegarde GitHub.
+                        */
+
+                        try {
+
+                            await saveChatLog(
+
+                                ws.user.username,
+
+                                message
+
+                            );
+
+                        }
+                        catch(error) {
+
+                            console.error(
+                                "[CHAT LOG]",
+                                error
+                            );
+
+                        }
+
+
+                        /*
+                           Broadcast à tous.
+                        */
+
+                        broadcast(
+                            chatData
                         );
+
 
                         return;
 
@@ -1177,27 +2026,24 @@ wss.on(
 
                     /*
                     =========================================
-                    PING
+                     PING
                     =========================================
                     */
 
                     if (
-                        data.type ===
-                        "ping"
+                        data.type === "ping"
                     ) {
 
-                        safeSend(
-                            ws,
-                            {
+                        ws.send(
+                            JSON.stringify({
 
                                 type:
                                     "pong",
 
                                 time:
-                                    new Date()
-                                        .toISOString()
+                                    nowISO()
 
-                            }
+                            })
                         );
 
                         return;
@@ -1205,25 +2051,43 @@ wss.on(
                     }
 
 
-                    sendError(
-                        ws,
-                        "Type de message inconnu."
+                    ws.send(
+                        JSON.stringify({
+
+                            type:
+                                "error",
+
+                            message:
+                                "Unknown message type"
+
+                        })
                     );
 
                 }
-
                 catch(error) {
 
                     console.error(
-                        "[WSS] Erreur message:",
+                        "[WSS MESSAGE]",
                         error
                     );
 
 
-                    sendError(
-                        ws,
-                        "Message invalide."
-                    );
+                    try {
+
+                        ws.send(
+                            JSON.stringify({
+
+                                type:
+                                    "error",
+
+                                message:
+                                    "Invalid JSON"
+
+                            })
+                        );
+
+                    }
+                    catch {}
 
                 }
 
@@ -1231,47 +2095,25 @@ wss.on(
         );
 
 
-        /*
-        -------------------------------------------------
-        CLOSE
-        -------------------------------------------------
-        */
-
         ws.on(
             "close",
-            function() {
-
-                clients.delete(
-                    client
-                );
-
+            () => {
 
                 console.log(
-                    "[WSS] Connexion fermée"
+                    "[WSS] Client disconnected"
                 );
 
             }
         );
 
 
-        /*
-        -------------------------------------------------
-        ERROR
-        -------------------------------------------------
-        */
-
         ws.on(
             "error",
-            function(error) {
+            error => {
 
                 console.error(
-                    "[WSS] Socket error:",
+                    "[WSS]",
                     error
-                );
-
-
-                clients.delete(
-                    client
                 );
 
             }
@@ -1283,369 +2125,41 @@ wss.on(
 
 /*
 =========================================================
-AUTHENTIFICATION
+ BROADCAST
 =========================================================
 */
 
-async function authenticateClient(
-    client,
-    token
-) {
-
-    if (
-        typeof token !==
-        "string" ||
-        token.length < 10
-    ) {
-
-        sendError(
-            client.ws,
-            "Token invalide."
-        );
-
-        return;
-
-    }
-
-
-    const user =
-        await findUserByToken(
-            token
-        );
-
-
-    if (!user) {
-
-        sendError(
-            client.ws,
-            "Session invalide. Connecte-toi à ton compte."
-        );
-
-        return;
-
-    }
-
-
-    client.token =
-        token;
-
-
-    client.username =
-        user.username;
-
-
-    client.authenticated =
-        true;
-
-
-    safeSend(
-        client.ws,
-        {
-
-            type:
-                "auth",
-
-            success:
-                true,
-
-            username:
-                user.username
-
-        }
-    );
-
-
-    sendSystem(
-        client.ws,
-        "Authentifié en tant que " +
-        user.username
-    );
-
-
-    console.log(
-        "[WSS] Auth:",
-        user.username
-    );
-
-}
-
-
-/*
-=========================================================
-CHAT MESSAGE
-=========================================================
-*/
-
-async function handleChatMessage(
-    client,
-    data
-) {
-
-    /*
-    -------------------------------------------------
-    COMPTE OBLIGATOIRE
-    -------------------------------------------------
-    */
-
-    if (
-        !client.authenticated
-    ) {
-
-        sendError(
-            client.ws,
-            "Tu dois être connecté pour utiliser le chat."
-        );
-
-        return;
-
-    }
-
-
-    /*
-    -------------------------------------------------
-    MESSAGE
-    -------------------------------------------------
-    */
-
-    if (
-        typeof data.message !==
-        "string"
-    ) {
-
-        sendError(
-            client.ws,
-            "Message invalide."
-        );
-
-        return;
-
-    }
-
+function broadcast(data) {
 
     const message =
-        data.message.trim();
+        JSON.stringify(data);
 
 
-    if (!message) {
+    wss.clients.forEach(
+        client => {
 
-        sendError(
-            client.ws,
-            "Message vide."
-        );
+            if (
+                client.readyState ===
+                WebSocket.OPEN
+            ) {
 
-        return;
+                try {
 
-    }
+                    client.send(
+                        message
+                    );
 
+                }
+                catch(error) {
 
-    if (
-        message.length >
-        MAX_MESSAGE_LENGTH
-    ) {
+                    console.error(
+                        "[WSS BROADCAST]",
+                        error
+                    );
 
-        sendError(
-            client.ws,
-            "Message trop long. Maximum 500 caractères."
-        );
+                }
 
-        return;
-
-    }
-
-
-    /*
-    -------------------------------------------------
-    PSEUDO SERVEUR
-    -------------------------------------------------
-    
-    Le pseudo envoyé par le navigateur
-    est complètement ignoré.
-    -------------------------------------------------
-    */
-
-    const username =
-        client.username;
-
-
-    if (!username) {
-
-        sendError(
-            client.ws,
-            "Utilisateur introuvable."
-        );
-
-        return;
-
-    }
-
-
-    const chatMessage = {
-
-        type:
-            "chat",
-
-        username:
-            username,
-
-        message:
-            message,
-
-        time:
-            new Date()
-                .toISOString()
-
-    };
-
-
-    /*
-    -------------------------------------------------
-    GITHUB
-    -------------------------------------------------
-    */
-
-    try {
-
-        await saveChatMessage(
-            chatMessage
-        );
-
-    }
-
-    catch(error) {
-
-        console.error(
-            "[CHAT] Sauvegarde GitHub:",
-            error
-        );
-
-
-        sendError(
-            client.ws,
-            "Impossible d'enregistrer le message."
-        );
-
-
-        return;
-
-    }
-
-
-    /*
-    -------------------------------------------------
-    DIFFUSION
-    -------------------------------------------------
-    */
-
-    broadcast(
-        chatMessage
-    );
-
-
-    console.log(
-        `[CHAT] ${username}: ${message}`
-    );
-
-}
-
-
-/*
-=========================================================
-TROUVER UTILISATEUR PAR TOKEN
-=========================================================
-
-IMPORTANT :
-
-Cette fonction doit être reliée à ton système
-de comptes actuel.
-
-Le reste du serveur est déjà prêt.
-
-=========================================================
-*/
-
-async function findUserByToken(
-    token
-) {
-
-    /*
-    =====================================================
-    IMPORTANT
-    =====================================================
-
-    Pour l'instant cette fonction ne peut pas savoir
-    quel utilisateur possède le token sans ton système
-    users.enc / accounts.
-
-    Donc elle retourne null.
-
-    Il faudra remplacer cette partie par le même
-    système de déchiffrement que ton serveur Account.
-    =====================================================
-    */
-
-
-    return null;
-
-}
-
-
-/*
-=========================================================
-BROADCAST
-=========================================================
-*/
-
-function broadcast(
-    data
-) {
-
-    const payload =
-        JSON.stringify(
-            data
-        );
-
-
-    for (
-        const client of clients
-    ) {
-
-        if (
-            client.ws.readyState ===
-            WebSocket.OPEN
-        ) {
-
-            safeSendRaw(
-                client.ws,
-                payload
-            );
-
-        }
-
-    }
-
-}
-
-
-/*
-=========================================================
-SYSTEM MESSAGE
-=========================================================
-*/
-
-function sendSystem(
-    ws,
-    message
-) {
-
-    safeSend(
-        ws,
-        {
-
-            type:
-                "system",
-
-            message:
-                message
+            }
 
         }
     );
@@ -1655,122 +2169,16 @@ function sendSystem(
 
 /*
 =========================================================
-ERROR MESSAGE
-=========================================================
-*/
-
-function sendError(
-    ws,
-    message
-) {
-
-    safeSend(
-        ws,
-        {
-
-            type:
-                "error",
-
-            error:
-                message
-
-        }
-    );
-
-}
-
-
-/*
-=========================================================
-SAFE SEND
-=========================================================
-*/
-
-function safeSend(
-    ws,
-    data
-) {
-
-    try {
-
-        if (
-            ws.readyState ===
-            WebSocket.OPEN
-        ) {
-
-            ws.send(
-                JSON.stringify(
-                    data
-                )
-            );
-
-        }
-
-    }
-
-    catch(error) {
-
-        console.error(
-            "[WSS] Send error:",
-            error
-        );
-
-    }
-
-}
-
-
-/*
-=========================================================
-SAFE SEND RAW
-=========================================================
-*/
-
-function safeSendRaw(
-    ws,
-    data
-) {
-
-    try {
-
-        if (
-            ws.readyState ===
-            WebSocket.OPEN
-        ) {
-
-            ws.send(
-                data
-            );
-
-        }
-
-    }
-
-    catch(error) {
-
-        console.error(
-            "[WSS] Send error:",
-            error
-        );
-
-    }
-
-}
-
-
-/*
-=========================================================
-404
+ 404
 =========================================================
 */
 
 app.use(
-    function(req, res) {
+    (req, res) => {
 
         res.status(404).json({
 
-            success:
-                false,
+            success: false,
 
             error:
                 "Route introuvable.",
@@ -1786,20 +2194,51 @@ app.use(
 
 /*
 =========================================================
-START
+ ERROR HANDLER
+=========================================================
+*/
+
+app.use(
+    (error, req, res, next) => {
+
+        console.error(
+            "[EXPRESS ERROR]",
+            error
+        );
+
+
+        res.status(500).json({
+
+            success: false,
+
+            error:
+                error.message ||
+                "Internal server error"
+
+        });
+
+    }
+);
+
+
+/*
+=========================================================
+ START SERVER
 =========================================================
 */
 
 server.listen(
     PORT,
-    function() {
+    "0.0.0.0",
+    () => {
 
+        console.log("");
         console.log(
             "========================================"
         );
 
         console.log(
-            "DAVID RANDOM SERVER"
+            "       DAVID RANDOM V2 SERVER"
         );
 
         console.log(
@@ -1812,38 +2251,44 @@ server.listen(
         );
 
         console.log(
-            "HTTP: ONLINE"
-        );
-
-        console.log(
-            "WSS: ONLINE"
-        );
-
-        console.log(
             "GitHub:",
-            GITHUB_TOKEN
-                ? "CONFIGURED"
-                : "MISSING"
-        );
-
-        console.log(
-            "Repository:",
             `${GITHUB_OWNER}/${GITHUB_REPO}`
         );
 
         console.log(
-            "Chat:",
-            `${CHAT_FOLDER}/`
+            "Branch:",
+            GITHUB_BRANCH
         );
 
         console.log(
-            "Chat limit:",
-            "20 MB"
+            "GitHub token:",
+            GITHUB_TOKEN
+                ? "PRESENT"
+                : "MISSING"
         );
 
         console.log(
-            "Media:",
-            "image/ music/ video/"
+            "WebSocket: ONLINE"
+        );
+
+        console.log(
+            "Media routes:"
+        );
+
+        console.log(
+            "GET /api/files/image"
+        );
+
+        console.log(
+            "GET /api/files/music"
+        );
+
+        console.log(
+            "GET /api/files/video"
+        );
+
+        console.log(
+            "GET /api/files/chat-log"
         );
 
         console.log(
@@ -1851,4 +2296,38 @@ server.listen(
         );
 
     }
+);
+
+
+/*
+=========================================================
+ KEEP-ALIVE / HEARTBEAT
+=========================================================
+*/
+
+setInterval(
+    () => {
+
+        wss.clients.forEach(
+            ws => {
+
+                if (
+                    ws.readyState ===
+                    WebSocket.OPEN
+                ) {
+
+                    try {
+
+                        ws.ping();
+
+                    }
+                    catch {}
+
+                }
+
+            }
+        );
+
+    },
+    30000
 );
