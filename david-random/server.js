@@ -1,5 +1,41 @@
 "use strict";
 
+/*
+===========================================================
+DAVID RANDOM V2
+SERVER COMPLET
+===========================================================
+
+Fonctions :
+- Express
+- CORS
+- GitHub Storage
+- accounts.json
+- users.enc
+- sessions persistantes via tokens signés
+- Login / Register / Logout
+- /api/account/me
+- Profile picture URL
+- Profile picture upload
+- Media upload
+- Images / Music / Videos
+- Chat logs
+- WebSocket WSS
+- Render
+
+IMPORTANT :
+
+ENCRYPTION_KEY doit être une vraie clé secrète.
+
+NE METS PAS le contenu de users.enc dans ENCRYPTION_KEY.
+
+Exemple :
+
+ENCRYPTION_KEY=une-longue-cle-secrete-random
+
+===========================================================
+*/
+
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
@@ -7,9 +43,20 @@ const multer = require("multer");
 const WebSocket = require("ws");
 const http = require("http");
 
+
+/*
+===========================================================
+APP
+===========================================================
+*/
+
 const app = express();
 
-const PORT = process.env.PORT || 10000;
+const server = http.createServer(app);
+
+const PORT =
+    process.env.PORT || 10000;
+
 
 /*
 ===========================================================
@@ -17,47 +64,74 @@ CONFIGURATION
 ===========================================================
 */
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_OWNER = process.env.GITHUB_OWNER;
-const GITHUB_REPO = process.env.GITHUB_REPO;
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
+const GITHUB_TOKEN =
+    process.env.GITHUB_TOKEN;
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+const GITHUB_OWNER =
+    process.env.GITHUB_OWNER;
+
+const GITHUB_REPO =
+    process.env.GITHUB_REPO;
+
+const GITHUB_BRANCH =
+    process.env.GITHUB_BRANCH || "main";
+
+const ENCRYPTION_KEY =
+    process.env.ENCRYPTION_KEY;
 
 const ALLOWED_ORIGIN =
     process.env.ALLOWED_ORIGIN || "*";
 
+
 /*
 ===========================================================
-GITHUB CONFIG
+GITHUB
 ===========================================================
 */
-
-if (!GITHUB_TOKEN) {
-    console.warn("WARNING: GITHUB_TOKEN absent");
-}
-
-if (!GITHUB_OWNER) {
-    console.warn("WARNING: GITHUB_OWNER absent");
-}
-
-if (!GITHUB_REPO) {
-    console.warn("WARNING: GITHUB_REPO absent");
-}
-
-if (!ENCRYPTION_KEY) {
-    console.warn("WARNING: ENCRYPTION_KEY absent");
-}
 
 const GITHUB_API =
     `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents`;
 
+
 const githubHeaders = {
-    "Authorization": `Bearer ${GITHUB_TOKEN}`,
-    "Accept": "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "DAVID-RANDOM"
+    "Authorization":
+        `Bearer ${GITHUB_TOKEN}`,
+
+    "Accept":
+        "application/vnd.github+json",
+
+    "X-GitHub-Api-Version":
+        "2022-11-28",
+
+    "User-Agent":
+        "DAVID-RANDOM"
 };
+
+
+if (!GITHUB_TOKEN) {
+    console.warn(
+        "[CONFIG] GITHUB_TOKEN absent"
+    );
+}
+
+if (!GITHUB_OWNER) {
+    console.warn(
+        "[CONFIG] GITHUB_OWNER absent"
+    );
+}
+
+if (!GITHUB_REPO) {
+    console.warn(
+        "[CONFIG] GITHUB_REPO absent"
+    );
+}
+
+if (!ENCRYPTION_KEY) {
+    console.warn(
+        "[CONFIG] ENCRYPTION_KEY absent"
+    );
+}
+
 
 /*
 ===========================================================
@@ -71,15 +145,18 @@ app.use(
             ALLOWED_ORIGIN === "*"
                 ? true
                 : ALLOWED_ORIGIN,
+
         credentials: true
     })
 );
+
 
 app.use(
     express.json({
         limit: "5mb"
     })
 );
+
 
 app.use(
     express.urlencoded({
@@ -88,19 +165,24 @@ app.use(
     })
 );
 
+
 /*
 ===========================================================
 MULTER
 ===========================================================
 */
 
-const upload = multer({
-    storage: multer.memoryStorage(),
+const upload =
+    multer({
+        storage:
+            multer.memoryStorage(),
 
-    limits: {
-        fileSize: 25 * 1024 * 1024
-    }
-});
+        limits: {
+            fileSize:
+                25 * 1024 * 1024
+        }
+    });
+
 
 /*
 ===========================================================
@@ -108,9 +190,41 @@ MEMORY
 ===========================================================
 */
 
-const sessions = new Map();
+/*
+Anciennes sessions conservées temporairement
+pour ne pas casser les tokens déjà créés
+avant cette version.
+*/
 
-const connectedSockets = new Set();
+const sessions =
+    new Map();
+
+
+const connectedSockets =
+    new Set();
+
+
+/*
+===========================================================
+CONSTANTES
+===========================================================
+*/
+
+const ACCOUNTS_FILE =
+    "accounts/accounts.json";
+
+const USERS_FILE =
+    "accounts/users.enc";
+
+const CHAT_FOLDER =
+    "chat-log";
+
+const MAX_CHAT_LOG_SIZE =
+    15 * 1024 * 1024;
+
+const MAX_UPLOAD_SIZE =
+    25 * 1024 * 1024;
+
 
 /*
 ===========================================================
@@ -119,12 +233,55 @@ UTILITAIRES
 */
 
 function randomId(length = 24) {
+
     return crypto
         .randomBytes(length)
         .toString("hex");
+
 }
 
-function hashPassword(password, salt) {
+
+function normalizeUsername(username) {
+
+    return String(
+        username || ""
+    )
+        .trim()
+        .toLowerCase();
+
+}
+
+
+function publicUser(user) {
+
+    return {
+        id:
+            user.id,
+
+        username:
+            user.username,
+
+        profile_picture:
+            user.profile_picture || null,
+
+        created_at:
+            user.created_at
+    };
+
+}
+
+
+/*
+===========================================================
+PASSWORD
+===========================================================
+*/
+
+function hashPassword(
+    password,
+    salt
+) {
+
     return crypto
         .pbkdf2Sync(
             password,
@@ -134,24 +291,34 @@ function hashPassword(password, salt) {
             "sha512"
         )
         .toString("hex");
+
 }
 
-function createPasswordHash(password) {
+
+function createPasswordHash(
+    password
+) {
 
     const salt =
         crypto
             .randomBytes(32)
             .toString("hex");
 
+
+    const hash =
+        hashPassword(
+            password,
+            salt
+        );
+
+
     return {
         salt,
-        hash:
-            hashPassword(
-                password,
-                salt
-            )
+        hash
     };
+
 }
+
 
 function verifyPassword(
     password,
@@ -159,82 +326,97 @@ function verifyPassword(
     hash
 ) {
 
-    const calculated =
-        hashPassword(
-            password,
-            salt
-        );
+    try {
 
-    const a =
-        Buffer.from(
-            calculated,
-            "hex"
-        );
+        const calculated =
+            hashPassword(
+                password,
+                salt
+            );
 
-    const b =
-        Buffer.from(
-            hash,
-            "hex"
-        );
 
-    if (a.length !== b.length) {
+        const a =
+            Buffer.from(
+                calculated,
+                "hex"
+            );
+
+
+        const b =
+            Buffer.from(
+                hash,
+                "hex"
+            );
+
+
+        if (
+            a.length !==
+            b.length
+        ) {
+            return false;
+        }
+
+
+        return crypto
+            .timingSafeEqual(
+                a,
+                b
+            );
+
+    } catch {
+
         return false;
+
     }
 
-    return crypto.timingSafeEqual(
-        a,
-        b
-    );
 }
 
-function normalizeUsername(username) {
-
-    return String(
-        username || ""
-    )
-        .trim()
-        .toLowerCase();
-}
-
-function publicUser(user) {
-
-    return {
-        id: user.id,
-        username: user.username,
-        profile_picture:
-            user.profile_picture || null,
-        created_at:
-            user.created_at
-    };
-}
 
 /*
 ===========================================================
-ENCRYPTION
+ENCRYPTION KEY
 ===========================================================
 */
 
 function getEncryptionKey() {
 
     if (!ENCRYPTION_KEY) {
+
         throw new Error(
             "ENCRYPTION_KEY NOT CONFIGURED"
         );
+
     }
+
 
     return crypto
         .createHash("sha256")
-        .update(ENCRYPTION_KEY)
+        .update(
+            String(
+                ENCRYPTION_KEY
+            ),
+            "utf8"
+        )
         .digest();
+
 }
+
+
+/*
+===========================================================
+ENCRYPT USERS
+===========================================================
+*/
 
 function encryptUsers(data) {
 
     const key =
         getEncryptionKey();
 
+
     const iv =
         crypto.randomBytes(12);
+
 
     const cipher =
         crypto.createCipheriv(
@@ -243,8 +425,10 @@ function encryptUsers(data) {
             iv
         );
 
+
     const json =
         JSON.stringify(data);
+
 
     const encrypted =
         Buffer.concat([
@@ -252,11 +436,14 @@ function encryptUsers(data) {
                 json,
                 "utf8"
             ),
+
             cipher.final()
         ]);
 
+
     const tag =
         cipher.getAuthTag();
+
 
     return [
         "DR1",
@@ -264,26 +451,39 @@ function encryptUsers(data) {
         tag.toString("base64url"),
         encrypted.toString("base64url")
     ].join(":");
+
 }
+
+
+/*
+===========================================================
+DECRYPT USERS
+===========================================================
+*/
 
 function decryptUsers(text) {
 
     const key =
         getEncryptionKey();
 
+
     const parts =
         String(text)
             .trim()
             .split(":");
 
+
     if (
         parts.length !== 4 ||
         parts[0] !== "DR1"
     ) {
+
         throw new Error(
             "INVALID USERS ENC FORMAT"
         );
+
     }
+
 
     const iv =
         Buffer.from(
@@ -291,17 +491,20 @@ function decryptUsers(text) {
             "base64url"
         );
 
+
     const tag =
         Buffer.from(
             parts[2],
             "base64url"
         );
 
+
     const encrypted =
         Buffer.from(
             parts[3],
             "base64url"
         );
+
 
     const decipher =
         crypto.createDecipheriv(
@@ -310,24 +513,32 @@ function decryptUsers(text) {
             iv
         );
 
+
     decipher.setAuthTag(tag);
+
 
     const decrypted =
         Buffer.concat([
             decipher.update(
                 encrypted
             ),
+
             decipher.final()
         ]);
 
+
     return JSON.parse(
-        decrypted.toString("utf8")
+        decrypted.toString(
+            "utf8"
+        )
     );
+
 }
+
 
 /*
 ===========================================================
-GITHUB
+GITHUB GET
 ===========================================================
 */
 
@@ -339,47 +550,87 @@ async function githubGet(path) {
                 GITHUB_BRANCH
             )}`,
             {
-                headers: githubHeaders
+                headers:
+                    githubHeaders
             }
         );
 
-    if (response.status === 404) {
+
+    if (
+        response.status === 404
+    ) {
+
         return null;
+
     }
 
-    if (!response.ok) {
+
+    if (
+        !response.ok
+    ) {
 
         const text =
             await response.text();
 
+
         throw new Error(
             `GITHUB GET ${response.status}: ${text}`
         );
+
     }
 
+
     return await response.json();
+
 }
 
-async function githubReadText(path) {
+
+/*
+===========================================================
+GITHUB READ TEXT
+===========================================================
+*/
+
+async function githubReadText(
+    path
+) {
 
     const file =
         await githubGet(path);
+
 
     if (!file) {
         return null;
     }
 
+
     if (!file.content) {
+
         throw new Error(
             "GITHUB FILE HAS NO CONTENT"
         );
+
     }
 
+
     return Buffer.from(
-        file.content.replace(/\n/g, ""),
+        file.content.replace(
+            /\n/g,
+            ""
+        ),
         "base64"
-    ).toString("utf8");
+    ).toString(
+        "utf8"
+    );
+
 }
+
+
+/*
+===========================================================
+GITHUB WRITE TEXT
+===========================================================
+*/
 
 async function githubWriteText(
     path,
@@ -390,56 +641,85 @@ async function githubWriteText(
     const existing =
         await githubGet(path);
 
+
     const body = {
+
         message,
+
         content:
             Buffer
                 .from(
                     content,
                     "utf8"
                 )
-                .toString("base64"),
+                .toString(
+                    "base64"
+                ),
+
         branch:
             GITHUB_BRANCH
+
     };
+
 
     if (
         existing &&
         existing.sha
     ) {
+
         body.sha =
             existing.sha;
+
     }
+
 
     const response =
         await fetch(
             `${GITHUB_API}/${path}`,
             {
-                method: "PUT",
+                method:
+                    "PUT",
 
                 headers: {
                     ...githubHeaders,
+
                     "Content-Type":
                         "application/json"
                 },
 
                 body:
-                    JSON.stringify(body)
+                    JSON.stringify(
+                        body
+                    )
             }
         );
 
-    if (!response.ok) {
+
+    if (
+        !response.ok
+    ) {
 
         const text =
             await response.text();
 
+
         throw new Error(
             `GITHUB WRITE ${response.status}: ${text}`
         );
+
     }
 
+
     return await response.json();
+
 }
+
+
+/*
+===========================================================
+GITHUB WRITE BUFFER
+===========================================================
+*/
 
 async function githubWriteBuffer(
     path,
@@ -450,63 +730,80 @@ async function githubWriteBuffer(
     const existing =
         await githubGet(path);
 
+
     const body = {
+
         message,
+
         content:
-            buffer.toString("base64"),
+            buffer.toString(
+                "base64"
+            ),
+
         branch:
             GITHUB_BRANCH
+
     };
+
 
     if (
         existing &&
         existing.sha
     ) {
+
         body.sha =
             existing.sha;
+
     }
+
 
     const response =
         await fetch(
             `${GITHUB_API}/${path}`,
             {
-                method: "PUT",
+                method:
+                    "PUT",
 
                 headers: {
                     ...githubHeaders,
+
                     "Content-Type":
                         "application/json"
                 },
 
                 body:
-                    JSON.stringify(body)
+                    JSON.stringify(
+                        body
+                    )
             }
         );
 
-    if (!response.ok) {
+
+    if (
+        !response.ok
+    ) {
 
         const text =
             await response.text();
 
+
         throw new Error(
             `GITHUB WRITE ${response.status}: ${text}`
         );
+
     }
 
+
     return await response.json();
+
 }
+
 
 /*
 ===========================================================
-DATABASE
+ACCOUNTS DATABASE
 ===========================================================
 */
-
-const ACCOUNTS_FILE =
-    "accounts/accounts.json";
-
-const USERS_FILE =
-    "accounts/users.enc";
 
 async function loadAccounts() {
 
@@ -515,41 +812,81 @@ async function loadAccounts() {
             ACCOUNTS_FILE
         );
 
+
     if (!text) {
 
         return {
             users: []
         };
+
     }
 
-    const data =
-        JSON.parse(text);
+
+    let data;
+
+
+    try {
+
+        data =
+            JSON.parse(text);
+
+    } catch {
+
+        throw new Error(
+            "ACCOUNTS DATABASE CORRUPTED"
+        );
+
+    }
+
 
     if (
         !Array.isArray(
             data.users
         )
     ) {
+
         data.users = [];
+
     }
 
+
     return data;
+
 }
+
+
+/*
+===========================================================
+SAVE ACCOUNTS
+===========================================================
+*/
 
 async function saveAccounts(
     accounts
 ) {
 
     await githubWriteText(
+
         ACCOUNTS_FILE,
+
         JSON.stringify(
             accounts,
             null,
             2
         ),
+
         "Update accounts.json"
+
     );
+
 }
+
+
+/*
+===========================================================
+LOAD USERS
+===========================================================
+*/
 
 async function loadEncryptedUsers() {
 
@@ -558,58 +895,485 @@ async function loadEncryptedUsers() {
             USERS_FILE
         );
 
+
     if (!text) {
 
         return {
             users: []
         };
+
     }
+
 
     try {
 
         const data =
-            decryptUsers(text);
+            decryptUsers(
+                text
+            );
+
 
         if (
             !Array.isArray(
                 data.users
             )
         ) {
+
             data.users = [];
+
         }
+
 
         return data;
 
     } catch (error) {
 
         console.error(
-            "users.enc decrypt error:",
+            "[USERS] Decryption error:",
             error.message
         );
+
 
         throw new Error(
             "USERS DATABASE CORRUPTED OR ENCRYPTION KEY INVALID"
         );
+
     }
+
 }
+
+
+/*
+===========================================================
+SAVE USERS
+===========================================================
+*/
 
 async function saveEncryptedUsers(
     data
 ) {
 
     const encrypted =
-        encryptUsers(data);
+        encryptUsers(
+            data
+        );
+
 
     await githubWriteText(
+
         USERS_FILE,
+
         encrypted,
+
         "Update encrypted users database"
+
     );
+
 }
+
 
 /*
 ===========================================================
-DATABASE INITIALISATION
+TOKEN SYSTEM
+===========================================================
+
+IMPORTANT :
+
+Le token n'est plus seulement stocké dans :
+
+    const sessions = new Map();
+
+Il est maintenant signé.
+
+Format :
+
+base64(payload).signature
+
+Payload :
+
+{
+    v: 1,
+    uid: "...",
+    exp: 123456789
+}
+
+Donc Render peut redémarrer et le token
+reste vérifiable.
+===========================================================
+*/
+
+const SESSION_DURATION =
+    30 * 24 * 60 * 60 * 1000;
+
+
+/*
+===========================================================
+TOKEN SIGNATURE
+===========================================================
+*/
+
+function signTokenPayload(
+    encodedPayload
+) {
+
+    const key =
+        getEncryptionKey();
+
+
+    return crypto
+        .createHmac(
+            "sha256",
+            key
+        )
+        .update(
+            encodedPayload
+        )
+        .digest(
+            "base64url"
+        );
+
+}
+
+
+/*
+===========================================================
+CREATE TOKEN
+===========================================================
+*/
+
+function createToken(
+    userId
+) {
+
+    const payload = {
+
+        v: 1,
+
+        uid:
+            userId,
+
+        exp:
+            Date.now() +
+            SESSION_DURATION
+
+    };
+
+
+    const encodedPayload =
+        Buffer
+            .from(
+                JSON.stringify(
+                    payload
+                ),
+                "utf8"
+            )
+            .toString(
+                "base64url"
+            );
+
+
+    const signature =
+        signTokenPayload(
+            encodedPayload
+        );
+
+
+    return (
+        encodedPayload +
+        "." +
+        signature
+    );
+
+}
+
+
+/*
+===========================================================
+ VERIFY TOKEN
+===========================================================
+*/
+
+function verifyPersistentToken(
+    token
+) {
+
+    try {
+
+        if (
+            !token ||
+            typeof token !==
+            "string"
+        ) {
+
+            return null;
+
+        }
+
+
+        const parts =
+            token.split(".");
+
+
+        if (
+            parts.length !== 2
+        ) {
+
+            return null;
+
+        }
+
+
+        const [
+            encodedPayload,
+            signature
+        ] = parts;
+
+
+        const expected =
+            signTokenPayload(
+                encodedPayload
+            );
+
+
+        const a =
+            Buffer.from(
+                signature
+            );
+
+
+        const b =
+            Buffer.from(
+                expected
+            );
+
+
+        if (
+            a.length !==
+            b.length
+        ) {
+
+            return null;
+
+        }
+
+
+        if (
+            !crypto.timingSafeEqual(
+                a,
+                b
+            )
+        ) {
+
+            return null;
+
+        }
+
+
+        const payload =
+            JSON.parse(
+                Buffer
+                    .from(
+                        encodedPayload,
+                        "base64url"
+                    )
+                    .toString(
+                        "utf8"
+                    )
+            );
+
+
+        if (
+            payload.v !== 1
+        ) {
+
+            return null;
+
+        }
+
+
+        if (
+            !payload.uid ||
+            !payload.exp
+        ) {
+
+            return null;
+
+        }
+
+
+        if (
+            Date.now() >
+            Number(
+                payload.exp
+            )
+        ) {
+
+            return null;
+
+        }
+
+
+        return payload;
+
+    } catch {
+
+        return null;
+
+    }
+
+}
+
+
+/*
+===========================================================
+GET TOKEN
+===========================================================
+*/
+
+function getTokenFromRequest(
+    req
+) {
+
+    const auth =
+        req.headers.authorization ||
+        "";
+
+
+    if (
+        !auth.startsWith(
+            "Bearer "
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    return auth
+        .substring(7)
+        .trim() ||
+        null;
+
+}
+
+
+/*
+===========================================================
+AUTHENTICATE REQUEST
+===========================================================
+*/
+
+async function authenticateRequest(
+    req
+) {
+
+    const token =
+        getTokenFromRequest(
+            req
+        );
+
+
+    if (!token) {
+
+        return null;
+
+    }
+
+
+    /*
+    -------------------------------------------------------
+    1. Nouveau token persistant
+    -------------------------------------------------------
+    */
+
+    const persistent =
+        verifyPersistentToken(
+            token
+        );
+
+
+    let userId = null;
+
+
+    if (persistent) {
+
+        userId =
+            persistent.uid;
+
+    }
+
+
+    /*
+    -------------------------------------------------------
+    2. Ancien token en RAM
+    -------------------------------------------------------
+    */
+
+    if (!userId) {
+
+        const oldSession =
+            sessions.get(
+                token
+            );
+
+
+        if (
+            oldSession
+        ) {
+
+            userId =
+                oldSession.userId;
+
+        }
+
+    }
+
+
+    if (!userId) {
+
+        return null;
+
+    }
+
+
+    const accounts =
+        await loadAccounts();
+
+
+    const user =
+        accounts.users.find(
+            u =>
+                u.id ===
+                userId
+        );
+
+
+    if (!user) {
+
+        sessions.delete(
+            token
+        );
+
+        return null;
+
+    }
+
+
+    return {
+
+        token,
+
+        user
+
+    };
+
+}
+
+
+/*
+===========================================================
+DATABASE INIT
 ===========================================================
 */
 
@@ -623,29 +1387,25 @@ async function ensureDatabase() {
     ) {
 
         console.warn(
-            "GitHub database disabled: missing environment variables."
+            "[DATABASE] Configuration GitHub incomplète."
         );
 
         return;
+
     }
+
 
     try {
 
-        let accounts =
+        const accounts =
             await loadAccounts();
 
-        if (
-            !Array.isArray(
-                accounts.users
-            )
-        ) {
-            accounts.users = [];
-        }
 
         const accountsFile =
             await githubGet(
                 ACCOUNTS_FILE
             );
+
 
         if (!accountsFile) {
 
@@ -654,14 +1414,17 @@ async function ensureDatabase() {
             );
 
             console.log(
-                "Created accounts/accounts.json"
+                "[DATABASE] Created accounts.json"
             );
+
         }
+
 
         const usersFile =
             await githubGet(
                 USERS_FILE
             );
+
 
         if (!usersFile) {
 
@@ -669,86 +1432,29 @@ async function ensureDatabase() {
                 users: []
             });
 
+
             console.log(
-                "Created accounts/users.enc"
+                "[DATABASE] Created users.enc"
             );
+
         }
 
+
         console.log(
-            "GitHub account database ready."
+            "[DATABASE] GitHub database ready."
         );
 
     } catch (error) {
 
         console.error(
-            "DATABASE INITIALIZATION ERROR:",
+            "[DATABASE] INITIALIZATION ERROR:",
             error
         );
+
     }
+
 }
 
-/*
-===========================================================
-AUTHENTICATION
-===========================================================
-*/
-
-function getTokenFromRequest(req) {
-
-    const auth =
-        req.headers.authorization || "";
-
-    if (
-        !auth.startsWith(
-            "Bearer "
-        )
-    ) {
-        return null;
-    }
-
-    return auth
-        .substring(7)
-        .trim() || null;
-}
-
-async function authenticateRequest(req) {
-
-    const token =
-        getTokenFromRequest(req);
-
-    if (!token) {
-        return null;
-    }
-
-    const session =
-        sessions.get(token);
-
-    if (!session) {
-        return null;
-    }
-
-    const accounts =
-        await loadAccounts();
-
-    const user =
-        accounts.users.find(
-            u =>
-                u.id ===
-                session.userId
-        );
-
-    if (!user) {
-
-        sessions.delete(token);
-
-        return null;
-    }
-
-    return {
-        token,
-        user
-    };
-}
 
 /*
 ===========================================================
@@ -758,11 +1464,15 @@ STATUS
 
 app.get(
     "/api/status",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
             let users = 0;
+
 
             if (
                 GITHUB_TOKEN &&
@@ -773,55 +1483,58 @@ app.get(
                 const accounts =
                     await loadAccounts();
 
+
                 users =
                     accounts.users.length;
+
             }
 
+
             res.json({
+
                 online: true,
+
                 service:
                     "DAVID RANDOM V2",
+
                 users,
+
                 github:
                     Boolean(
                         GITHUB_TOKEN &&
                         GITHUB_OWNER &&
                         GITHUB_REPO
                     ),
+
                 websocket: true,
-                endpoints: {
-                    status:
-                        "/api/status",
-                    register:
-                        "/api/account/register",
-                    login:
-                        "/api/account/login",
-                    me:
-                        "/api/account/me",
-                    profilePicture:
-                        "/api/account/profile-picture",
-                    upload:
-                        "/api/upload",
-                    chatLogs:
-                        "/api/chat/logs"
-                }
+
+                persistentSessions:
+                    true
+
             });
 
         } catch (error) {
 
             console.error(
-                "STATUS ERROR:",
+                "[STATUS]",
                 error
             );
 
+
             res.status(500).json({
+
                 online: false,
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
+
 
 /*
 ===========================================================
@@ -831,19 +1544,26 @@ REGISTER
 
 app.post(
     "/api/account/register",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
             const username =
                 String(
-                    req.body.username || ""
+                    req.body.username ||
+                    ""
                 ).trim();
+
 
             const password =
                 String(
-                    req.body.password || ""
+                    req.body.password ||
+                    ""
                 );
+
 
             const profilePicture =
                 req.body.profile_picture
@@ -852,16 +1572,23 @@ app.post(
                     ).trim()
                     : null;
 
+
             if (
                 username.length < 3 ||
                 username.length > 24
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "USERNAME MUST BE 3-24 CHARACTERS"
+
                 });
+
             }
+
 
             if (
                 !/^[a-zA-Z0-9_-]+$/.test(
@@ -869,33 +1596,52 @@ app.post(
                 )
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "USERNAME CAN ONLY CONTAIN LETTERS, NUMBERS, _ AND -"
+
                 });
+
             }
+
 
             if (
                 password.length < 8 ||
                 password.length > 128
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "PASSWORD MUST BE 8-128 CHARACTERS"
+
                 });
+
             }
+
 
             if (
                 profilePicture &&
-                profilePicture.length > 2000
+                profilePicture.length >
+                2000
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "PROFILE PICTURE URL TOO LONG"
+
                 });
+
             }
+
 
             if (
                 profilePicture &&
@@ -904,35 +1650,51 @@ app.post(
                 )
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "PROFILE PICTURE MUST BE A HTTP/HTTPS URL"
+
                 });
+
             }
+
 
             const accounts =
                 await loadAccounts();
+
 
             const normalized =
                 normalizeUsername(
                     username
                 );
 
+
             const exists =
                 accounts.users.some(
                     u =>
                         normalizeUsername(
                             u.username
-                        ) === normalized
+                        ) ===
+                        normalized
                 );
+
 
             if (exists) {
 
-                return res.status(409).json({
+                return res.status(
+                    409
+                ).json({
+
                     error:
                         "USERNAME ALREADY EXISTS"
+
                 });
+
             }
+
 
             const {
                 salt,
@@ -942,7 +1704,9 @@ app.post(
                     password
                 );
 
+
             const user = {
+
                 id:
                     randomId(12),
 
@@ -958,13 +1722,18 @@ app.post(
                     salt,
 
                 profile_picture:
-                    profilePicture || null,
+                    profilePicture ||
+                    null,
 
                 created_at:
-                    new Date().toISOString()
+                    new Date()
+                        .toISOString()
+
             };
 
+
             accounts.users.push({
+
                 id:
                     user.id,
 
@@ -979,12 +1748,16 @@ app.post(
 
                 created_at:
                     user.created_at
+
             });
+
 
             const encryptedUsers =
                 await loadEncryptedUsers();
 
+
             encryptedUsers.users.push({
+
                 id:
                     user.id,
 
@@ -996,20 +1769,29 @@ app.post(
 
                 password_salt:
                     user.password_salt
+
             });
+
 
             await saveAccounts(
                 accounts
             );
 
+
             await saveEncryptedUsers(
                 encryptedUsers
             );
 
+
             const token =
-                crypto
-                    .randomBytes(48)
-                    .toString("base64url");
+                createToken(
+                    user.id
+                );
+
+
+            /*
+            Garder aussi le token en RAM
+            */
 
             sessions.set(
                 token,
@@ -1022,31 +1804,45 @@ app.post(
                 }
             );
 
+
             console.log(
-                `Account created: ${username}`
+                `[AUTH] Account created: ${username}`
             );
 
+
             res.status(201).json({
+
                 success: true,
+
                 token,
+
                 user:
-                    publicUser(user)
+                    publicUser(
+                        user
+                    )
+
             });
 
         } catch (error) {
 
             console.error(
-                "REGISTER ERROR:",
+                "[REGISTER]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
+
 
 /*
 ===========================================================
@@ -1056,57 +1852,81 @@ LOGIN
 
 app.post(
     "/api/account/login",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
             const username =
                 String(
-                    req.body.username || ""
+                    req.body.username ||
+                    ""
                 ).trim();
+
 
             const password =
                 String(
-                    req.body.password || ""
+                    req.body.password ||
+                    ""
                 );
+
 
             if (
                 !username ||
                 !password
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "USERNAME AND PASSWORD REQUIRED"
+
                 });
+
             }
+
 
             const normalized =
                 normalizeUsername(
                     username
                 );
 
+
             const accounts =
                 await loadAccounts();
+
 
             const publicAccount =
                 accounts.users.find(
                     u =>
                         normalizeUsername(
                             u.username
-                        ) === normalized
+                        ) ===
+                        normalized
                 );
+
 
             if (!publicAccount) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "INVALID USERNAME OR PASSWORD"
+
                 });
+
             }
+
 
             const encryptedUsers =
                 await loadEncryptedUsers();
+
 
             const secureUser =
                 encryptedUsers.users.find(
@@ -1115,13 +1935,20 @@ app.post(
                         publicAccount.id
                 );
 
+
             if (!secureUser) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "INVALID USERNAME OR PASSWORD"
+
                 });
+
             }
+
 
             const valid =
                 verifyPassword(
@@ -1130,18 +1957,30 @@ app.post(
                     secureUser.password_hash
                 );
 
+
             if (!valid) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "INVALID USERNAME OR PASSWORD"
+
                 });
+
             }
 
+
+            /*
+            NOUVEAU TOKEN PERSISTANT
+            */
+
             const token =
-                crypto
-                    .randomBytes(48)
-                    .toString("base64url");
+                createToken(
+                    publicAccount.id
+                );
+
 
             sessions.set(
                 token,
@@ -1154,33 +1993,45 @@ app.post(
                 }
             );
 
+
             console.log(
-                `Login: ${publicAccount.username}`
+                `[AUTH] Login: ${publicAccount.username}`
             );
 
+
             res.json({
+
                 success: true,
+
                 token,
+
                 user:
                     publicUser(
                         publicAccount
                     )
+
             });
 
         } catch (error) {
 
             console.error(
-                "LOGIN ERROR:",
+                "[LOGIN]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
+
 
 /*
 ===========================================================
@@ -1190,20 +2041,35 @@ LOGOUT
 
 app.post(
     "/api/account/logout",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         const token =
-            getTokenFromRequest(req);
+            getTokenFromRequest(
+                req
+            );
+
 
         if (token) {
-            sessions.delete(token);
+
+            sessions.delete(
+                token
+            );
+
         }
 
+
         res.json({
+
             success: true
+
         });
+
     }
 );
+
 
 /*
 ===========================================================
@@ -1213,7 +2079,10 @@ ME
 
 app.get(
     "/api/account/me",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -1222,46 +2091,65 @@ app.get(
                     req
                 );
 
+
             if (!auth) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "LOGIN REQUIRED"
+
                 });
+
             }
 
+
             res.json({
+
                 success: true,
+
                 user:
                     publicUser(
                         auth.user
                     )
+
             });
 
         } catch (error) {
 
             console.error(
-                "ME ERROR:",
+                "[ME]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
 
+
 /*
 ===========================================================
-CHANGE PROFILE PICTURE - URL
+PROFILE PICTURE URL
 ===========================================================
 */
 
 app.post(
     "/api/account/profile-picture",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -1270,44 +2158,66 @@ app.post(
                     req
                 );
 
+
             if (!auth) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "LOGIN REQUIRED"
+
                 });
+
             }
+
 
             let profilePicture =
                 req.body.profile_picture;
 
+
             if (
                 profilePicture ===
                 undefined ||
-                profilePicture === null
+                profilePicture ===
+                null
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "PROFILE PICTURE REQUIRED"
+
                 });
+
             }
+
 
             profilePicture =
                 String(
                     profilePicture
                 ).trim();
 
+
             if (
                 profilePicture.length >
                 2000
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "PROFILE PICTURE URL TOO LONG"
+
                 });
+
             }
+
 
             if (
                 profilePicture &&
@@ -1316,14 +2226,21 @@ app.post(
                 )
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "PROFILE PICTURE MUST BE A HTTP/HTTPS URL"
+
                 });
+
             }
+
 
             const accounts =
                 await loadAccounts();
+
 
             const user =
                 accounts.users.find(
@@ -1332,56 +2249,83 @@ app.post(
                         auth.user.id
                 );
 
+
             if (!user) {
 
-                return res.status(404).json({
+                return res.status(
+                    404
+                ).json({
+
                     error:
                         "USER NOT FOUND"
+
                 });
+
             }
 
+
             user.profile_picture =
-                profilePicture || null;
+                profilePicture ||
+                null;
+
 
             await saveAccounts(
                 accounts
             );
 
+
             broadcastUserUpdate(
                 user
             );
 
+
             res.json({
+
                 success: true,
+
                 user:
-                    publicUser(user)
+                    publicUser(
+                        user
+                    )
+
             });
 
         } catch (error) {
 
             console.error(
-                "PROFILE PICTURE ERROR:",
+                "[PROFILE PICTURE]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
 
+
 /*
 ===========================================================
-CHANGE PROFILE PICTURE - FILE
+PROFILE PICTURE UPLOAD
 ===========================================================
 */
 
 app.post(
     "/api/account/profile-picture/upload",
+
     upload.single("file"),
-    async (req, res) => {
+
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -1390,21 +2334,34 @@ app.post(
                     req
                 );
 
+
             if (!auth) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "LOGIN REQUIRED"
+
                 });
+
             }
+
 
             if (!req.file) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "NO IMAGE PROVIDED"
+
                 });
+
             }
+
 
             if (
                 !req.file.mimetype.startsWith(
@@ -1412,27 +2369,24 @@ app.post(
                 )
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "PROFILE PICTURE MUST BE AN IMAGE"
+
                 });
+
             }
 
-            if (
-                req.file.size >
-                25 * 1024 * 1024
-            ) {
-
-                return res.status(413).json({
-                    error:
-                        "IMAGE TOO LARGE. MAXIMUM 25 MB"
-                });
-            }
 
             let extension =
                 ".png";
 
-            const mimeExtensions = {
+
+            const extensions = {
+
                 "image/jpeg":
                     ".jpg",
 
@@ -1450,38 +2404,52 @@ app.post(
 
                 "image/bmp":
                     ".bmp"
+
             };
 
+
             if (
-                mimeExtensions[
+                extensions[
                     req.file.mimetype
                 ]
             ) {
+
                 extension =
-                    mimeExtensions[
+                    extensions[
                         req.file.mimetype
                     ];
+
             }
+
 
             const filename =
                 `profile_${auth.user.id}_${Date.now()}_${crypto
                     .randomBytes(4)
                     .toString("hex")}${extension}`;
 
+
             const path =
                 `profile-pictures/${filename}`;
 
+
             await githubWriteBuffer(
+
                 path,
+
                 req.file.buffer,
+
                 `Update profile picture for ${auth.user.username}`
+
             );
+
 
             const profilePicture =
                 `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
 
+
             const accounts =
                 await loadAccounts();
+
 
             const user =
                 accounts.users.find(
@@ -1490,153 +2458,203 @@ app.post(
                         auth.user.id
                 );
 
+
             if (!user) {
 
-                return res.status(404).json({
+                return res.status(
+                    404
+                ).json({
+
                     error:
                         "USER NOT FOUND"
+
                 });
+
             }
+
 
             user.profile_picture =
                 profilePicture;
+
 
             await saveAccounts(
                 accounts
             );
 
+
             broadcastUserUpdate(
                 user
             );
 
-            console.log(
-                `Profile picture updated: ${user.username}`
-            );
 
             res.json({
+
                 success: true,
 
                 user:
-                    publicUser(user),
+                    publicUser(
+                        user
+                    ),
 
                 profile_picture:
                     profilePicture
+
             });
 
         } catch (error) {
 
             console.error(
-                "PROFILE PICTURE UPLOAD ERROR:",
+                "[PROFILE UPLOAD]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
 
+
 /*
 ===========================================================
-FILES
+MEDIA FILE LIST
 ===========================================================
 */
 
 app.get(
     "/api/files/:folder",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
             const folder =
                 req.params.folder;
 
+
             if (
                 ![
                     "image",
                     "music",
                     "video"
-                ].includes(folder)
+                ].includes(
+                    folder
+                )
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "INVALID FOLDER"
+
                 });
+
             }
 
-            const file =
+
+            const data =
                 await githubGet(
                     folder
                 );
 
-            if (!file) {
+
+            if (!data) {
 
                 return res.json({
+
                     files: []
+
                 });
+
             }
 
+
             const files =
-                Array.isArray(file)
-                    ? file
-                    : [file];
+                Array.isArray(data)
+                    ? data
+                    : [data];
+
 
             const result =
                 files
                     .filter(
-                        f =>
-                            f.type ===
+                        file =>
+                            file.type ===
                             "file"
                     )
                     .map(
-                        f => ({
+                        file => ({
+
                             name:
-                                f.name,
+                                file.name,
 
                             path:
-                                f.path,
+                                file.path,
 
                             size:
-                                f.size,
+                                file.size,
 
                             download:
-                                `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${f.path}`
+                                `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${file.path}`
+
                         })
                     );
 
+
             res.json({
+
                 files:
                     result
+
             });
 
         } catch (error) {
 
             console.error(
-                "FILES ERROR:",
+                "[FILES]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
 
+
 /*
 ===========================================================
-UPLOAD MEDIA
+MEDIA UPLOAD
 ===========================================================
 */
 
 app.post(
     "/api/upload",
+
     upload.single("file"),
-    async (req, res) => {
+
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -1645,51 +2663,80 @@ app.post(
                     req
                 );
 
+
             if (!auth) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "LOGIN REQUIRED"
+
                 });
+
             }
+
 
             if (!req.file) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "NO FILE PROVIDED"
+
                 });
+
             }
+
 
             const folder =
                 String(
-                    req.body.folder || ""
+                    req.body.folder ||
+                    ""
                 ).trim();
+
 
             if (
                 ![
                     "image",
                     "music",
                     "video"
-                ].includes(folder)
+                ].includes(
+                    folder
+                )
             ) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "INVALID FOLDER"
+
                 });
+
             }
+
 
             if (
                 req.file.size >
-                25 * 1024 * 1024
+                MAX_UPLOAD_SIZE
             ) {
 
-                return res.status(413).json({
+                return res.status(
+                    413
+                ).json({
+
                     error:
                         "FILE TOO LARGE. MAXIMUM 25 MB"
+
                 });
+
             }
+
 
             const originalName =
                 req.file.originalname
@@ -1698,51 +2745,65 @@ app.post(
                         "_"
                     );
 
-            const timestamp =
-                Date.now();
-
-            const random =
-                crypto
-                    .randomBytes(4)
-                    .toString("hex");
 
             const filename =
-                `${timestamp}_${random}_${originalName}`;
+                `${Date.now()}_${crypto
+                    .randomBytes(4)
+                    .toString("hex")}_${originalName}`;
+
 
             const path =
                 `${folder}/${filename}`;
 
+
             await githubWriteBuffer(
+
                 path,
+
                 req.file.buffer,
+
                 `Upload ${folder}/${filename} by ${auth.user.username}`
+
             );
+
 
             const download =
                 `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
 
+
             res.json({
+
                 success: true,
+
                 name:
                     filename,
+
                 path,
+
                 download
+
             });
 
         } catch (error) {
 
             console.error(
-                "UPLOAD ERROR:",
+                "[UPLOAD]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
+
 
 /*
 ===========================================================
@@ -1754,24 +2815,30 @@ async function getChatLogs() {
 
     const data =
         await githubGet(
-            "chat-log"
+            CHAT_FOLDER
         );
 
+
     if (!data) {
+
         return [];
+
     }
+
 
     const files =
         Array.isArray(data)
             ? data
             : [data];
 
+
     return files
         .filter(
-            f =>
-                f.type === "file" &&
+            file =>
+                file.type ===
+                "file" &&
                 /\.json$/i.test(
-                    f.name
+                    file.name
                 )
         )
         .sort(
@@ -1780,11 +2847,22 @@ async function getChatLogs() {
                     b.name
                 )
         );
+
 }
+
+
+/*
+===========================================================
+CHAT LOG LIST
+===========================================================
+*/
 
 app.get(
     "/api/chat/logs",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -1793,48 +2871,75 @@ app.get(
                     req
                 );
 
+
             if (!auth) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "LOGIN REQUIRED"
+
                 });
+
             }
+
 
             const logs =
                 await getChatLogs();
 
+
             res.json({
+
                 logs:
                     logs.map(
-                        f => ({
+                        file => ({
+
                             name:
-                                f.name,
+                                file.name,
 
                             path:
-                                f.path
+                                file.path
+
                         })
                     )
+
             });
 
         } catch (error) {
 
             console.error(
-                "CHAT LOG LIST ERROR:",
+                "[CHAT LOGS]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
 
+
+/*
+===========================================================
+CHAT LOG READ
+===========================================================
+*/
+
 app.get(
     "/api/chat/log/:number",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -1843,13 +2948,20 @@ app.get(
                     req
                 );
 
+
             if (!auth) {
 
-                return res.status(401).json({
+                return res.status(
+                    401
+                ).json({
+
                     error:
                         "LOGIN REQUIRED"
+
                 });
+
             }
+
 
             const number =
                 String(
@@ -1859,53 +2971,79 @@ app.get(
                     ""
                 );
 
+
             if (!number) {
 
-                return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
                     error:
                         "INVALID LOG NUMBER"
+
                 });
+
             }
+
 
             const path =
                 `chat-log/chat-${number}.json`;
+
 
             const text =
                 await githubReadText(
                     path
                 );
 
+
             if (!text) {
 
-                return res.status(404).json({
+                return res.status(
+                    404
+                ).json({
+
                     error:
                         "CHAT LOG NOT FOUND"
+
                 });
+
             }
 
-            const data =
-                JSON.parse(text);
 
-            res.json(data);
+            const data =
+                JSON.parse(
+                    text
+                );
+
+
+            res.json(
+                data
+            );
 
         } catch (error) {
 
             console.error(
-                "CHAT LOG ERROR:",
+                "[CHAT LOG READ]",
                 error
             );
 
+
             res.status(500).json({
+
                 error:
                     error.message
+
             });
+
         }
+
     }
 );
 
+
 /*
 ===========================================================
-WRITE CHAT LOG
+APPEND CHAT MESSAGE
 ===========================================================
 */
 
@@ -1918,16 +3056,26 @@ async function appendChatMessage(
         const logs =
             await getChatLogs();
 
-        let target = null;
 
-        if (logs.length) {
+        let target =
+            null;
+
+
+        if (
+            logs.length
+        ) {
+
             target =
                 logs[
                     logs.length - 1
                 ];
+
         }
 
-        let messages = [];
+
+        let messages =
+            [];
+
 
         if (target) {
 
@@ -1938,23 +3086,37 @@ async function appendChatMessage(
                         target.path
                     );
 
-                const data =
-                    JSON.parse(text);
 
-                messages =
+                const data =
+                    JSON.parse(
+                        text
+                    );
+
+
+                if (
                     Array.isArray(
                         data.messages
                     )
-                        ? data.messages
-                        : [];
+                ) {
+
+                    messages =
+                        data.messages;
+
+                }
 
             } catch {
 
                 messages = [];
+
             }
+
         }
 
-        messages.push(message);
+
+        messages.push(
+            message
+        );
+
 
         const serialized =
             JSON.stringify(
@@ -1965,41 +3127,51 @@ async function appendChatMessage(
                 2
             );
 
+
         if (
             !target ||
             Buffer.byteLength(
                 serialized,
                 "utf8"
             ) >
-            15 * 1024 * 1024
+            MAX_CHAT_LOG_SIZE
         ) {
 
-            let nextNumber = 1;
+            let nextNumber =
+                1;
 
-            if (logs.length) {
+
+            if (
+                logs.length
+            ) {
 
                 const numbers =
                     logs.map(
-                        f =>
+                        file =>
                             Number(
                                 (
-                                    f.name.match(
+                                    file.name.match(
                                         /(\d+)/
                                     ) || []
                                 )[1]
                             ) || 0
                     );
 
+
                 nextNumber =
                     Math.max(
                         ...numbers
                     ) + 1;
+
             }
+
 
             const path =
                 `chat-log/chat-${nextNumber}.json`;
 
+
             await githubWriteText(
+
                 path,
 
                 JSON.stringify(
@@ -2013,34 +3185,34 @@ async function appendChatMessage(
                 ),
 
                 `Create chat log ${nextNumber}`
+
             );
 
         } else {
 
             await githubWriteText(
+
                 target.path,
+
                 serialized,
+
                 `Update chat log by ${message.username}`
+
             );
+
         }
 
     } catch (error) {
 
         console.error(
-            "CHAT LOG WRITE ERROR:",
+            "[CHAT LOG WRITE]",
             error
         );
+
     }
+
 }
 
-/*
-===========================================================
-HTTP SERVER
-===========================================================
-*/
-
-const server =
-    http.createServer(app);
 
 /*
 ===========================================================
@@ -2050,48 +3222,118 @@ WEBSOCKET
 
 const wss =
     new WebSocket.Server({
+
         server,
-        path: "/ws"
+
+        path:
+            "/ws"
+
     });
+
+
+/*
+===========================================================
+AUTHENTICATE SOCKET
+===========================================================
+*/
 
 async function authenticateSocket(
     token
 ) {
 
     if (!token) {
+
         return null;
+
     }
 
-    const session =
-        sessions.get(token);
 
-    if (!session) {
-        return null;
+    let userId =
+        null;
+
+
+    /*
+    Nouveau token persistant
+    */
+
+    const persistent =
+        verifyPersistentToken(
+            token
+        );
+
+
+    if (persistent) {
+
+        userId =
+            persistent.uid;
+
     }
+
+
+    /*
+    Ancien token
+    */
+
+    if (!userId) {
+
+        const session =
+            sessions.get(
+                token
+            );
+
+
+        if (session) {
+
+            userId =
+                session.userId;
+
+        }
+
+    }
+
+
+    if (!userId) {
+
+        return null;
+
+    }
+
 
     try {
 
         const accounts =
             await loadAccounts();
 
-        const user =
-            accounts.users.find(
-                u =>
-                    u.id ===
-                    session.userId
-            );
 
-        return user || null;
+        return (
+            accounts.users.find(
+                user =>
+                    user.id ===
+                    userId
+            ) || null
+        );
 
     } catch {
 
         return null;
+
     }
+
 }
+
+
+/*
+===========================================================
+WSS CONNECTION
+===========================================================
+*/
 
 wss.on(
     "connection",
-    async (ws, req) => {
+    async (
+        ws,
+        req
+    ) => {
 
         try {
 
@@ -2101,46 +3343,61 @@ wss.on(
                     `http://${req.headers.host}`
                 );
 
+
             const token =
                 url.searchParams.get(
                     "token"
                 );
+
 
             const user =
                 await authenticateSocket(
                     token
                 );
 
+
             if (!user) {
 
                 ws.send(
                     JSON.stringify({
+
                         type:
                             "error",
 
                         message:
                             "LOGIN REQUIRED"
+
                     })
                 );
+
 
                 ws.close(
                     1008,
                     "LOGIN REQUIRED"
                 );
 
+
                 return;
+
             }
+
 
             ws.user =
                 user;
 
+
             ws.authenticated =
                 true;
 
-            connectedSockets.add(ws);
+
+            connectedSockets.add(
+                ws
+            );
+
 
             ws.send(
                 JSON.stringify({
+
                     type:
                         "welcome",
 
@@ -2155,10 +3412,17 @@ wss.on(
 
                     profile_picture:
                         user.profile_picture
+
                 })
             );
 
+
             broadcastUsers();
+
+
+            /*
+            MESSAGE
+            */
 
             ws.on(
                 "message",
@@ -2171,12 +3435,16 @@ wss.on(
                                 raw.toString()
                             );
 
+
                         if (
                             data.type !==
                             "message"
                         ) {
+
                             return;
+
                         }
+
 
                         const message =
                             String(
@@ -2184,16 +3452,23 @@ wss.on(
                                 ""
                             ).trim();
 
+
                         if (!message) {
+
                             return;
+
                         }
+
 
                         if (
                             message.length >
                             500
                         ) {
+
                             return;
+
                         }
+
 
                         const chatMessage = {
 
@@ -2215,15 +3490,28 @@ wss.on(
                             timestamp:
                                 new Date()
                                     .toISOString()
+
                         };
 
+
+                        /*
+                        Envoi immédiat aux clients
+                        */
+
                         broadcast({
+
                             type:
                                 "message",
 
                             data:
                                 chatMessage
+
                         });
+
+
+                        /*
+                        Sauvegarde GitHub
+                        */
 
                         await appendChatMessage(
                             chatMessage
@@ -2232,22 +3520,32 @@ wss.on(
                     } catch (error) {
 
                         console.error(
-                            "WSS MESSAGE ERROR:",
+                            "[WSS MESSAGE]",
                             error
                         );
 
-                        ws.send(
-                            JSON.stringify({
-                                type:
-                                    "error",
 
-                                message:
-                                    "INVALID MESSAGE"
-                            })
-                        );
+                        try {
+
+                            ws.send(
+                                JSON.stringify({
+
+                                    type:
+                                        "error",
+
+                                    message:
+                                        "INVALID MESSAGE"
+
+                                })
+                            );
+
+                        } catch {}
+
                     }
+
                 }
             );
+
 
             ws.on(
                 "close",
@@ -2257,9 +3555,12 @@ wss.on(
                         ws
                     );
 
+
                     broadcastUsers();
+
                 }
             );
+
 
             ws.on(
                 "error",
@@ -2268,22 +3569,29 @@ wss.on(
                     connectedSockets.delete(
                         ws
                     );
+
                 }
             );
 
         } catch (error) {
 
             console.error(
-                "WSS CONNECTION ERROR:",
+                "[WSS CONNECTION]",
                 error
             );
 
+
             try {
+
                 ws.close();
+
             } catch {}
+
         }
+
     }
 );
+
 
 /*
 ===========================================================
@@ -2291,13 +3599,19 @@ BROADCAST
 ===========================================================
 */
 
-function broadcast(data) {
+function broadcast(
+    data
+) {
 
     const text =
-        JSON.stringify(data);
+        JSON.stringify(
+            data
+        );
+
 
     for (
-        const ws of connectedSockets
+        const ws of
+        connectedSockets
     ) {
 
         if (
@@ -2306,44 +3620,71 @@ function broadcast(data) {
         ) {
 
             try {
-                ws.send(text);
+
+                ws.send(
+                    text
+                );
+
             } catch {}
+
         }
+
     }
+
 }
+
+
+/*
+===========================================================
+BROADCAST USERS
+===========================================================
+*/
 
 function broadcastUsers() {
 
     broadcast({
+
         type:
             "users",
 
         count:
             connectedSockets.size
+
     });
+
 }
+
+
+/*
+===========================================================
+PROFILE UPDATE
+===========================================================
+*/
 
 function broadcastUserUpdate(
     user
 ) {
 
     for (
-        const ws of connectedSockets
+        const ws of
+        connectedSockets
     ) {
 
         if (
             ws.user &&
             ws.user.id ===
-                user.id &&
+            user.id &&
             ws.readyState ===
-                WebSocket.OPEN
+            WebSocket.OPEN
         ) {
 
             ws.user =
                 user;
 
+
             ws.send(
                 JSON.stringify({
+
                     type:
                         "profile_updated",
 
@@ -2355,11 +3696,16 @@ function broadcastUserUpdate(
 
                     profile_picture:
                         user.profile_picture
+
                 })
             );
+
         }
+
     }
+
 }
+
 
 /*
 ===========================================================
@@ -2369,9 +3715,13 @@ ROOT
 
 app.get(
     "/",
-    (req, res) => {
+    (
+        req,
+        res
+    ) => {
 
         res.json({
+
             name:
                 "DAVID RANDOM V2 API",
 
@@ -2384,11 +3734,17 @@ app.get(
             websocket:
                 "/ws",
 
+            persistent_sessions:
+                true,
+
             status_endpoint:
                 "/api/status"
+
         });
+
     }
 );
+
 
 /*
 ===========================================================
@@ -2397,17 +3753,26 @@ app.get(
 */
 
 app.use(
-    (req, res) => {
+    (
+        req,
+        res
+    ) => {
 
-        res.status(404).json({
+        res.status(
+            404
+        ).json({
+
             error:
                 "ENDPOINT NOT FOUND",
 
             path:
                 req.originalUrl
+
         });
+
     }
 );
+
 
 /*
 ===========================================================
@@ -2416,12 +3781,18 @@ ERROR HANDLER
 */
 
 app.use(
-    (error, req, res, next) => {
+    (
+        error,
+        req,
+        res,
+        next
+    ) => {
 
         console.error(
-            "EXPRESS ERROR:",
+            "[EXPRESS ERROR]",
             error
         );
+
 
         if (
             error instanceof
@@ -2433,25 +3804,43 @@ app.use(
                 "LIMIT_FILE_SIZE"
             ) {
 
-                return res.status(413).json({
+                return res.status(
+                    413
+                ).json({
+
                     error:
                         "FILE TOO LARGE. MAXIMUM 25 MB"
+
                 });
+
             }
 
-            return res.status(400).json({
+
+            return res.status(
+                400
+            ).json({
+
                 error:
                     error.message
+
             });
+
         }
 
-        res.status(500).json({
+
+        res.status(
+            500
+        ).json({
+
             error:
                 error.message ||
                 "INTERNAL SERVER ERROR"
+
         });
+
     }
 );
+
 
 /*
 ===========================================================
@@ -2489,54 +3878,51 @@ server.listen(
         );
 
         console.log(
-            "HTTP:",
-            "/"
+            "HTTP: /"
         );
 
         console.log(
-            "STATUS:",
-            "/api/status"
+            "STATUS: /api/status"
         );
 
         console.log(
-            "WEBSOCKET:",
-            "/ws"
+            "WEBSOCKET: /ws"
         );
 
         console.log(
-            "REGISTER:",
-            "/api/account/register"
+            "REGISTER: /api/account/register"
         );
 
         console.log(
-            "LOGIN:",
-            "/api/account/login"
+            "LOGIN: /api/account/login"
         );
 
         console.log(
-            "PROFILE URL:",
-            "/api/account/profile-picture"
+            "ME: /api/account/me"
         );
 
         console.log(
-            "PROFILE UPLOAD:",
-            "/api/account/profile-picture/upload"
+            "PROFILE: /api/account/profile-picture"
         );
 
         console.log(
-            "MEDIA UPLOAD:",
-            "/api/upload"
+            "MEDIA: /api/upload"
         );
 
         console.log(
-            "ACCOUNT STORAGE:",
-            "GitHub"
+            "CHAT: /api/chat/logs"
+        );
+
+        console.log(
+            "PERSISTENT SESSIONS: ENABLED"
         );
 
         console.log(
             "========================================"
         );
 
+
         await ensureDatabase();
+
     }
 );
