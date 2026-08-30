@@ -1,75 +1,60 @@
-// ============================================================
-// DAVID RANDOM V2 - SERVER
-// Render + GitHub Storage + WebSocket + Accounts
-// Persistent Accounts: accounts.json + accounts/users.enc
-// Chat Logs + Media
-// ============================================================
+"use strict";
 
 const express = require("express");
-const crypto = require("crypto");
-const path = require("path");
 const http = require("http");
-const { WebSocketServer } = require("ws");
-
-// ============================================================
-// CONFIG
-// ============================================================
+const WebSocket = require("ws");
+const crypto = require("crypto");
+const multer = require("multer");
 
 const app = express();
 const server = http.createServer(app);
 
 const PORT = process.env.PORT || 10000;
 
-const GITHUB_OWNER =
-    process.env.GITHUB_OWNER || "davidtytytutu-lgtm";
+/* =========================================================
+   CONFIGURATION GITHUB
+   ========================================================= */
 
-const GITHUB_REPO =
-    process.env.GITHUB_REPO || "ramdom";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_OWNER = process.env.GITHUB_OWNER;
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
 
-const GITHUB_BRANCH =
-    process.env.GITHUB_BRANCH || "main";
+/*
+Exemple :
 
-const GITHUB_TOKEN =
-    process.env.GITHUB_TOKEN || "";
+GITHUB_OWNER = davidtytytutu-lgtm
+GITHUB_REPO  = ramdom
+GITHUB_BRANCH = main
+*/
 
-// Clé de chiffrement des comptes.
-// IMPORTANT : à mettre dans les variables Render.
-const ACCOUNT_ENCRYPTION_KEY =
-    process.env.ACCOUNT_ENCRYPTION_KEY || "";
+if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
+    console.warn("⚠️ VARIABLES GITHUB MANQUANTES");
+}
 
-const MAX_UPLOAD_SIZE =
-    25 * 1024 * 1024;
+/* =========================================================
+   EXPRESS
+   ========================================================= */
 
-const MAX_MESSAGE_LENGTH = 500;
+app.use(express.json({
+    limit: "2mb"
+}));
 
-const CHAT_LOG_LIMIT =
-    15 * 1024 * 1024;
+app.use(express.urlencoded({
+    extended: true,
+    limit: "2mb"
+}));
 
-// ============================================================
-// MIDDLEWARE
-// ============================================================
-
-// CORS sans dépendance supplémentaire
 app.use((req, res, next) => {
 
-    res.setHeader(
-        "Access-Control-Allow-Origin",
-        req.headers.origin || "*"
-    );
-
-    res.setHeader(
-        "Access-Control-Allow-Credentials",
-        "true"
-    );
-
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader(
         "Access-Control-Allow-Headers",
         "Content-Type, Authorization"
     );
-
     res.setHeader(
         "Access-Control-Allow-Methods",
-        "GET,POST,PUT,DELETE,OPTIONS"
+        "GET, POST, PUT, DELETE, OPTIONS"
     );
 
     if (req.method === "OPTIONS") {
@@ -77,1063 +62,543 @@ app.use((req, res, next) => {
     }
 
     next();
-
 });
 
-app.use(express.json({
-    limit: "35mb"
-}));
+/* =========================================================
+   MULTER
+   ========================================================= */
 
-app.use(express.urlencoded({
-    extended: true,
-    limit: "35mb"
-}));
+const upload = multer({
+    storage: multer.memoryStorage(),
 
-// ============================================================
-// MEMORY
-// ============================================================
-
-const accounts = new Map();
-const sessions = new Map();
-
-let visitors = 1337;
-
-let chatLogCache = [];
-let chatLogLoaded = false;
-
-let accountsLoaded = false;
-
-// ============================================================
-// GITHUB HELPERS
-// ============================================================
-
-function githubHeaders() {
-
-    const headers = {
-        "Accept":
-            "application/vnd.github+json",
-
-        "X-GitHub-Api-Version":
-            "2022-11-28",
-
-        "User-Agent":
-            "David-Random-V2"
-    };
-
-    if (GITHUB_TOKEN) {
-
-        headers.Authorization =
-            `Bearer ${GITHUB_TOKEN}`;
-
+    limits: {
+        fileSize: 25 * 1024 * 1024
     }
+});
 
-    return headers;
+/* =========================================================
+   GITHUB API
+   ========================================================= */
 
+const githubHeaders = {
+    "Accept": "application/vnd.github+json",
+    "Authorization": `Bearer ${GITHUB_TOKEN}`,
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "DAVID-RANDOM"
+};
+
+function githubPath(path) {
+    return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;
 }
 
-// ============================================================
+/* =========================================================
+   GITHUB : LIRE UN FICHIER
+   ========================================================= */
 
-function githubApiUrl(apiPath) {
+async function githubGetFile(path) {
 
-    return (
-        "https://api.github.com/repos/" +
-        encodeURIComponent(GITHUB_OWNER) +
-        "/" +
-        encodeURIComponent(GITHUB_REPO) +
-        apiPath
+    const response = await fetch(
+        githubPath(path) + `?ref=${encodeURIComponent(GITHUB_BRANCH)}`,
+        {
+            headers: githubHeaders
+        }
     );
 
+    if (response.status === 404) {
+        return null;
+    }
+
+    if (!response.ok) {
+        const text = await response.text();
+
+        throw new Error(
+            `GitHub GET ${response.status}: ${text}`
+        );
+    }
+
+    return await response.json();
 }
 
-// ============================================================
+/* =========================================================
+   GITHUB : CONTENU D'UN FICHIER
+   ========================================================= */
 
-async function githubRequest(apiPath, options = {}) {
+async function githubReadText(path) {
 
-    const response =
-        await fetch(
-            githubApiUrl(apiPath),
-            {
-                ...options,
+    const file = await githubGetFile(path);
 
-                headers: {
-                    ...githubHeaders(),
-                    ...(options.headers || {})
-                }
-            }
-        );
-
-    let data = null;
-
-    try {
-        data = await response.json();
+    if (!file) {
+        return null;
     }
-    catch {
-        data = null;
+
+    if (!file.content) {
+        throw new Error("GitHub file content missing");
+    }
+
+    return Buffer
+        .from(file.content.replace(/\n/g, ""), "base64")
+        .toString("utf8");
+}
+
+/* =========================================================
+   GITHUB : ECRIRE UN FICHIER
+   ========================================================= */
+
+async function githubWriteFile(path, content, message) {
+
+    const existing = await githubGetFile(path);
+
+    const body = {
+        message,
+        content: Buffer
+            .from(content)
+            .toString("base64"),
+        branch: GITHUB_BRANCH
+    };
+
+    if (existing && existing.sha) {
+        body.sha = existing.sha;
+    }
+
+    const response = await fetch(
+        githubPath(path),
+        {
+            method: "PUT",
+            headers: {
+                ...githubHeaders,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        }
+    );
+
+    if (!response.ok) {
+
+        const text = await response.text();
+
+        throw new Error(
+            `GitHub PUT ${response.status}: ${text}`
+        );
+    }
+
+    return await response.json();
+}
+
+/* =========================================================
+   GITHUB : SUPPRIMER
+   ========================================================= */
+
+async function githubDeleteFile(path, message) {
+
+    const existing = await githubGetFile(path);
+
+    if (!existing) {
+        return false;
+    }
+
+    const response = await fetch(
+        githubPath(path),
+        {
+            method: "DELETE",
+            headers: {
+                ...githubHeaders,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message,
+                sha: existing.sha,
+                branch: GITHUB_BRANCH
+            })
+        }
+    );
+
+    if (!response.ok) {
+
+        const text = await response.text();
+
+        throw new Error(
+            `GitHub DELETE ${response.status}: ${text}`
+        );
+    }
+
+    return true;
+}
+
+/* =========================================================
+   GITHUB : LISTE D'UN DOSSIER
+   ========================================================= */
+
+async function githubList(path) {
+
+    const response = await fetch(
+        githubPath(path) +
+        `?ref=${encodeURIComponent(GITHUB_BRANCH)}`,
+        {
+            headers: githubHeaders
+        }
+    );
+
+    if (response.status === 404) {
+        return [];
     }
 
     if (!response.ok) {
 
-        const error =
-            new Error(
-                data?.message ||
-                `GitHub HTTP ${response.status}`
-            );
-
-        error.status =
-            response.status;
-
-        error.github =
-            data;
-
-        throw error;
-
-    }
-
-    return data;
-
-}
-
-// ============================================================
-// GITHUB LIST FOLDER
-// ============================================================
-
-async function githubListFolder(folder) {
-
-    const cleanFolder =
-        String(folder || "")
-            .replace(/^\/+/, "")
-            .replace(/\/+$/, "");
-
-    return githubRequest(
-        `/contents/${cleanFolder
-            .split("/")
-            .map(encodeURIComponent)
-            .join("/")
-        }?ref=${encodeURIComponent(GITHUB_BRANCH)}`
-    );
-
-}
-
-// ============================================================
-// GITHUB READ FILE
-// ============================================================
-
-async function githubReadFile(filePath) {
-
-    const cleanPath =
-        String(filePath || "")
-            .replace(/^\/+/, "");
-
-    const data =
-        await githubRequest(
-            `/contents/${cleanPath
-                .split("/")
-                .map(encodeURIComponent)
-                .join("/")
-            }?ref=${encodeURIComponent(GITHUB_BRANCH)}`
-        );
-
-    if (!data || !data.content) {
+        const text = await response.text();
 
         throw new Error(
-            "Fichier GitHub sans contenu."
+            `GitHub LIST ${response.status}: ${text}`
         );
-
     }
 
-    return Buffer
-        .from(
-            data.content.replace(/\n/g, ""),
-            "base64"
-        )
-        .toString("utf8");
-
+    return await response.json();
 }
 
-// ============================================================
-// GITHUB WRITE FILE
-// ============================================================
+/* =========================================================
+   COMPTES
+   ========================================================= */
 
-async function githubWriteFile(
-    filePath,
-    content,
-    message
-) {
+const ACCOUNTS_JSON = "accounts/accounts.json";
+const USERS_ENC = "accounts/users.enc";
 
-    if (!GITHUB_TOKEN) {
+/*
+accounts.json contient la structure publique :
 
-        throw new Error(
-            "GITHUB_TOKEN n'est pas configuré sur Render."
-        );
-
-    }
-
-    const cleanPath =
-        String(filePath || "")
-            .replace(/^\/+/, "");
-
-    let sha = null;
-
-    try {
-
-        const existing =
-            await githubRequest(
-                `/contents/${cleanPath
-                    .split("/")
-                    .map(encodeURIComponent)
-                    .join("/")
-                }?ref=${encodeURIComponent(GITHUB_BRANCH)}`
-            );
-
-        sha =
-            existing.sha || null;
-
-    }
-    catch (error) {
-
-        if (error.status !== 404) {
-            throw error;
-        }
-
-    }
-
-    const body = {
-
-        message:
-            message ||
-            "David Random update",
-
-        content:
-            Buffer
-                .from(content, "utf8")
-                .toString("base64"),
-
-        branch:
-            GITHUB_BRANCH
-
-    };
-
-    if (sha) {
-        body.sha = sha;
-    }
-
-    return githubRequest(
-        `/contents/${cleanPath
-            .split("/")
-            .map(encodeURIComponent)
-            .join("/")
-        }`,
-        {
-            method: "PUT",
-
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
-
-            body:
-                JSON.stringify(body)
-        }
-    );
-
+{
+    "version": 2,
+    "users": [...]
 }
 
-// ============================================================
-// GITHUB WRITE BUFFER
-// ============================================================
+users.enc contient une copie chiffrée des informations
+sensibles.
+*/
 
-async function githubWriteBuffer(
-    filePath,
-    buffer,
-    message
-) {
+let accountsCache = null;
 
-    if (!GITHUB_TOKEN) {
+/* =========================================================
+   HASH MOT DE PASSE
+   ========================================================= */
 
-        throw new Error(
-            "GITHUB_TOKEN n'est pas configuré."
-        );
-
-    }
-
-    const cleanPath =
-        String(filePath || "")
-            .replace(/^\/+/, "");
-
-    let sha = null;
-
-    try {
-
-        const existing =
-            await githubRequest(
-                `/contents/${cleanPath
-                    .split("/")
-                    .map(encodeURIComponent)
-                    .join("/")
-                }?ref=${encodeURIComponent(GITHUB_BRANCH)}`
-            );
-
-        sha =
-            existing.sha || null;
-
-    }
-    catch (error) {
-
-        if (error.status !== 404) {
-            throw error;
-        }
-
-    }
-
-    const body = {
-
-        message:
-            message ||
-            "David Random file upload",
-
-        content:
-            buffer.toString("base64"),
-
-        branch:
-            GITHUB_BRANCH
-
-    };
-
-    if (sha) {
-        body.sha = sha;
-    }
-
-    return githubRequest(
-        `/contents/${cleanPath
-            .split("/")
-            .map(encodeURIComponent)
-            .join("/")
-        }`,
-        {
-            method: "PUT",
-
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
-
-            body:
-                JSON.stringify(body)
-        }
-    );
-
-}
-
-// ============================================================
-// RANDOM ID
-// ============================================================
-
-function randomId(length = 16) {
+function hashPassword(password, salt) {
 
     return crypto
-        .randomBytes(length)
+        .scryptSync(password, salt, 64)
+        .toString("hex");
+}
+
+function createPassword(password) {
+
+    const salt = crypto
+        .randomBytes(32)
         .toString("hex");
 
+    const hash = hashPassword(password, salt);
+
+    return {
+        salt,
+        hash
+    };
 }
 
-// ============================================================
-// PASSWORD HASH
-// ============================================================
+function verifyPassword(password, salt, hash) {
 
-// SHA-256 conservé pour être compatible avec
-// les comptes créés par ta version actuelle.
+    try {
 
-function hashPassword(password) {
-
-    return crypto
-        .createHash("sha256")
-        .update(
-            String(password),
-            "utf8"
-        )
-        .digest("hex");
-
-}
-
-// ============================================================
-// ACCOUNT ENCRYPTION
-// ============================================================
-
-function getEncryptionKey() {
-
-    if (!ACCOUNT_ENCRYPTION_KEY) {
-
-        throw new Error(
-            "ACCOUNT_ENCRYPTION_KEY n'est pas configurée sur Render."
+        const calculated = hashPassword(
+            password,
+            salt
         );
 
+        return crypto.timingSafeEqual(
+            Buffer.from(calculated, "hex"),
+            Buffer.from(hash, "hex")
+        );
+
+    } catch {
+        return false;
     }
-
-    /*
-       SHA-256 permet d'obtenir exactement 32 octets
-       pour AES-256-GCM.
-    */
-
-    return crypto
-        .createHash("sha256")
-        .update(
-            ACCOUNT_ENCRYPTION_KEY,
-            "utf8"
-        )
-        .digest();
-
 }
 
-// ============================================================
-// ENCRYPT USERS
-// ============================================================
+/* =========================================================
+   CHIFFREMENT users.enc
+   ========================================================= */
 
-function encryptAccounts(users) {
+const ENC_KEY = crypto
+    .createHash("sha256")
+    .update(
+        process.env.ACCOUNTS_ENCRYPTION_KEY ||
+        "CHANGE_THIS_SECRET_KEY"
+    )
+    .digest();
 
-    const key =
-        getEncryptionKey();
+function encryptUsers(data) {
 
-    const iv =
-        crypto.randomBytes(12);
+    const iv = crypto.randomBytes(16);
 
-    const cipher =
-        crypto.createCipheriv(
-            "aes-256-gcm",
-            key,
+    const cipher = crypto.createCipheriv(
+        "aes-256-cbc",
+        ENC_KEY,
+        iv
+    );
+
+    const encrypted = Buffer.concat([
+        cipher.update(
+            JSON.stringify(data),
+            "utf8"
+        ),
+        cipher.final()
+    ]);
+
+    return JSON.stringify({
+        version: 1,
+        iv: iv.toString("base64"),
+        data: encrypted.toString("base64")
+    });
+}
+
+function decryptUsers(text) {
+
+    try {
+
+        const obj = JSON.parse(text);
+
+        const iv = Buffer.from(
+            obj.iv,
+            "base64"
+        );
+
+        const encrypted = Buffer.from(
+            obj.data,
+            "base64"
+        );
+
+        const decipher = crypto.createDecipheriv(
+            "aes-256-cbc",
+            ENC_KEY,
             iv
         );
 
-    const json =
-        JSON.stringify(
-            users,
-            null,
-            2
-        );
-
-    const encrypted =
-        Buffer.concat([
-            cipher.update(
-                json,
-                "utf8"
-            ),
-            cipher.final()
+        const decrypted = Buffer.concat([
+            decipher.update(encrypted),
+            decipher.final()
         ]);
 
-    const authTag =
-        cipher.getAuthTag();
-
-    /*
-       Format :
-
-       DRAC1:
-       IV:
-       AUTH TAG:
-       DATA
-    */
-
-    return [
-        "DRAC1",
-        iv.toString("base64"),
-        authTag.toString("base64"),
-        encrypted.toString("base64")
-    ].join(":");
-
-}
-
-// ============================================================
-// DECRYPT USERS
-// ============================================================
-
-function decryptAccounts(text) {
-
-    const clean =
-        String(text || "").trim();
-
-    if (!clean) {
-        return [];
-    }
-
-    /*
-       Nouveau format DAVID RANDOM
-    */
-
-    if (clean.startsWith("DRAC1:")) {
-
-        const parts =
-            clean.split(":");
-
-        if (parts.length !== 4) {
-
-            throw new Error(
-                "FORMAT users.enc INVALIDE."
-            );
-
-        }
-
-        const iv =
-            Buffer.from(
-                parts[1],
-                "base64"
-            );
-
-        const authTag =
-            Buffer.from(
-                parts[2],
-                "base64"
-            );
-
-        const encrypted =
-            Buffer.from(
-                parts[3],
-                "base64"
-            );
-
-        const decipher =
-            crypto.createDecipheriv(
-                "aes-256-gcm",
-                getEncryptionKey(),
-                iv
-            );
-
-        decipher.setAuthTag(
-            authTag
+        return JSON.parse(
+            decrypted.toString("utf8")
         );
 
-        const decrypted =
-            Buffer.concat([
-                decipher.update(
-                    encrypted
-                ),
-                decipher.final()
-            ]).toString("utf8");
+    } catch {
 
-        const users =
-            JSON.parse(decrypted);
-
-        return Array.isArray(users)
-            ? users
-            : [];
-
+        return null;
     }
-
-    /*
-       Compatibilité :
-       si users.enc contient directement du JSON.
-    */
-
-    try {
-
-        const decoded =
-            Buffer.from(
-                clean,
-                "base64"
-            ).toString("utf8");
-
-        const parsed =
-            JSON.parse(decoded);
-
-        if (Array.isArray(parsed)) {
-            return parsed;
-        }
-
-    }
-    catch {}
-
-    /*
-       Dernière possibilité :
-       users.enc contient du JSON normal.
-    */
-
-    try {
-
-        const parsed =
-            JSON.parse(clean);
-
-        if (Array.isArray(parsed)) {
-            return parsed;
-        }
-
-    }
-    catch {}
-
-    throw new Error(
-        "Impossible de déchiffrer accounts/users.enc avec le format actuel."
-    );
-
 }
 
-// ============================================================
-// ACCOUNTS.JSON
-// ============================================================
-
-function createAccountsIndex() {
-
-    const users =
-        Array.from(
-            accounts.values()
-        );
-
-    return {
-
-        version: 2,
-
-        storage:
-            "accounts/users.enc",
-
-        updatedAt:
-            new Date().toISOString(),
-
-        users:
-            users.map(user => ({
-                id: user.id,
-                username: user.username,
-                createdAt: user.createdAt
-            }))
-
-    };
-
-}
-
-// ============================================================
-// SAVE ACCOUNTS
-// ============================================================
-
-async function saveAccounts() {
-
-    const users =
-        Array.from(
-            accounts.values()
-        );
-
-    /*
-       users.enc contient les informations complètes
-       des utilisateurs.
-    */
-
-    const encrypted =
-        encryptAccounts(users);
-
-    await githubWriteFile(
-        "accounts/users.enc",
-        encrypted,
-        "Update encrypted accounts"
-    );
-
-    /*
-       accounts.json sert d'index public/non-secret.
-       AUCUN mot de passe n'y est enregistré.
-    */
-
-    const index =
-        createAccountsIndex();
-
-    await githubWriteFile(
-        "accounts.json",
-        JSON.stringify(
-            index,
-            null,
-            2
-        ),
-        "Update accounts index"
-    );
-
-}
-
-// ============================================================
-// LOAD ACCOUNTS
-// ============================================================
+/* =========================================================
+   CHARGER LES COMPTES
+   ========================================================= */
 
 async function loadAccounts() {
 
-    if (accountsLoaded) {
-        return;
+    if (accountsCache) {
+        return accountsCache;
     }
 
-    accountsLoaded = true;
-
-    console.log(
-        "[ACCOUNTS] Chargement depuis GitHub..."
+    const text = await githubReadText(
+        ACCOUNTS_JSON
     );
 
-    let users = [];
+    if (!text) {
 
-    /*
-       1. On essaye users.enc
-    */
+        accountsCache = {
+            version: 2,
+            users: []
+        };
+
+        return accountsCache;
+    }
 
     try {
 
-        const encrypted =
-            await githubReadFile(
-                "accounts/users.enc"
-            );
+        accountsCache = JSON.parse(text);
 
-        users =
-            decryptAccounts(
-                encrypted
-            );
+    } catch {
 
-        console.log(
-            `[ACCOUNTS] users.enc chargé : ${users.length} compte(s)`
+        console.error(
+            "accounts.json invalide"
         );
 
-    }
-    catch (error) {
-
-        if (error.status === 404) {
-
-            console.log(
-                "[ACCOUNTS] accounts/users.enc inexistant."
-            );
-
-        }
-        else {
-
-            console.error(
-                "[ACCOUNTS] Erreur users.enc:",
-                error.message
-            );
-
-        }
-
+        accountsCache = {
+            version: 2,
+            users: []
+        };
     }
 
-    /*
-       2. Si users.enc ne contient rien,
-          on essaye accounts.json.
-    */
-
-    if (users.length === 0) {
-
-        try {
-
-            const text =
-                await githubReadFile(
-                    "accounts.json"
-                );
-
-            const data =
-                JSON.parse(text);
-
-            if (Array.isArray(data)) {
-
-                users = data;
-
-            }
-            else if (
-                Array.isArray(data.users)
-            ) {
-
-                /*
-                   Attention :
-                   accounts.json ne devrait normalement
-                   pas contenir les mots de passe.
-                */
-
-                users =
-                    data.users;
-
-            }
-
-            console.log(
-                `[ACCOUNTS] accounts.json chargé : ${users.length} compte(s)`
-            );
-
-        }
-        catch (error) {
-
-            if (error.status === 404) {
-
-                console.log(
-                    "[ACCOUNTS] Aucun ancien compte trouvé."
-                );
-
-            }
-            else {
-
-                console.error(
-                    "[ACCOUNTS] Erreur accounts.json:",
-                    error.message
-                );
-
-            }
-
-        }
-
+    if (!Array.isArray(accountsCache.users)) {
+        accountsCache.users = [];
     }
 
-    /*
-       3. Mise en mémoire
-    */
-
-    for (const user of users) {
-
-        if (!user || !user.id) {
-            continue;
-        }
-
-        if (!user.username) {
-            continue;
-        }
-
-        accounts.set(
-            user.id,
-            {
-                id:
-                    String(user.id),
-
-                username:
-                    String(user.username),
-
-                password:
-                    String(user.password || ""),
-
-                profile_picture:
-                    user.profile_picture ||
-                    null,
-
-                createdAt:
-                    user.createdAt ||
-                    new Date().toISOString()
-
-            }
-        );
-
-    }
-
-    console.log(
-        `[ACCOUNTS] ${accounts.size} compte(s) disponible(s).`
-    );
-
+    return accountsCache;
 }
 
-// ============================================================
-// SESSION
-// ============================================================
+/* =========================================================
+   SAUVEGARDER LES COMPTES
+   ========================================================= */
+
+async function saveAccounts(accounts) {
+
+    accountsCache = accounts;
+
+    await githubWriteFile(
+        ACCOUNTS_JSON,
+        JSON.stringify(
+            accounts,
+            null,
+            2
+        ),
+        "Update accounts.json"
+    );
+
+    /*
+    Création de users.enc.
+
+    On ne met pas le mot de passe en clair.
+    */
+
+    const encrypted = encryptUsers(
+        accounts.users
+    );
+
+    await githubWriteFile(
+        USERS_ENC,
+        encrypted,
+        "Update users.enc"
+    );
+}
+
+/* =========================================================
+   SESSION
+   ========================================================= */
+
+const sessions = new Map();
 
 function createSession(user) {
 
-    const token =
-        crypto
-            .randomBytes(32)
-            .toString("hex");
+    const token = crypto
+        .randomBytes(48)
+        .toString("hex");
 
-    sessions.set(
-        token,
-        {
-            userId:
-                user.id,
-
-            createdAt:
-                Date.now()
-        }
-    );
+    sessions.set(token, {
+        userId: user.id,
+        username: user.username,
+        created: Date.now()
+    });
 
     return token;
-
 }
 
-// ============================================================
-// TOKEN
-// ============================================================
-
-function getTokenFromRequest(req) {
+function getSession(req) {
 
     const auth =
         req.headers.authorization || "";
 
-    if (
-        auth.startsWith("Bearer ")
-    ) {
-
-        return auth
-            .slice(7)
-            .trim();
-
+    if (!auth.startsWith("Bearer ")) {
+        return null;
     }
 
-    return null;
-
-}
-
-// ============================================================
-
-function getUserFromToken(token) {
+    const token =
+        auth.substring(7).trim();
 
     if (!token) {
         return null;
     }
 
-    const session =
-        sessions.get(token);
+    return sessions.get(token) || null;
+}
+
+function requireAuth(req, res, next) {
+
+    const session = getSession(req);
 
     if (!session) {
-        return null;
-    }
-
-    const user =
-        accounts.get(
-            session.userId
-        );
-
-    return user || null;
-
-}
-
-// ============================================================
-
-function authMiddleware(req, res, next) {
-
-    const token =
-        getTokenFromRequest(req);
-
-    const user =
-        getUserFromToken(token);
-
-    if (!user) {
 
         return res.status(401).json({
-            success: false,
-            error:
-                "AUTHENTICATION REQUIRED"
+            error: "LOGIN REQUIRED"
         });
-
     }
 
-    req.user =
-        user;
-
+    req.session = session;
     req.token =
-        token;
+        req.headers.authorization
+            .substring(7)
+            .trim();
 
     next();
-
 }
 
-// ============================================================
-// PUBLIC USER
-// ============================================================
+/* =========================================================
+   NORMALISATION PSEUDO
+   ========================================================= */
+
+function normalizeUsername(username) {
+
+    return String(username || "")
+        .trim()
+        .toLowerCase();
+}
+
+/* =========================================================
+   PUBLIC USER
+   ========================================================= */
 
 function publicUser(user) {
 
-    if (!user) {
-        return null;
-    }
-
     return {
-
-        id:
-            user.id,
-
-        username:
-            user.username,
-
+        id: user.id,
+        username: user.username,
         profile_picture:
-            user.profile_picture ||
-            null
-
+            user.profile_picture || null,
+        created_at:
+            user.created_at
     };
-
 }
 
-// ============================================================
-// STATUS
-// ============================================================
-
-app.get(
-    "/",
-    (req, res) => {
-
-        res.json({
-
-            name:
-                "DAVID RANDOM",
-
-            version:
-                "2.0",
-
-            online:
-                true,
-
-            server:
-                "Render",
-
-            storage:
-                "GitHub",
-
-            accounts:
-                accounts.size,
-
-            websocket:
-                true
-
-        });
-
-    }
-);
-
-// ============================================================
+/* =========================================================
+   STATUS
+   ========================================================= */
 
 app.get(
     "/api/status",
-    (req, res) => {
+    async (req, res) => {
 
-        res.json({
+        try {
 
-            success:
-                true,
+            const accounts =
+                await loadAccounts();
 
-            online:
-                true,
+            res.json({
+                online: true,
+                users: accounts.users.length,
+                github: true,
+                render: true,
+                websocket: true,
+                accounts: "github"
+            });
 
-            service:
-                "DAVID RANDOM V2",
+        } catch (error) {
 
-            server:
-                "Render",
+            console.error(error);
 
-            github:
-                Boolean(GITHUB_TOKEN),
-
-            accounts:
-                accounts.size,
-
-            accounts_loaded:
-                accountsLoaded,
-
-            websocket:
-                true,
-
-            visitors
-
-        });
-
+            res.status(500).json({
+                online: false,
+                error: error.message
+            });
+        }
     }
 );
 
-// ============================================================
-// VISITORS
-// ============================================================
-
-app.get(
-    "/api/visitors",
-    (req, res) => {
-
-        res.json({
-
-            success:
-                true,
-
-            visitors
-
-        });
-
-    }
-);
-
-// ============================================================
-// REGISTER
-// ============================================================
+/* =========================================================
+   REGISTER
+   ========================================================= */
 
 app.post(
     "/api/account/register",
@@ -1151,26 +616,12 @@ app.post(
                     req.body.password || ""
                 );
 
-            const profilePicture =
-                req.body.profile_picture ||
-                null;
-
-            if (
-                !username ||
-                !password
-            ) {
-
-                return res.status(400).json({
-
-                    success:
-                        false,
-
-                    error:
-                        "USERNAME AND PASSWORD REQUIRED"
-
-                });
-
-            }
+            const profile_picture =
+                req.body.profile_picture
+                    ? String(
+                        req.body.profile_picture
+                    ).trim()
+                    : null;
 
             if (
                 username.length < 3 ||
@@ -1178,178 +629,113 @@ app.post(
             ) {
 
                 return res.status(400).json({
-
-                    success:
-                        false,
-
                     error:
                         "USERNAME MUST BE 3-24 CHARACTERS"
-
                 });
-
             }
 
-            if (password.length < 4) {
-
-                return res.status(400).json({
-
-                    success:
-                        false,
-
-                    error:
-                        "PASSWORD TOO SHORT"
-
-                });
-
-            }
-
-            const usernameKey =
-                username.toLowerCase();
-
-            for (
-                const user
-                of accounts.values()
+            if (
+                !/^[a-zA-Z0-9_.-]+$/.test(username)
             ) {
 
-                if (
-                    user.username
-                        .toLowerCase() ===
-                    usernameKey
-                ) {
-
-                    return res.status(409).json({
-
-                        success:
-                            false,
-
-                        error:
-                            "USERNAME ALREADY EXISTS"
-
-                    });
-
-                }
-
+                return res.status(400).json({
+                    error:
+                        "INVALID USERNAME"
+                });
             }
+
+            if (
+                password.length < 8 ||
+                password.length > 128
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "PASSWORD MUST BE 8-128 CHARACTERS"
+                });
+            }
+
+            const accounts =
+                await loadAccounts();
+
+            const normalized =
+                normalizeUsername(username);
+
+            const exists =
+                accounts.users.some(
+                    u =>
+                        normalizeUsername(
+                            u.username
+                        ) === normalized
+                );
+
+            if (exists) {
+
+                return res.status(409).json({
+                    error:
+                        "USERNAME ALREADY EXISTS"
+                });
+            }
+
+            const passwordData =
+                createPassword(password);
 
             const user = {
 
-                id:
-                    randomId(8),
+                id: crypto
+                    .randomUUID(),
 
                 username,
 
-                password:
-                    hashPassword(password),
+                password_hash:
+                    passwordData.hash,
 
-                profile_picture:
-                    profilePicture,
+                password_salt:
+                    passwordData.salt,
 
-                createdAt:
+                profile_picture,
+
+                created_at:
                     new Date().toISOString()
-
             };
 
-            accounts.set(
-                user.id,
-                user
-            );
+            accounts.users.push(user);
 
-            /*
-               Sauvegarde IMMÉDIATE sur GitHub.
-            */
-
-            try {
-
-                await saveAccounts();
-
-            }
-            catch (saveError) {
-
-                /*
-                   On retire le compte de la mémoire
-                   si la sauvegarde échoue.
-                */
-
-                accounts.delete(
-                    user.id
-                );
-
-                console.error(
-                    "[REGISTER SAVE]",
-                    saveError
-                );
-
-                return res.status(500).json({
-
-                    success:
-                        false,
-
-                    error:
-                        "ACCOUNT SAVE ERROR: " +
-                        saveError.message
-
-                });
-
-            }
+            await saveAccounts(accounts);
 
             const token =
                 createSession(user);
 
-            console.log(
-                `[ACCOUNT] Nouveau compte : ${user.username}`
-            );
-
             res.json({
-
-                success:
-                    true,
-
+                success: true,
                 token,
-
-                user:
-                    publicUser(user)
-
+                user: publicUser(user)
             });
 
-        }
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "[REGISTER]",
+                "REGISTER ERROR:",
                 error
             );
 
             res.status(500).json({
-
-                success:
-                    false,
-
                 error:
-                    "REGISTRATION ERROR"
-
+                    "REGISTER FAILED"
             });
-
         }
-
     }
 );
 
-// ============================================================
-// LOGIN
-// ============================================================
+/* =========================================================
+   LOGIN
+   ========================================================= */
 
 app.post(
     "/api/account/login",
     async (req, res) => {
 
         try {
-
-            /*
-               S'assurer que les comptes GitHub sont
-               chargés avant de chercher l'utilisateur.
-            */
-
-            await loadAccounts();
 
             const username =
                 String(
@@ -1361,160 +747,86 @@ app.post(
                     req.body.password || ""
                 );
 
-            let foundUser =
-                null;
+            const accounts =
+                await loadAccounts();
 
-            for (
-                const user
-                of accounts.values()
-            ) {
+            const normalized =
+                normalizeUsername(username);
 
-                if (
-                    user.username
-                        .toLowerCase() ===
-                    username.toLowerCase()
-                ) {
-
-                    foundUser =
-                        user;
-
-                    break;
-
-                }
-
-            }
-
-            if (!foundUser) {
-
-                console.log(
-                    `[LOGIN] Utilisateur inconnu : ${username}`
+            const user =
+                accounts.users.find(
+                    u =>
+                        normalizeUsername(
+                            u.username
+                        ) === normalized
                 );
 
+            if (!user) {
+
                 return res.status(401).json({
-
-                    success:
-                        false,
-
                     error:
                         "INVALID USERNAME OR PASSWORD"
-
                 });
-
             }
 
             /*
-               Vérification du mot de passe.
+            Nouveau format
             */
 
-            const passwordHash =
-                hashPassword(
-                    password
-                );
+            let valid = false;
 
             if (
-                foundUser.password !==
-                passwordHash
+                user.password_hash &&
+                user.password_salt
             ) {
 
-                console.log(
-                    `[LOGIN] Mauvais mot de passe : ${username}`
-                );
-
-                return res.status(401).json({
-
-                    success:
-                        false,
-
-                    error:
-                        "INVALID USERNAME OR PASSWORD"
-
-                });
-
+                valid =
+                    verifyPassword(
+                        password,
+                        user.password_salt,
+                        user.password_hash
+                    );
             }
 
-            /*
-               IMPORTANT :
-               nouveau token de session.
-            */
+            if (!valid) {
+
+                return res.status(401).json({
+                    error:
+                        "INVALID USERNAME OR PASSWORD"
+                });
+            }
 
             const token =
-                createSession(
-                    foundUser
-                );
-
-            console.log(
-                `[LOGIN] Connexion réussie : ${foundUser.username}`
-            );
+                createSession(user);
 
             res.json({
-
-                success:
-                    true,
-
+                success: true,
                 token,
-
-                user:
-                    publicUser(
-                        foundUser
-                    )
-
+                user: publicUser(user)
             });
 
-        }
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "[LOGIN]",
+                "LOGIN ERROR:",
                 error
             );
 
             res.status(500).json({
-
-                success:
-                    false,
-
                 error:
-                    "LOGIN ERROR: " +
-                    error.message
-
+                    "LOGIN FAILED"
             });
-
         }
-
     }
 );
 
-// ============================================================
-// ME
-// ============================================================
-
-app.get(
-    "/api/account/me",
-    authMiddleware,
-    (req, res) => {
-
-        res.json({
-
-            success:
-                true,
-
-            user:
-                publicUser(
-                    req.user
-                )
-
-        });
-
-    }
-);
-
-// ============================================================
-// LOGOUT
-// ============================================================
+/* =========================================================
+   LOGOUT
+   ========================================================= */
 
 app.post(
     "/api/account/logout",
-    authMiddleware,
+    requireAuth,
     (req, res) => {
 
         sessions.delete(
@@ -1522,1025 +834,602 @@ app.post(
         );
 
         res.json({
-
-            success:
-                true
-
+            success: true
         });
-
     }
 );
 
-// ============================================================
-// FILE EXTENSIONS
-// ============================================================
+/* =========================================================
+   ME
+   ========================================================= */
 
-function getAllowedExtensions(folder) {
+app.get(
+    "/api/account/me",
+    requireAuth,
+    async (req, res) => {
 
-    if (folder === "image") {
+        try {
 
-        return [
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".gif",
-            ".webp",
-            ".bmp",
-            ".svg"
-        ];
+            const accounts =
+                await loadAccounts();
 
+            const user =
+                accounts.users.find(
+                    u =>
+                        u.id ===
+                        req.session.userId
+                );
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "LOGIN REQUIRED"
+                });
+            }
+
+            res.json({
+                user: publicUser(user)
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+                error:
+                    "ACCOUNT ERROR"
+            });
+        }
     }
+);
 
-    if (folder === "music") {
-
-        return [
-            ".mp3",
-            ".wav",
-            ".ogg",
-            ".flac",
-            ".m4a",
-            ".aac"
-        ];
-
-    }
-
-    if (folder === "video") {
-
-        return [
-            ".mp4",
-            ".webm",
-            ".mov",
-            ".avi",
-            ".mkv"
-        ];
-
-    }
-
-    return [];
-
-}
-
-// ============================================================
-// MEDIA URL
-// ============================================================
-
-function githubRawUrl(folder, filename) {
-
-    return (
-        "https://raw.githubusercontent.com/" +
-        encodeURIComponent(GITHUB_OWNER) +
-        "/" +
-        encodeURIComponent(GITHUB_REPO) +
-        "/" +
-        encodeURIComponent(GITHUB_BRANCH) +
-        "/" +
-        folder +
-        "/" +
-        filename
-            .split("/")
-            .map(encodeURIComponent)
-            .join("/")
-    );
-
-}
-
-// ============================================================
-// LIST MEDIA
-// ============================================================
+/* =========================================================
+   LISTE FICHIERS GITHUB
+   ========================================================= */
 
 app.get(
     "/api/files/:folder",
     async (req, res) => {
 
-        const folder =
-            String(
-                req.params.folder || ""
-            ).toLowerCase();
+        try {
 
-        if (
-            ![
+            const allowed = [
                 "image",
                 "music",
                 "video"
-            ].includes(folder)
-        ) {
+            ];
 
-            return res.status(400).json({
+            const folder =
+                req.params.folder;
 
-                success:
-                    false,
+            if (!allowed.includes(folder)) {
 
-                error:
-                    "DOSSIER MEDIA INVALIDE"
-
-            });
-
-        }
-
-        try {
-
-            const entries =
-                await githubListFolder(
-                    folder
-                );
-
-            const allowed =
-                getAllowedExtensions(
-                    folder
-                );
+                return res.status(400).json({
+                    error:
+                        "INVALID FOLDER"
+                });
+            }
 
             const files =
-                Array.isArray(entries)
-                ? entries
-                    .filter(item => {
+                await githubList(folder);
 
-                        if (
-                            item.type !==
-                            "file"
-                        ) {
-                            return false;
-                        }
+            const result =
+                files
+                    .filter(
+                        f =>
+                            f.type === "file"
+                    )
+                    .map(f => ({
 
-                        if (
-                            item.name
-                                .toLowerCase()
-                                .endsWith(".gitkeep")
-                        ) {
-                            return false;
-                        }
+                        name: f.name,
 
-                        return allowed.includes(
-                            path.extname(
-                                item.name
-                            ).toLowerCase()
-                        );
+                        path: f.path,
 
-                    })
-                    .map(item => ({
-
-                        name:
-                            item.name,
-
-                        path:
-                            item.path,
-
-                        size:
-                            item.size || 0,
+                        size: f.size,
 
                         download:
-                            githubRawUrl(
-                                folder,
-                                item.name
-                            )
+                            `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${f.path}`
 
-                    }))
-                : [];
+                    }));
 
             res.json({
-
-                success:
-                    true,
-
-                folder,
-
-                files
-
+                files: result
             });
 
-        }
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                `[FILES/${folder}]`,
+                "FILES ERROR:",
                 error
             );
 
-            res.status(
-                error.status === 404
-                    ? 404
-                    : 500
-            ).json({
-
-                success:
-                    false,
-
+            res.status(500).json({
                 error:
-                    error.status === 404
-                    ? "DOSSIER INTROUVABLE"
-                    : error.message
-
+                    error.message
             });
-
         }
-
     }
 );
 
-// ============================================================
-// UPLOAD MEDIA
-// ============================================================
+/* =========================================================
+   UPLOAD
+   ========================================================= */
 
 app.post(
     "/api/upload",
-    authMiddleware,
+    requireAuth,
+    upload.single("file"),
     async (req, res) => {
 
         try {
 
-            const filename =
-                String(
-                    req.body.filename || ""
-                ).trim();
+            if (!req.file) {
 
-            const content =
-                String(
-                    req.body.content || ""
-                );
+                return res.status(400).json({
+                    error:
+                        "NO FILE"
+                });
+            }
 
             const folder =
                 String(
                     req.body.folder || ""
-                ).toLowerCase();
+                );
 
-            if (
-                !filename ||
-                !content ||
-                !folder
-            ) {
+            const allowed = [
+                "image",
+                "music",
+                "video"
+            ];
+
+            if (!allowed.includes(folder)) {
 
                 return res.status(400).json({
-
-                    success:
-                        false,
-
                     error:
-                        "FILENAME, CONTENT AND FOLDER REQUIRED"
-
+                        "INVALID FOLDER"
                 });
-
             }
 
-            if (
-                ![
-                    "image",
-                    "music",
-                    "video"
-                ].includes(folder)
-            ) {
+            const originalName =
+                req.file.originalname
+                    .replace(
+                        /[^a-zA-Z0-9._-]/g,
+                        "_"
+                    );
 
-                return res.status(400).json({
+            const safeName =
+                `${Date.now()}_${originalName}`;
 
-                    success:
-                        false,
+            const path =
+                `${folder}/${safeName}`;
 
-                    error:
-                        "INVALID MEDIA FOLDER"
+            const existing =
+                await githubGetFile(path);
 
-                });
+            const body = {
 
+                message:
+                    `Upload ${path}`,
+
+                content:
+                    req.file.buffer.toString(
+                        "base64"
+                    ),
+
+                branch:
+                    GITHUB_BRANCH
+            };
+
+            if (existing?.sha) {
+                body.sha = existing.sha;
             }
 
-            const extension =
-                path.extname(
-                    filename
-                ).toLowerCase();
-
-            if (
-                !getAllowedExtensions(
-                    folder
-                ).includes(extension)
-            ) {
-
-                return res.status(400).json({
-
-                    success:
-                        false,
-
-                    error:
-                        "FILE TYPE NOT ALLOWED"
-
-                });
-
-            }
-
-            let base64 =
-                content;
-
-            if (
-                base64.includes(",")
-            ) {
-
-                base64 =
-                    base64.split(",")[1];
-
-            }
-
-            const buffer =
-                Buffer.from(
-                    base64,
-                    "base64"
+            const response =
+                await fetch(
+                    githubPath(path),
+                    {
+                        method: "PUT",
+                        headers: {
+                            ...githubHeaders,
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body:
+                            JSON.stringify(body)
+                    }
                 );
 
-            if (
-                buffer.length >
-                MAX_UPLOAD_SIZE
-            ) {
-
-                return res.status(413).json({
-
-                    success:
-                        false,
-
-                    error:
-                        "FILE TOO LARGE. MAXIMUM 25 MB."
-
-                });
-
-            }
-
-            const safeFilename =
-                path.basename(
-                    filename
-                )
-                .replace(
-                    /[^a-zA-Z0-9._-]/g,
-                    "_"
-                );
-
-            const githubPath =
-                `${folder}/${safeFilename}`;
-
-            const result =
-                await githubWriteBuffer(
-                    githubPath,
-                    buffer,
-                    `Upload ${folder}/${safeFilename} by ${req.user.username}`
-                );
-
-            const download =
-                githubRawUrl(
-                    folder,
-                    safeFilename
-                );
-
-            res.json({
-
-                success:
-                    true,
-
-                filename:
-                    safeFilename,
-
-                folder,
-
-                download,
-
-                github:
-                    result.content?.html_url ||
-                    null
-
-            });
-
-        }
-        catch (error) {
-
-            console.error(
-                "[UPLOAD]",
-                error
-            );
-
-            res.status(500).json({
-
-                success:
-                    false,
-
-                error:
-                    error.message ||
-                    "UPLOAD ERROR"
-
-            });
-
-        }
-
-    }
-);
-
-// ============================================================
-// CHAT LOG
-// ============================================================
-
-function chatLogFilename(number) {
-
-    return (
-        "chat-log/chat-log" +
-        String(number).padStart(3, "0") +
-        ".json"
-    );
-
-}
-
-// ============================================================
-
-function calculateChatLogSize(messages) {
-
-    return Buffer.byteLength(
-        JSON.stringify(
-            messages,
-            null,
-            2
-        ),
-        "utf8"
-    );
-
-}
-
-// ============================================================
-
-async function getChatLogFiles() {
-
-    try {
-
-        const entries =
-            await githubListFolder(
-                "chat-log"
-            );
-
-        return Array.isArray(entries)
-            ? entries
-                .filter(
-                    item =>
-                        item.type === "file" &&
-                        /^chat-log\d+\.json$/i
-                            .test(item.name)
-                )
-                .sort(
-                    (a, b) =>
-                        a.name.localeCompare(
-                            b.name,
-                            undefined,
-                            {
-                                numeric:
-                                    true
-                            }
-                        )
-                )
-            : [];
-
-    }
-    catch (error) {
-
-        if (error.status === 404) {
-            return [];
-        }
-
-        throw error;
-
-    }
-
-}
-
-// ============================================================
-
-async function loadChatLogs() {
-
-    if (chatLogLoaded) {
-        return chatLogCache;
-    }
-
-    chatLogCache = [];
-
-    try {
-
-        const files =
-            await getChatLogFiles();
-
-        for (
-            const file
-            of files
-        ) {
-
-            try {
+            if (!response.ok) {
 
                 const text =
-                    await githubReadFile(
-                        file.path
-                    );
+                    await response.text();
 
-                const parsed =
-                    JSON.parse(text);
-
-                if (
-                    Array.isArray(parsed)
-                ) {
-
-                    chatLogCache.push(
-                        ...parsed
-                    );
-
-                }
-                else if (
-                    Array.isArray(
-                        parsed.messages
-                    )
-                ) {
-
-                    chatLogCache.push(
-                        ...parsed.messages
-                    );
-
-                }
-
-            }
-            catch (error) {
-
-                console.warn(
-                    "[CHAT LOG] Impossible de lire",
-                    file.name,
-                    error.message
-                );
-
+                throw new Error(text);
             }
 
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            "[CHAT LOG] Chargement impossible:",
-            error.message
-        );
-
-    }
-
-    if (
-        chatLogCache.length > 1000
-    ) {
-
-        chatLogCache =
-            chatLogCache.slice(-1000);
-
-    }
-
-    chatLogLoaded = true;
-
-    return chatLogCache;
-
-}
-
-// ============================================================
-
-async function getNextChatLogNumber() {
-
-    const files =
-        await getChatLogFiles();
-
-    let max = 0;
-
-    for (
-        const file
-        of files
-    ) {
-
-        const match =
-            file.name.match(
-                /^chat-log(\d+)\.json$/i
-            );
-
-        if (match) {
-
-            max =
-                Math.max(
-                    max,
-                    Number(match[1])
-                );
-
-        }
-
-    }
-
-    return max + 1;
-
-}
-
-// ============================================================
-
-async function saveChatMessage(message) {
-
-    chatLogCache.push(
-        message
-    );
-
-    if (
-        chatLogCache.length >
-        1000
-    ) {
-
-        chatLogCache =
-            chatLogCache.slice(-1000);
-
-    }
-
-    const size =
-        calculateChatLogSize(
-            chatLogCache
-        );
-
-    if (
-        size >
-        CHAT_LOG_LIMIT
-    ) {
-
-        const previousMessages =
-            chatLogCache.slice(
-                0,
-                Math.max(
-                    1,
-                    Math.floor(
-                        chatLogCache.length / 2
-                    )
-                )
-            );
-
-        const remainingMessages =
-            chatLogCache.slice(
-                previousMessages.length
-            );
-
-        const number =
-            await getNextChatLogNumber();
-
-        await githubWriteFile(
-            chatLogFilename(number),
-            JSON.stringify(
-                previousMessages,
-                null,
-                2
-            ),
-            `Create chat log ${number}`
-        );
-
-        chatLogCache =
-            remainingMessages;
-
-    }
-
-    const files =
-        await getChatLogFiles();
-
-    let number =
-        1;
-
-    if (files.length > 0) {
-
-        const last =
-            files[files.length - 1];
-
-        const match =
-            last.name.match(
-                /^chat-log(\d+)\.json$/i
-            );
-
-        if (match) {
-
-            number =
-                Number(match[1]);
-
-        }
-
-    }
-
-    await githubWriteFile(
-        chatLogFilename(number),
-        JSON.stringify(
-            chatLogCache,
-            null,
-            2
-        ),
-        `Update chat log ${number}`
-    );
-
-}
-
-// ============================================================
-// CHAT HISTORY
-// ============================================================
-
-app.get(
-    "/api/chat/history",
-    async (req, res) => {
-
-        try {
-
-            const messages =
-                await loadChatLogs();
+            const download =
+                `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
 
             res.json({
-
-                success:
-                    true,
-
-                messages:
-                    messages.slice(-200)
-
+                success: true,
+                name: safeName,
+                path,
+                download
             });
 
-        }
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "[CHAT HISTORY]",
+                "UPLOAD ERROR:",
                 error
             );
 
             res.status(500).json({
-
-                success:
-                    false,
-
                 error:
                     error.message
-
             });
-
         }
-
     }
 );
 
-// ============================================================
-// CHAT LOG LIST
-// ============================================================
+/* =========================================================
+   CHAT LOG
+   ========================================================= */
+
+const CHAT_FOLDER =
+    "chat-log";
+
+const CHAT_LIMIT =
+    15 * 1024 * 1024;
+
+async function listChatLogs() {
+
+    const files =
+        await githubList(
+            CHAT_FOLDER
+        );
+
+    return files
+        .filter(
+            f =>
+                f.type === "file" &&
+                /\.json$/i.test(f.name)
+        )
+        .sort(
+            (a, b) =>
+                a.name.localeCompare(
+                    b.name,
+                    undefined,
+                    {
+                        numeric: true
+                    }
+                )
+        );
+}
 
 app.get(
     "/api/chat/logs",
+    requireAuth,
     async (req, res) => {
 
         try {
 
             const files =
-                await getChatLogFiles();
+                await listChatLogs();
 
             res.json({
-
-                success:
-                    true,
-
-                files:
+                logs:
                     files.map(
-                        file => ({
-
-                            name:
-                                file.name,
-
-                            path:
-                                file.path,
-
-                            size:
-                                file.size || 0,
-
-                            download:
-                                githubRawUrl(
-                                    "chat-log",
-                                    file.name
-                                )
-
+                        f => ({
+                            name: f.name,
+                            size: f.size
                         })
                     )
-
             });
 
-        }
-        catch (error) {
-
-            console.error(
-                "[CHAT LOGS]",
-                error
-            );
+        } catch (error) {
 
             res.status(500).json({
-
-                success:
-                    false,
-
                 error:
                     error.message
-
             });
-
         }
-
     }
 );
 
-// ============================================================
-// INDIVIDUAL CHAT LOG
-// ============================================================
-
 app.get(
     "/api/chat/log/:number",
+    requireAuth,
     async (req, res) => {
 
         try {
 
             const number =
-                Number(
+                String(
                     req.params.number
+                ).replace(
+                    /[^0-9]/g,
+                    ""
                 );
 
-            if (
-                !Number.isInteger(number) ||
-                number < 1
-            ) {
-
-                return res.status(400).json({
-
-                    success:
-                        false,
-
-                    error:
-                        "INVALID LOG NUMBER"
-
-                });
-
-            }
-
-            const filePath =
-                chatLogFilename(
-                    number
-                );
+            const path =
+                `${CHAT_FOLDER}/chat-${number}.json`;
 
             const text =
-                await githubReadFile(
-                    filePath
-                );
+                await githubReadText(path);
 
-            let data;
+            if (!text) {
 
-            try {
-
-                data =
-                    JSON.parse(text);
-
-            }
-            catch {
-
-                return res.status(500).json({
-
-                    success:
-                        false,
-
+                return res.status(404).json({
                     error:
-                        "CHAT LOG JSON INVALID"
-
+                        "CHAT LOG NOT FOUND"
                 });
-
             }
 
-            res.json({
+            const data =
+                JSON.parse(text);
 
-                success:
-                    true,
+            res.json(data);
 
-                number,
+        } catch (error) {
 
-                messages:
-                    Array.isArray(data)
-                    ? data
-                    : data.messages || []
-
-            });
-
-        }
-        catch (error) {
-
-            console.error(
-                "[CHAT LOG READ]",
-                error
-            );
-
-            res.status(
-                error.status === 404
-                    ? 404
-                    : 500
-            ).json({
-
-                success:
-                    false,
-
+            res.status(500).json({
                 error:
-                    error.status === 404
-                    ? "CHAT LOG NOT FOUND"
-                    : error.message
-
+                    error.message
             });
-
         }
-
     }
 );
 
-// ============================================================
-// WEBSOCKET
-// ============================================================
+/* =========================================================
+   CHAT : SAUVEGARDE
+   ========================================================= */
+
+let chatMessages = [];
+let chatLoaded = false;
+
+async function loadChat() {
+
+    if (chatLoaded) {
+        return;
+    }
+
+    chatLoaded = true;
+
+    try {
+
+        const logs =
+            await listChatLogs();
+
+        if (!logs.length) {
+            chatMessages = [];
+            return;
+        }
+
+        const latest =
+            logs[logs.length - 1];
+
+        const text =
+            await githubReadText(
+                latest.path
+            );
+
+        if (!text) {
+            chatMessages = [];
+            return;
+        }
+
+        const data =
+            JSON.parse(text);
+
+        chatMessages =
+            Array.isArray(
+                data.messages
+            )
+                ? data.messages
+                : [];
+
+    } catch (error) {
+
+        console.error(
+            "CHAT LOAD:",
+            error
+        );
+
+        chatMessages = [];
+    }
+}
+
+async function saveChat() {
+
+    const json =
+        JSON.stringify(
+            {
+                version: 2,
+                messages:
+                    chatMessages
+            },
+            null,
+            2
+        );
+
+    /*
+    Si le fichier devient trop gros,
+    on crée un nouveau log.
+    */
+
+    let logs =
+        await listChatLogs();
+
+    let filename =
+        "chat-1.json";
+
+    if (logs.length) {
+
+        filename =
+            logs[logs.length - 1]
+                .name;
+
+        const latest =
+            await githubReadText(
+                `${CHAT_FOLDER}/${filename}`
+            );
+
+        if (
+            latest &&
+            Buffer.byteLength(
+                json,
+                "utf8"
+            ) > CHAT_LIMIT
+        ) {
+
+            const nums =
+                logs
+                    .map(
+                        x =>
+                            Number(
+                                (
+                                    x.name.match(
+                                        /(\d+)/
+                                    ) || []
+                                )[1] || 0
+                            )
+                    );
+
+            const next =
+                Math.max(
+                    0,
+                    ...nums
+                ) + 1;
+
+            filename =
+                `chat-${next}.json`;
+
+            chatMessages =
+                chatMessages.slice(
+                    -200
+                );
+        }
+    }
+
+    await githubWriteFile(
+        `${CHAT_FOLDER}/${filename}`,
+        json,
+        `Update ${filename}`
+    );
+}
+
+/* =========================================================
+   WEBSOCKET
+   ========================================================= */
 
 const wss =
-    new WebSocketServer({
-        server,
-        path:
-            "/ws"
+    new WebSocket.Server({
+        noServer: true
     });
 
 const clients =
     new Set();
 
-// ============================================================
+async function authenticateToken(token) {
 
-function sendWS(ws, data) {
+    if (!token) {
+        return null;
+    }
 
-    if (
-        ws.readyState === 1
-    ) {
+    return sessions.get(token) || null;
+}
+
+server.on(
+    "upgrade",
+    async (request, socket, head) => {
 
         try {
 
-            ws.send(
-                JSON.stringify(data)
+            const url =
+                new URL(
+                    request.url,
+                    `http://${request.headers.host}`
+                );
+
+            if (url.pathname !== "/ws") {
+
+                socket.destroy();
+                return;
+            }
+
+            const token =
+                url.searchParams.get(
+                    "token"
+                );
+
+            const session =
+                await authenticateToken(
+                    token
+                );
+
+            if (!session) {
+
+                socket.write(
+                    "HTTP/1.1 401 Unauthorized\r\n\r\n"
+                );
+
+                socket.destroy();
+
+                return;
+            }
+
+            wss.handleUpgrade(
+                request,
+                socket,
+                head,
+                ws => {
+
+                    wss.emit(
+                        "connection",
+                        ws,
+                        request,
+                        session
+                    );
+                }
             );
 
+        } catch {
+
+            socket.destroy();
         }
-        catch {}
-
     }
-
-}
-
-// ============================================================
-
-function broadcast(data) {
-
-    const text =
-        JSON.stringify(data);
-
-    for (
-        const ws
-        of clients
-    ) {
-
-        if (
-            ws.readyState === 1
-        ) {
-
-            try {
-
-                ws.send(text);
-
-            }
-            catch {}
-
-        }
-
-    }
-
-}
-
-// ============================================================
-// WEBSOCKET CONNECTION
-// ============================================================
+);
 
 wss.on(
     "connection",
-    (ws) => {
+    async (ws, request, session) => {
 
         clients.add(ws);
 
-        let authenticatedUser =
-            null;
+        ws.user = session;
 
-        console.log(
-            `[WSS] Client connecté (${clients.size})`
+        await loadChat();
+
+        ws.send(
+            JSON.stringify({
+                type: "welcome",
+                authenticated: true,
+                username:
+                    session.username,
+                user_id:
+                    session.userId
+            })
         );
 
-        sendWS(ws, {
+        ws.send(
+            JSON.stringify({
+                type: "users",
+                count:
+                    clients.size
+            })
+        );
 
-            type:
-                "system",
-
-            message:
-                "Connexion au serveur DAVID RANDOM ✓"
-
-        });
-
-        /*
-           Le client DOIT envoyer :
-
-           {
-               type: "auth",
-               token: "..."
-           }
-
-           avant de pouvoir envoyer un message.
-        */
+        broadcastUsers();
 
         ws.on(
             "message",
@@ -2554,586 +1443,227 @@ wss.on(
                         );
 
                     if (
-                        !data ||
-                        typeof data !==
-                        "object"
+                        data.type !==
+                        "message"
                     ) {
-
                         return;
-
                     }
 
-                    // ====================================================
-                    // AUTH
-                    // ====================================================
+                    const message =
+                        String(
+                            data.message || ""
+                        ).trim();
+
+                    if (!message) {
+                        return;
+                    }
 
                     if (
-                        data.type === "auth"
+                        message.length > 500
                     ) {
-
-                        const token =
-                            String(
-                                data.token || ""
-                            ).trim();
-
-                        if (!token) {
-
-                            sendWS(ws, {
-
-                                type:
-                                    "auth",
-
-                                success:
-                                    false,
-
-                                message:
-                                    "TOKEN MISSING"
-
-                            });
-
-                            return;
-
-                        }
-
-                        const user =
-                            getUserFromToken(
-                                token
-                            );
-
-                        if (!user) {
-
-                            console.log(
-                                "[WSS] Token invalide"
-                            );
-
-                            sendWS(ws, {
-
-                                type:
-                                    "auth",
-
-                                success:
-                                    false,
-
-                                message:
-                                    "TOKEN INVALID"
-
-                            });
-
-                            return;
-
-                        }
-
-                        authenticatedUser =
-                            user;
-
-                        sendWS(ws, {
-
-                            type:
-                                "auth",
-
-                            success:
-                                true,
-
-                            user:
-                                publicUser(
-                                    user
-                                )
-
-                        });
-
-                        console.log(
-                            `[WSS] Auth OK: ${user.username}`
-                        );
-
                         return;
-
                     }
 
-                    // ====================================================
-                    // CHAT
-                    // ====================================================
+                    const chatMessage = {
+
+                        id:
+                            crypto.randomUUID(),
+
+                        username:
+                            session.username,
+
+                        user_id:
+                            session.userId,
+
+                        message,
+
+                        timestamp:
+                            new Date()
+                                .toISOString()
+                    };
+
+                    chatMessages.push(
+                        chatMessage
+                    );
+
+                    /*
+                    Garde les derniers messages
+                    en mémoire.
+                    */
 
                     if (
-                        data.type === "chat" ||
-                        data.type === "message"
+                        chatMessages.length >
+                        1000
                     ) {
 
-                        /*
-                           IMPORTANT :
-                           On vérifie d'abord l'utilisateur déjà
-                           authentifié avec le message auth.
-                        */
-
-                        let user =
-                            authenticatedUser;
-
-                        /*
-                           Compatibilité :
-                           le client peut aussi envoyer son token
-                           directement dans le message.
-                        */
-
-                        if (
-                            !user &&
-                            data.token
-                        ) {
-
-                            user =
-                                getUserFromToken(
-                                    String(
-                                        data.token
-                                    ).trim()
-                                );
-
-                        }
-
-                        if (!user) {
-
-                            sendWS(ws, {
-
-                                type:
-                                    "error",
-
-                                message:
-                                    "LOGIN REQUIRED"
-
-                            });
-
-                            return;
-
-                        }
-
-                        authenticatedUser =
-                            user;
-
-                        const message =
-                            String(
-                                data.message || ""
-                            ).trim();
-
-                        if (!message) {
-                            return;
-                        }
-
-                        if (
-                            message.length >
-                            MAX_MESSAGE_LENGTH
-                        ) {
-
-                            sendWS(ws, {
-
-                                type:
-                                    "error",
-
-                                message:
-                                    "MESSAGE TOO LONG"
-
-                            });
-
-                            return;
-
-                        }
-
-                        const chatMessage = {
-
-                            type:
-                                "chat",
-
-                            id:
-                                randomId(6),
-
-                            username:
-                                user.username,
-
-                            message,
-
-                            time:
-                                new Date()
-                                    .toISOString()
-
-                        };
-
-                        /*
-                           Broadcast immédiat.
-                        */
-
-                        broadcast(
-                            chatMessage
-                        );
-
-                        /*
-                           Sauvegarde GitHub.
-                        */
-
-                        try {
-
-                            await saveChatMessage(
-                                chatMessage
+                        chatMessages =
+                            chatMessages.slice(
+                                -1000
                             );
-
-                        }
-                        catch (error) {
-
-                            console.error(
-                                "[CHAT SAVE]",
-                                error
-                            );
-
-                            sendWS(ws, {
-
-                                type:
-                                    "error",
-
-                                message:
-                                    "Message envoyé mais sauvegarde GitHub échouée."
-
-                            });
-
-                        }
-
-                        return;
-
                     }
 
-                    // ====================================================
-                    // PING
-                    // ====================================================
-
-                    if (
-                        data.type === "ping"
-                    ) {
-
-                        sendWS(ws, {
-
-                            type:
-                                "pong",
-
-                            time:
-                                Date.now()
-
-                        });
-
-                        return;
-
-                    }
-
-                    // ====================================================
-                    // UNKNOWN
-                    // ====================================================
-
-                    sendWS(ws, {
-
+                    broadcast({
                         type:
-                            "error",
+                            "message",
 
-                        message:
-                            "UNKNOWN MESSAGE TYPE"
-
+                        data:
+                            chatMessage
                     });
 
-                }
-                catch (error) {
+                    try {
+
+                        await saveChat();
+
+                    } catch (error) {
+
+                        console.error(
+                            "CHAT SAVE ERROR:",
+                            error
+                        );
+                    }
+
+                } catch (error) {
 
                     console.error(
-                        "[WSS MESSAGE]",
+                        "WSS MESSAGE ERROR:",
                         error
                     );
 
-                    sendWS(ws, {
+                    ws.send(
+                        JSON.stringify({
+                            type:
+                                "error",
 
-                        type:
-                            "error",
-
-                        message:
-                            "INVALID JSON"
-
-                    });
-
+                            message:
+                                "INVALID MESSAGE"
+                        })
+                    );
                 }
-
             }
         );
-
-        // ============================================================
-        // CLOSE
-        // ============================================================
 
         ws.on(
             "close",
             () => {
 
-                clients.delete(
-                    ws
-                );
+                clients.delete(ws);
 
-                console.log(
-                    `[WSS] Client déconnecté (${clients.size})`
-                );
-
+                broadcastUsers();
             }
         );
-
-        // ============================================================
-        // ERROR
-        // ============================================================
 
         ws.on(
             "error",
-            error => {
+            () => {
 
-                console.error(
-                    "[WSS CLIENT]",
-                    error
-                );
+                clients.delete(ws);
 
-                clients.delete(
-                    ws
-                );
-
+                broadcastUsers();
             }
         );
-
     }
 );
 
-// ============================================================
-// HTTP 404
-// ============================================================
+/* =========================================================
+   BROADCAST
+   ========================================================= */
 
-app.use(
+function broadcast(data) {
+
+    const text =
+        JSON.stringify(data);
+
+    for (const client of clients) {
+
+        if (
+            client.readyState ===
+            WebSocket.OPEN
+        ) {
+
+            client.send(text);
+        }
+    }
+}
+
+function broadcastUsers() {
+
+    broadcast({
+        type: "users",
+        count: clients.size
+    });
+}
+
+/* =========================================================
+   ROOT
+   ========================================================= */
+
+app.get(
+    "/",
     (req, res) => {
 
-        res.status(404).json({
+        res.json({
+            name:
+                "DAVID RANDOM V2 API",
 
-            success:
-                false,
+            online:
+                true,
 
-            error:
-                "Route introuvable.",
+            accounts:
+                "GitHub",
 
-            path:
-                req.originalUrl
+            storage:
+                "GitHub",
 
+            websocket:
+                "/ws"
         });
-
     }
 );
 
-// ============================================================
-// ERROR HANDLER
-// ============================================================
-
-app.use(
-    (error, req, res, next) => {
-
-        console.error(
-            "[SERVER ERROR]",
-            error
-        );
-
-        res.status(500).json({
-
-            success:
-                false,
-
-            error:
-                error.message ||
-                "Internal server error"
-
-        });
-
-    }
-);
-
-// ============================================================
-// START
-// ============================================================
+/* =========================================================
+   START
+   ========================================================= */
 
 server.listen(
     PORT,
-    async () => {
+    () => {
 
         console.log(
             "======================================"
         );
 
         console.log(
-            "DAVID RANDOM V2"
+            " DAVID RANDOM V2 SERVER"
         );
 
         console.log(
-            "======================================"
-        );
-
-        console.log(
-            "PORT:",
+            " PORT:",
             PORT
         );
 
         console.log(
-            "GITHUB:",
-            `${GITHUB_OWNER}/${GITHUB_REPO}`
+            " GITHUB:",
+            GITHUB_OWNER +
+            "/" +
+            GITHUB_REPO
         );
 
         console.log(
-            "BRANCH:",
-            GITHUB_BRANCH
+            " ACCOUNTS:",
+            ACCOUNTS_JSON
         );
 
         console.log(
-            "GITHUB TOKEN:",
-            GITHUB_TOKEN
-                ? "PRESENT"
-                : "MISSING"
+            " ENCRYPTED:",
+            USERS_ENC
         );
 
         console.log(
-            "ACCOUNT ENCRYPTION:",
-            ACCOUNT_ENCRYPTION_KEY
-                ? "PRESENT"
-                : "MISSING"
-        );
-
-        console.log(
-            "ACCOUNTS:"
-        );
-
-        console.log(
-            "  accounts.json"
-        );
-
-        console.log(
-            "  accounts/users.enc"
-        );
-
-        console.log(
-            "MEDIA:"
-        );
-
-        console.log(
-            "  /image/"
-        );
-
-        console.log(
-            "  /music/"
-        );
-
-        console.log(
-            "  /video/"
-        );
-
-        console.log(
-            "CHAT LOG:"
-        );
-
-        console.log(
-            "  /chat-log/"
-        );
-
-        console.log(
-            "API:"
-        );
-
-        console.log(
-            "  /api/status"
-        );
-
-        console.log(
-            "  /api/account/register"
-        );
-
-        console.log(
-            "  /api/account/login"
-        );
-
-        console.log(
-            "  /api/account/me"
-        );
-
-        console.log(
-            "  /api/account/logout"
-        );
-
-        console.log(
-            "  /api/files/:folder"
-        );
-
-        console.log(
-            "  /api/chat/history"
-        );
-
-        console.log(
-            "  /api/chat/logs"
-        );
-
-        console.log(
-            "  /api/chat/log/:number"
-        );
-
-        console.log(
-            "WEBSOCKET:"
-        );
-
-        console.log(
-            "  /ws"
+            " WEBSOCKET: /ws"
         );
 
         console.log(
             "======================================"
         );
-
-        // ============================================================
-        // CHARGEMENT DES COMPTES
-        // ============================================================
-
-        try {
-
-            await loadAccounts();
-
-        }
-        catch (error) {
-
-            console.error(
-                "[ACCOUNTS] Chargement impossible:",
-                error.message
-            );
-
-        }
-
-        // ============================================================
-        // CHARGEMENT CHAT
-        // ============================================================
-
-        try {
-
-            await loadChatLogs();
-
-            console.log(
-                `[CHAT] ${chatLogCache.length} messages chargés`
-            );
-
-        }
-        catch (error) {
-
-            console.warn(
-                "[CHAT] Préchargement impossible:",
-                error.message
-            );
-
-        }
-
-        console.log(
-            "======================================"
-        );
-
-        console.log(
-            "DAVID RANDOM V2 READY"
-        );
-
-        console.log(
-            "======================================"
-
-        );
-
     }
 );
