@@ -1493,6 +1493,39 @@ const USER_KEY =
 const MAX_FILE_SIZE =
 25 * 1024 * 1024;
 
+/* =========================================================
+   AUTH STATE
+========================================================= */
+
+let token =
+    localStorage.getItem(TOKEN_KEY) || null;
+
+let currentUser = null;
+
+/* Restaurer l'utilisateur affiché */
+try {
+
+    const savedUser =
+        localStorage.getItem(USER_KEY);
+
+    if (savedUser) {
+
+        currentUser =
+            JSON.parse(savedUser);
+
+    }
+
+} catch (error) {
+
+    console.error(
+        "[AUTH] Impossible de lire le compte sauvegardé:",
+        error
+    );
+
+    localStorage.removeItem(USER_KEY);
+
+    currentUser = null;
+}
 
 /* =========================================================
    STATE
@@ -1545,59 +1578,184 @@ encodeURIComponent(username) +
    API REQUEST
 ========================================================= */
 
-async function apiRequest(endpoint, options = {}){
+async function apiRequest(
+    endpoint,
+    options = {}
+) {
 
-const headers = {
-...(options.headers || {})
-};
+    const headers = {
+        ...(options.headers || {})
+    };
 
-if(token){
+    /*
+    Ajoute automatiquement le token
+    à toutes les requêtes.
+    */
 
-headers.Authorization =
-"Bearer " + token;
+    if (token) {
 
+        headers.Authorization =
+            `Bearer ${token}`;
+
+    }
+
+    const response =
+        await fetch(
+            API + endpoint,
+            {
+                ...options,
+                headers
+            }
+        );
+
+    let data;
+
+    try {
+
+        data =
+            await response.json();
+
+    } catch {
+
+        throw new Error(
+            `SERVER RETURNED INVALID JSON (${response.status})`
+        );
+
+    }
+
+    if (!response.ok) {
+
+        throw new Error(
+            data.error ||
+            `HTTP ${response.status}`
+        );
+
+    }
+
+    return data;
 }
 
-const response =
-await fetch(
-API + endpoint,
-{
-...options,
-headers,
-cache:"no-store"
+/* =========================================================
+   RESTORE SESSION
+========================================================= */
+
+async function restoreSession() {
+
+    /*
+    Récupère le token après F5
+    */
+
+    token =
+        localStorage.getItem(TOKEN_KEY);
+
+    if (!token) {
+
+        console.log(
+            "[AUTH] Aucun token sauvegardé"
+        );
+
+        return false;
+
+    }
+
+    console.log(
+        "[AUTH] Vérification de la session..."
+    );
+
+    try {
+
+        const data =
+            await apiRequest(
+                "/api/account/me",
+                {
+                    method: "GET"
+                }
+            );
+
+        if (
+            !data ||
+            !data.success ||
+            !data.user
+        ) {
+
+            throw new Error(
+                "SESSION INVALID"
+            );
+
+        }
+
+        /*
+        Le serveur nous donne
+        les informations actuelles du compte.
+        */
+
+        currentUser =
+            data.user;
+
+        /*
+        On remet à jour le compte sauvegardé.
+        */
+
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(currentUser)
+        );
+
+        console.log(
+            "[AUTH] Session restaurée:",
+            currentUser.username
+        );
+
+        /*
+        Met à jour ton interface.
+        */
+
+        if (
+            typeof updateAccountUI ===
+            "function"
+        ) {
+
+            updateAccountUI();
+
+        }
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "[AUTH] Session invalide:",
+            error
+        );
+
+        /*
+        Seulement ici on supprime
+        le token.
+        */
+
+        token = null;
+        currentUser = null;
+
+        localStorage.removeItem(
+            TOKEN_KEY
+        );
+
+        localStorage.removeItem(
+            USER_KEY
+        );
+
+        if (
+            typeof updateAccountUI ===
+            "function"
+        ) {
+
+            updateAccountUI();
+
+        }
+
+        return false;
+    }
 }
-);
-
-
-let data = {};
-
-try{
-
-data =
-await response.json();
-
-}catch{
-
-data = {};
-
-}
-
-
-if(!response.ok){
-
-throw new Error(
-data.error ||
-data.message ||
-`HTTP ${response.status}`
-);
-
-}
-
-
-return data;
-
-}
-
 
 /* =========================================================
    ACCOUNT STORAGE
@@ -2172,121 +2330,126 @@ error
    ou directement l'utilisateur.
 */
 
-async function changeProfilePicture(){
+async function changeProfilePicture() {
 
-if(!currentUser || !token){
+    if (!currentUser || !token) {
 
-return setAvatarStatus(
-"LOGIN REQUIRED",
-true
-);
+        return setAvatarStatus(
+            "LOGIN REQUIRED",
+            true
+        );
 
-}
+    }
 
+    const input =
+        document.getElementById("newProfilePicture");
 
-const url =
-document.getElementById(
-"newProfilePicture"
-).value.trim();
+    if (!input) {
 
+        return setAvatarStatus(
+            "PROFILE PICTURE INPUT NOT FOUND",
+            true
+        );
 
-if(!url){
+    }
 
-return setAvatarStatus(
-"ENTER A PROFILE PICTURE URL",
-true
-);
+    const url =
+        input.value.trim();
 
-}
+    if (!url) {
 
+        return setAvatarStatus(
+            "ENTER A PROFILE PICTURE URL",
+            true
+        );
 
-if(
-!/^https?:\/\/.+/i.test(url)
-){
+    }
 
-return setAvatarStatus(
-"INVALID IMAGE URL",
-true
-);
+    if (
+        !/^https?:\/\/.+/i.test(url)
+    ) {
 
-}
+        return setAvatarStatus(
+            "INVALID IMAGE URL",
+            true
+        );
 
+    }
 
-setAvatarStatus(
-"UPDATING PROFILE PICTURE..."
-);
+    if (url.length > 2000) {
 
+        return setAvatarStatus(
+            "PROFILE PICTURE URL TOO LONG",
+            true
+        );
 
-try{
+    }
 
-const data =
-await apiRequest(
-"/api/account/profile",
-{
-method:"PATCH",
+    setAvatarStatus(
+        "UPDATING PROFILE PICTURE..."
+    );
 
-headers:{
-"Content-Type":
-"application/json"
-},
+    try {
 
-body:JSON.stringify({
-profile_picture:url
-})
+        const data =
+            await apiRequest(
+                "/api/account/profile-picture",
+                {
+                    method: "POST",
 
-}
-);
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
+                    body: JSON.stringify({
+                        profile_picture: url
+                    })
+                }
+            );
 
-const updatedUser =
-data.user ||
-data.account ||
-data;
+        if (
+            !data ||
+            !data.success ||
+            !data.user
+        ) {
 
+            throw new Error(
+                "INVALID SERVER RESPONSE"
+            );
 
-if(updatedUser.username){
+        }
 
-currentUser =
-updatedUser;
+        currentUser =
+            data.user;
 
-}else{
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(currentUser)
+        );
 
-currentUser = {
-...currentUser,
-profile_picture:url
-};
+        updateAccountUI();
 
-}
+        setAvatarStatus(
+            "PROFILE PICTURE UPDATED ✓"
+        );
 
+        input.value = "";
 
-localStorage.setItem(
-USER_KEY,
-JSON.stringify(currentUser)
-);
+    } catch (error) {
 
+        console.error(
+            "[PROFILE PICTURE]",
+            error
+        );
 
-updateAccountUI();
+        setAvatarStatus(
+            error.message ||
+            "PROFILE PICTURE UPDATE FAILED",
+            true
+        );
 
-
-setAvatarStatus(
-"PROFILE PICTURE UPDATED ✓"
-);
-
-
-}catch(error){
-
-console.error(
-"[PROFILE PICTURE]",
-error
-);
-
-
-setAvatarStatus(
-error.message,
-true
-);
-
-}
+    }
 
 }
 
@@ -3964,6 +4127,32 @@ token
 "PRESENT"
 :
 "NONE"
+);
+
+window.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+
+        const loggedIn =
+            await restoreSession();
+
+        if (loggedIn) {
+
+            console.log(
+                "[AUTH] Connecté après rechargement"
+            );
+
+            connectWebSocket();
+
+        } else {
+
+            console.log(
+                "[AUTH] Pas de session"
+            );
+
+        }
+
+    }
 );
 
 </script>
