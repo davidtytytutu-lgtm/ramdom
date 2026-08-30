@@ -19,7 +19,8 @@ const wss = new WebSocket.Server({
    CONFIG
 ========================================================= */
 
-const PORT = process.env.PORT || 10000;
+const PORT =
+    process.env.PORT || 10000;
 
 const ALLOWED_ORIGIN =
     "https://david-officiel.neocities.org";
@@ -42,9 +43,6 @@ const GITHUB_BRANCH =
 const ENCRYPTION_KEY =
     process.env.ENCRYPTION_KEY;
 
-const USERS_FILE =
-    "accounts/users.enc";
-
 const CHAT_LOG_LIMIT =
     15 * 1024 * 1024;
 
@@ -54,31 +52,44 @@ const MAX_FILE_SIZE =
 const MESSAGE_LIMIT =
     500;
 
+const USERS_FILE =
+    "accounts/users.enc";
+
 /* =========================================================
    VALIDATION
 ========================================================= */
 
 if (!ENCRYPTION_KEY) {
-    console.error("[FATAL] ENCRYPTION_KEY manquante.");
+
+    console.error(
+        "[FATAL] ENCRYPTION_KEY manquante."
+    );
+
     process.exit(1);
 }
 
 if (!GITHUB_TOKEN) {
-    console.error("[FATAL] GITHUB_TOKEN manquant.");
+
+    console.error(
+        "[FATAL] GITHUB_TOKEN manquant."
+    );
+
     process.exit(1);
 }
 
 /*
-AES-256-GCM
-
-La clé Render peut avoir n'importe quelle longueur.
-SHA-256 permet d'obtenir exactement 32 octets.
+AES-256-GCM utilise exactement 32 octets.
+On transforme donc la clé Render en 32 octets
+avec SHA-256.
 */
 
 const CRYPTO_KEY =
     crypto
         .createHash("sha256")
-        .update(ENCRYPTION_KEY)
+        .update(
+            ENCRYPTION_KEY,
+            "utf8"
+        )
         .digest();
 
 /* =========================================================
@@ -102,48 +113,54 @@ app.use(
    CORS
 ========================================================= */
 
-app.use((req, res, next) => {
+app.use(
+    (req, res, next) => {
 
-    const origin =
-        req.headers.origin;
+        const origin =
+            req.headers.origin;
 
-    if (
-        !origin ||
-        origin === ALLOWED_ORIGIN
-    ) {
+        if (
+            !origin ||
+            origin === ALLOWED_ORIGIN
+        ) {
 
-        res.setHeader(
-            "Access-Control-Allow-Origin",
-            origin || ALLOWED_ORIGIN
-        );
+            res.setHeader(
+                "Access-Control-Allow-Origin",
+                origin ||
+                ALLOWED_ORIGIN
+            );
 
-        res.setHeader(
-            "Vary",
-            "Origin"
-        );
+            res.setHeader(
+                "Vary",
+                "Origin"
+            );
 
-        res.setHeader(
-            "Access-Control-Allow-Credentials",
-            "true"
-        );
+            res.setHeader(
+                "Access-Control-Allow-Credentials",
+                "true"
+            );
 
-        res.setHeader(
-            "Access-Control-Allow-Headers",
-            "Content-Type, Authorization"
-        );
+            res.setHeader(
+                "Access-Control-Allow-Headers",
+                "Content-Type, Authorization"
+            );
 
-        res.setHeader(
-            "Access-Control-Allow-Methods",
-            "GET,POST,PATCH,DELETE,OPTIONS"
-        );
+            res.setHeader(
+                "Access-Control-Allow-Methods",
+                "GET,POST,PATCH,DELETE,OPTIONS"
+            );
+        }
+
+        if (
+            req.method === "OPTIONS"
+        ) {
+
+            return res.sendStatus(204);
+        }
+
+        next();
     }
-
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(204);
-    }
-
-    next();
-});
+);
 
 /* =========================================================
    UPLOAD
@@ -172,25 +189,28 @@ const sessions =
 const clients =
     new Set();
 
-/*
-Empêche plusieurs sauvegardes users.enc
-de se faire simultanément.
-*/
+let users = [];
 
-let usersSaveQueue =
-    Promise.resolve();
+let usersLoaded =
+    false;
 
 /* =========================================================
-   GITHUB
+   GITHUB API
 ========================================================= */
 
-function githubApiUrl(path = "") {
+function githubApiUrl(
+    path = ""
+) {
 
     return (
         "https://api.github.com/repos/" +
-        encodeURIComponent(GITHUB_OWNER) +
+        encodeURIComponent(
+            GITHUB_OWNER
+        ) +
         "/" +
-        encodeURIComponent(GITHUB_REPO) +
+        encodeURIComponent(
+            GITHUB_REPO
+        ) +
         "/contents/" +
         path
     );
@@ -246,19 +266,10 @@ async function githubRequest(
 
     if (!response.ok) {
 
-        const error =
-            new Error(
-                data.message ||
-                `GitHub HTTP ${response.status}`
-            );
-
-        error.status =
-            response.status;
-
-        error.githubData =
-            data;
-
-        throw error;
+        throw new Error(
+            data.message ||
+            `GitHub HTTP ${response.status}`
+        );
     }
 
     return data;
@@ -273,14 +284,16 @@ Format users.enc :
 
 {
     "version": 2,
-    "algorithm": "AES-256-GCM",
+    "algorithm": "aes-256-gcm",
     "iv": "...",
-    "tag": "...",
-    "data": "..."
+    "data": "...",
+    "authTag": "..."
 }
 */
 
-function encryptJSON(value) {
+function encryptJSON(
+    value
+) {
 
     const iv =
         crypto.randomBytes(12);
@@ -306,7 +319,7 @@ function encryptJSON(value) {
             cipher.final()
         ]);
 
-    const tag =
+    const authTag =
         cipher.getAuthTag();
 
     return {
@@ -315,29 +328,32 @@ function encryptJSON(value) {
             2,
 
         algorithm:
-            "AES-256-GCM",
+            "aes-256-gcm",
 
         iv:
             iv.toString("base64"),
 
-        tag:
-            tag.toString("base64"),
-
         data:
-            encrypted.toString("base64")
+            encrypted.toString("base64"),
+
+        authTag:
+            authTag.toString("base64")
     };
 }
 
 
-function decryptJSON(payload) {
+function decryptJSON(
+    payload
+) {
 
     if (
         !payload ||
         payload.version !== 2 ||
-        payload.algorithm !== "AES-256-GCM" ||
+        payload.algorithm !==
+            "aes-256-gcm" ||
         !payload.iv ||
-        !payload.tag ||
-        !payload.data
+        !payload.data ||
+        !payload.authTag
     ) {
 
         throw new Error(
@@ -351,25 +367,33 @@ function decryptJSON(payload) {
             "base64"
         );
 
-    const tag =
-        Buffer.from(
-            payload.tag,
-            "base64"
-        );
-
     const encrypted =
         Buffer.from(
             payload.data,
             "base64"
         );
 
+    const authTag =
+        Buffer.from(
+            payload.authTag,
+            "base64"
+        );
+
     if (
-        iv.length !== 12 ||
-        tag.length !== 16
+        iv.length !== 12
     ) {
 
         throw new Error(
-            "PARAMETRES AES-256-GCM INVALIDES"
+            "IV AES-256-GCM INVALIDE"
+        );
+    }
+
+    if (
+        authTag.length !== 16
+    ) {
+
+        throw new Error(
+            "AUTH TAG AES-256-GCM INVALIDE"
         );
     }
 
@@ -380,7 +404,9 @@ function decryptJSON(payload) {
             iv
         );
 
-    decipher.setAuthTag(tag);
+    decipher.setAuthTag(
+        authTag
+    );
 
     const decrypted =
         Buffer.concat([
@@ -396,26 +422,6 @@ function decryptJSON(payload) {
 }
 
 /* =========================================================
-   USERS DATABASE
-========================================================= */
-
-let users = [];
-
-let usersLoaded = false;
-
-/* =========================================================
-   READ USERS FROM GITHUB
-========================================================= */
-
-async function getUsersFile() {
-
-    return await githubRequest(
-        USERS_FILE
-    );
-}
-
-
-/* =========================================================
    LOAD USERS
 ========================================================= */
 
@@ -425,19 +431,28 @@ async function loadUsers() {
 
         let data;
 
-        /*
-        Vérifie si users.enc existe.
-        */
-
         try {
 
             data =
-                await getUsersFile();
+                await githubRequest(
+                    USERS_FILE
+                );
 
         } catch (error) {
 
+            /*
+            Si users.enc n'existe pas,
+            on crée simplement une base vide.
+            */
+
             if (
-                error.status === 404
+                String(
+                    error.message
+                )
+                    .toLowerCase()
+                    .includes(
+                        "not found"
+                    )
             ) {
 
                 console.log(
@@ -445,26 +460,19 @@ async function loadUsers() {
                 );
 
                 console.log(
-                    "[USERS] Création d'une nouvelle base vide."
+                    "[USERS] Nouvelle base de comptes vide."
                 );
 
                 users = [];
 
+                usersLoaded = true;
+
                 /*
-                Crée immédiatement le fichier.
+                On crée immédiatement
+                users.enc dans GitHub.
                 */
 
-                await writeUsersToGitHub(
-                    users,
-                    null
-                );
-
-                usersLoaded =
-                    true;
-
-                console.log(
-                    "[USERS] users.enc créé avec succès."
-                );
+                await saveUsers();
 
                 return true;
             }
@@ -472,7 +480,9 @@ async function loadUsers() {
             throw error;
         }
 
-        if (!data.content) {
+        if (
+            !data.content
+        ) {
 
             throw new Error(
                 "USERS DATABASE VIDE"
@@ -488,18 +498,11 @@ async function loadUsers() {
                 .toString("utf8")
                 .trim();
 
-        if (!fileText) {
-
-            throw new Error(
-                "USERS DATABASE VIDE"
-            );
-        }
-
         console.log(
             "[USERS] Format détecté :",
             fileText.substring(
                 0,
-                80
+                120
             )
         );
 
@@ -515,7 +518,7 @@ async function loadUsers() {
         } catch {
 
             throw new Error(
-                "FORMAT USERS.ENC INVALIDE"
+                "USERS.ENC JSON INVALIDE"
             );
         }
 
@@ -552,7 +555,8 @@ async function loadUsers() {
         usersLoaded =
             false;
 
-        users = [];
+        users =
+            [];
 
         console.error(
             "[USERS] DATABASE ERROR:",
@@ -568,69 +572,57 @@ async function loadUsers() {
 }
 
 /* =========================================================
-   CREATE ENCRYPTED USERS CONTENT
+   SAVE USERS
 ========================================================= */
 
-function createUsersContent(userList) {
+async function saveUsers() {
 
     const payload =
         encryptJSON(
-            userList
+            users
         );
-
-    return Buffer
-        .from(
-            JSON.stringify(
-                payload
-            ),
-            "utf8"
-        )
-        .toString("base64");
-}
-
-/* =========================================================
-   WRITE USERS TO GITHUB
-========================================================= */
-
-async function writeUsersToGitHub(
-    userList,
-    knownSha = null
-) {
 
     const content =
-        createUsersContent(
-            userList
-        );
+        Buffer
+            .from(
+                JSON.stringify(
+                    payload,
+                    null,
+                    2
+                ),
+                "utf8"
+            )
+            .toString("base64");
 
-    /*
-    Si on connaît déjà le SHA,
-    on l'utilise.
+    let sha;
 
-    Sinon on relit le fichier.
-    */
+    try {
 
-    let sha =
-        knownSha;
+        const old =
+            await githubRequest(
+                USERS_FILE
+            );
 
-    if (!sha) {
+        sha =
+            old.sha;
 
-        try {
+    } catch (error) {
 
-            const current =
-                await getUsersFile();
+        if (
+            !String(
+                error.message
+            )
+                .toLowerCase()
+                .includes(
+                    "not found"
+                )
+        ) {
 
-            sha =
-                current.sha;
-
-        } catch (error) {
-
-            if (
-                error.status !== 404
-            ) {
-
-                throw error;
-            }
+            throw error;
         }
+
+        sha =
+            undefined;
     }
 
     const body = {
@@ -644,181 +636,37 @@ async function writeUsersToGitHub(
             GITHUB_BRANCH
     };
 
-    if (sha) {
-        body.sha = sha;
+    if (
+        sha
+    ) {
+
+        body.sha =
+            sha;
     }
 
-    try {
+    await githubRequest(
+        USERS_FILE,
+        {
 
-        await githubRequest(
-            USERS_FILE,
-            {
+            method:
+                "PUT",
 
-                method:
-                    "PUT",
+            headers: {
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+                "Content-Type":
+                    "application/json"
+            },
 
-                body:
-                    JSON.stringify(body)
-            }
-        );
-
-        return true;
-
-    } catch (error) {
-
-        /*
-        Conflit SHA :
-        on relit le SHA actuel puis
-        on réessaie une fois.
-        */
-
-        const conflict =
-            error.status === 409 ||
-            /expected/i.test(
-                error.message
-            ) ||
-            /is at/i.test(
-                error.message
-            );
-
-        if (!conflict) {
-            throw error;
+            body:
+                JSON.stringify(
+                    body
+                )
         }
+    );
 
-        console.warn(
-            "[USERS] Conflit SHA GitHub. Nouvelle tentative..."
-        );
-
-        let fresh;
-
-        try {
-
-            fresh =
-                await getUsersFile();
-
-        } catch (retryReadError) {
-
-            if (
-                retryReadError.status === 404
-            ) {
-
-                fresh = {
-                    sha: null
-                };
-
-            } else {
-
-                throw retryReadError;
-            }
-        }
-
-        const retryBody = {
-
-            message:
-                "Update accounts database",
-
-            content,
-
-            branch:
-                GITHUB_BRANCH
-        };
-
-        if (fresh.sha) {
-
-            retryBody.sha =
-                fresh.sha;
-        }
-
-        await githubRequest(
-            USERS_FILE,
-            {
-
-                method:
-                    "PUT",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body:
-                    JSON.stringify(
-                        retryBody
-                    )
-            }
-        );
-
-        console.log(
-            "[USERS] Sauvegarde réussie après retry."
-        );
-
-        return true;
-    }
-}
-
-/* =========================================================
-   SAVE USERS
-========================================================= */
-
-function saveUsers() {
-
-    /*
-    Les sauvegardes sont placées dans une
-    file d'attente.
-
-    Cela empêche deux inscriptions simultanées
-    de modifier users.enc avec le même SHA.
-    */
-
-    const operation =
-        usersSaveQueue.then(
-            async () => {
-
-                if (!usersLoaded) {
-
-                    throw new Error(
-                        "DATABASE USERS NON CHARGEE - SAUVEGARDE REFUSEE"
-                    );
-                }
-
-                /*
-                Copie de la base au moment
-                précis de la sauvegarde.
-                */
-
-                const snapshot =
-                    JSON.parse(
-                        JSON.stringify(
-                            users
-                        )
-                    );
-
-                await writeUsersToGitHub(
-                    snapshot
-                );
-
-                console.log(
-                    "[USERS] Base sauvegardée."
-                );
-            }
-        );
-
-    /*
-    La prochaine opération attend celle-ci,
-    même si celle-ci échoue.
-    */
-
-    usersSaveQueue =
-        operation.catch(
-            () => {}
-        );
-
-    return operation;
+    console.log(
+        "[USERS] Base sauvegardée"
+    );
 }
 
 /* =========================================================
@@ -833,9 +681,12 @@ function createToken() {
 }
 
 
-function publicUser(user) {
+function publicUser(
+    user
+) {
 
     if (!user) {
+
         return null;
     }
 
@@ -857,7 +708,9 @@ function publicUser(user) {
 }
 
 
-function getTokenFromRequest(req) {
+function getTokenFromRequest(
+    req
+) {
 
     const header =
         req.headers.authorization;
@@ -873,7 +726,9 @@ function getTokenFromRequest(req) {
     if (
         !header
             .toLowerCase()
-            .startsWith("bearer ")
+            .startsWith(
+                "bearer "
+            )
     ) {
 
         return null;
@@ -885,16 +740,22 @@ function getTokenFromRequest(req) {
 }
 
 
-function getUserFromToken(token) {
+function getUserFromToken(
+    token
+) {
 
     if (!token) {
+
         return null;
     }
 
     const session =
-        sessions.get(token);
+        sessions.get(
+            token
+        );
 
     if (!session) {
+
         return null;
     }
 
@@ -924,7 +785,9 @@ function requireAuth(
     next
 ) {
 
-    if (!usersLoaded) {
+    if (
+        !usersLoaded
+    ) {
 
         return res
             .status(503)
@@ -1043,11 +906,16 @@ app.post(
 
         try {
 
-            if (!usersLoaded) {
+            if (
+                !usersLoaded
+            ) {
 
                 return res
                     .status(503)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "USER DATABASE NOT AVAILABLE"
@@ -1082,6 +950,9 @@ app.post(
                     .status(400)
                     .json({
 
+                        success:
+                            false,
+
                         error:
                             "USERNAME MUST BE 3-24 CHARACTERS"
                     });
@@ -1095,6 +966,9 @@ app.post(
                 return res
                     .status(400)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "PASSWORD MUST BE 8-128 CHARACTERS"
@@ -1111,11 +985,16 @@ app.post(
                         username.toLowerCase()
                 );
 
-            if (exists) {
+            if (
+                exists
+            ) {
 
                 return res
                     .status(409)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "USERNAME ALREADY EXISTS"
@@ -1152,12 +1031,29 @@ app.post(
             );
 
             /*
-            IMPORTANT :
-            on sauvegarde réellement
-            avant de répondre success.
+            Sauvegarde dans GitHub.
             */
 
-            await saveUsers();
+            try {
+
+                await saveUsers();
+
+            } catch (error) {
+
+                /*
+                Si GitHub refuse la sauvegarde,
+                on retire le compte de la mémoire.
+                */
+
+                users =
+                    users.filter(
+                        u =>
+                            u.id !==
+                            user.id
+                    );
+
+                throw error;
+            }
 
             const token =
                 createToken();
@@ -1172,11 +1068,6 @@ app.post(
                     createdAt:
                         Date.now()
                 }
-            );
-
-            console.log(
-                "[REGISTER] Compte créé :",
-                username
             );
 
             res.json({
@@ -1203,6 +1094,9 @@ app.post(
                 .status(500)
                 .json({
 
+                    success:
+                        false,
+
                     error:
                         error.message
                 });
@@ -1221,11 +1115,16 @@ app.post(
 
         try {
 
-            if (!usersLoaded) {
+            if (
+                !usersLoaded
+            ) {
 
                 return res
                     .status(503)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "USER DATABASE NOT AVAILABLE"
@@ -1254,11 +1153,16 @@ app.post(
                         username.toLowerCase()
                 );
 
-            if (!user) {
+            if (
+                !user
+            ) {
 
                 return res
                     .status(401)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "INVALID USERNAME OR PASSWORD"
@@ -1271,11 +1175,16 @@ app.post(
                     user.password_hash
                 );
 
-            if (!valid) {
+            if (
+                !valid
+            ) {
 
                 return res
                     .status(401)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "INVALID USERNAME OR PASSWORD"
@@ -1295,11 +1204,6 @@ app.post(
                     createdAt:
                         Date.now()
                 }
-            );
-
-            console.log(
-                "[LOGIN] Connexion :",
-                user.username
             );
 
             res.json({
@@ -1325,6 +1229,9 @@ app.post(
             res
                 .status(500)
                 .json({
+
+                    success:
+                        false,
 
                     error:
                         error.message
@@ -1409,6 +1316,9 @@ app.post(
                     .status(400)
                     .json({
 
+                        success:
+                            false,
+
                         error:
                             "INVALID IMAGE URL"
                     });
@@ -1422,15 +1332,31 @@ app.post(
                     .status(400)
                     .json({
 
+                        success:
+                            false,
+
                         error:
                             "PROFILE PICTURE URL TOO LONG"
                     });
             }
 
+            const old =
+                req.user.profile_picture;
+
             req.user.profile_picture =
                 url;
 
-            await saveUsers();
+            try {
+
+                await saveUsers();
+
+            } catch (error) {
+
+                req.user.profile_picture =
+                    old;
+
+                throw error;
+            }
 
             res.json({
 
@@ -1454,6 +1380,9 @@ app.post(
                 .status(500)
                 .json({
 
+                    success:
+                        false,
+
                     error:
                         error.message
                 });
@@ -1462,7 +1391,7 @@ app.post(
 );
 
 /* =========================================================
-   PROFILE ALIAS
+   PROFILE PATCH
 ========================================================= */
 
 app.patch(
@@ -1490,15 +1419,31 @@ app.patch(
                     .status(400)
                     .json({
 
+                        success:
+                            false,
+
                         error:
                             "INVALID IMAGE URL"
                     });
             }
 
+            const old =
+                req.user.profile_picture;
+
             req.user.profile_picture =
                 url;
 
-            await saveUsers();
+            try {
+
+                await saveUsers();
+
+            } catch (error) {
+
+                req.user.profile_picture =
+                    old;
+
+                throw error;
+            }
 
             res.json({
 
@@ -1521,6 +1466,9 @@ app.patch(
             res
                 .status(500)
                 .json({
+
+                    success:
+                        false,
 
                     error:
                         error.message
@@ -1558,6 +1506,9 @@ app.get(
                 return res
                     .status(400)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "INVALID FOLDER"
@@ -1607,6 +1558,9 @@ app.get(
                 .status(500)
                 .json({
 
+                    success:
+                        false,
+
                     error:
                         error.message
                 });
@@ -1629,11 +1583,16 @@ app.post(
 
         try {
 
-            if (!req.file) {
+            if (
+                !req.file
+            ) {
 
                 return res
                     .status(400)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "NO FILE"
@@ -1659,6 +1618,9 @@ app.post(
                 return res
                     .status(400)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "INVALID FOLDER"
@@ -1738,6 +1700,9 @@ app.post(
                 .status(500)
                 .json({
 
+                    success:
+                        false,
+
                     error:
                         error.message
                 });
@@ -1746,10 +1711,12 @@ app.post(
 );
 
 /* =========================================================
-   CHAT LOG TXT
+   CHAT LOG
 ========================================================= */
 
-function chatLogPath(number) {
+function chatLogPath(
+    number
+) {
 
     return (
         "chat-log/" +
@@ -1759,7 +1726,9 @@ function chatLogPath(number) {
 }
 
 
-function formatChatMessage(message) {
+function formatChatMessage(
+    message
+) {
 
     const timestamp =
         message.timestamp ||
@@ -1785,6 +1754,10 @@ function formatChatMessage(message) {
             .replace(
                 /\r/g,
                 ""
+            )
+            .replace(
+                /\n/g,
+                " "
             );
 
     return (
@@ -1796,14 +1769,18 @@ function formatChatMessage(message) {
 }
 
 
-function parseChatLine(line) {
+function parseChatLine(
+    line
+) {
 
     const match =
         line.match(
             /^\[([^\]]+)\]\s(.+?)\s\(([^)]*)\)\s:\s([\s\S]*)$/
         );
 
-    if (!match) {
+    if (
+        !match
+    ) {
 
         return {
 
@@ -1858,7 +1835,10 @@ async function readChatLog(
             path
         );
 
-    if (!data.content) {
+    if (
+        !data.content
+    ) {
+
         return [];
     }
 
@@ -1973,6 +1953,9 @@ app.get(
                 .status(500)
                 .json({
 
+                    success:
+                        false,
+
                     error:
                         error.message
                 });
@@ -1995,15 +1978,8 @@ app.get(
                     req.params.number
                 );
 
-            /*
-            Accepte :
-            1
-            2
-            2026-08-30
-            */
-
             if (
-                !/^(?:\d+|\d{4}-\d{2}-\d{2})$/.test(
+                !/^\d+$/.test(
                     number
                 )
             ) {
@@ -2011,6 +1987,9 @@ app.get(
                 return res
                     .status(400)
                     .json({
+
+                        success:
+                            false,
 
                         error:
                             "INVALID LOG NUMBER"
@@ -2040,6 +2019,9 @@ app.get(
             res
                 .status(404)
                 .json({
+
+                    success:
+                        false,
 
                     error:
                         error.message
@@ -2155,7 +2137,8 @@ async function saveChatMessage(
         Buffer.byteLength(
             newContent,
             "utf8"
-        ) > CHAT_LOG_LIMIT
+        ) >
+        CHAT_LOG_LIMIT
     ) {
 
         number++;
@@ -2177,7 +2160,9 @@ async function saveChatMessage(
             number
         );
 
-    if (!currentSha) {
+    if (
+        !currentSha
+    ) {
 
         try {
 
@@ -2215,7 +2200,9 @@ async function saveChatMessage(
             GITHUB_BRANCH
     };
 
-    if (currentSha) {
+    if (
+        currentSha
+    ) {
 
         body.sha =
             currentSha;
@@ -2300,7 +2287,9 @@ wss.on(
                             "error",
 
                         message:
-                            "LOGIN REQUIRED"
+                            !usersLoaded
+                                ? "USER DATABASE NOT AVAILABLE"
+                                : "LOGIN REQUIRED"
                     })
                 );
 
@@ -2320,7 +2309,9 @@ wss.on(
         ws.userId =
             user.id;
 
-        clients.add(ws);
+        clients.add(
+            ws
+        );
 
         console.log(
             "[WSS] Connected:",
@@ -2361,7 +2352,9 @@ wss.on(
                             ws.authToken
                         );
 
-                    if (!current) {
+                    if (
+                        !current
+                    ) {
 
                         ws.send(
                             JSON.stringify({
@@ -2421,7 +2414,10 @@ wss.on(
                             ""
                         ).trim();
 
-                    if (!message) {
+                    if (
+                        !message
+                    ) {
+
                         return;
                     }
 
@@ -2545,7 +2541,9 @@ wss.on(
    BROADCAST
 ========================================================= */
 
-function broadcast(data) {
+function broadcast(
+    data
+) {
 
     const message =
         JSON.stringify(
@@ -2612,6 +2610,9 @@ app.use(
                 .status(400)
                 .json({
 
+                    success:
+                        false,
+
                     error:
                         err.message
                 });
@@ -2620,6 +2621,9 @@ app.use(
         res
             .status(500)
             .json({
+
+                success:
+                    false,
 
                 error:
                     err.message ||
@@ -2693,7 +2697,9 @@ async function start() {
     const loaded =
         await loadUsers();
 
-    if (!loaded) {
+    if (
+        !loaded
+    ) {
 
         console.error(
             "================================"
@@ -2710,7 +2716,6 @@ async function start() {
         console.error(
             "================================"
         );
-
     }
 
     server.listen(
