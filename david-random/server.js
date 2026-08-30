@@ -1,10 +1,12 @@
+```js
 // ============================================================
 // DAVID RANDOM V2 - SERVER
-// Render + GitHub Storage + WebSocket + Accounts + Chat Logs
+// Render + GitHub Storage + WebSocket + Accounts
+// Persistent Accounts: accounts.json + accounts/users.enc
+// Chat Logs + Media
 // ============================================================
 
 const express = require("express");
-const cors = require("cors");
 const crypto = require("crypto");
 const path = require("path");
 const http = require("http");
@@ -31,14 +33,15 @@ const GITHUB_BRANCH =
 const GITHUB_TOKEN =
     process.env.GITHUB_TOKEN || "";
 
-const ACCOUNTS_ENCRYPTION_KEY =
-    process.env.ACCOUNTS_ENCRYPTION_KEY || "";
+// Clé de chiffrement des comptes.
+// IMPORTANT : à mettre dans les variables Render.
+const ACCOUNT_ENCRYPTION_KEY =
+    process.env.ACCOUNT_ENCRYPTION_KEY || "";
 
 const MAX_UPLOAD_SIZE =
     25 * 1024 * 1024;
 
-const MAX_MESSAGE_LENGTH =
-    500;
+const MAX_MESSAGE_LENGTH = 500;
 
 const CHAT_LOG_LIMIT =
     15 * 1024 * 1024;
@@ -47,10 +50,36 @@ const CHAT_LOG_LIMIT =
 // MIDDLEWARE
 // ============================================================
 
-app.use(cors({
-    origin: true,
-    credentials: true
-}));
+// CORS sans dépendance supplémentaire
+app.use((req, res, next) => {
+
+    res.setHeader(
+        "Access-Control-Allow-Origin",
+        req.headers.origin || "*"
+    );
+
+    res.setHeader(
+        "Access-Control-Allow-Credentials",
+        "true"
+    );
+
+    res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+    );
+
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET,POST,PUT,DELETE,OPTIONS"
+    );
+
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(204);
+    }
+
+    next();
+
+});
 
 app.use(express.json({
     limit: "35mb"
@@ -74,8 +103,6 @@ let chatLogCache = [];
 let chatLogLoaded = false;
 
 let accountsLoaded = false;
-
-let accountsSaveQueue = Promise.resolve();
 
 // ============================================================
 // GITHUB HELPERS
@@ -102,11 +129,9 @@ function githubHeaders() {
     }
 
     return headers;
+
 }
 
-
-// ============================================================
-// GITHUB URL
 // ============================================================
 
 function githubApiUrl(apiPath) {
@@ -121,15 +146,9 @@ function githubApiUrl(apiPath) {
 
 }
 
-
-// ============================================================
-// GITHUB REQUEST
 // ============================================================
 
-async function githubRequest(
-    apiPath,
-    options = {}
-) {
+async function githubRequest(apiPath, options = {}) {
 
     const response =
         await fetch(
@@ -147,15 +166,10 @@ async function githubRequest(
     let data = null;
 
     try {
-
-        data =
-            await response.json();
-
+        data = await response.json();
     }
     catch {
-
         data = null;
-
     }
 
     if (!response.ok) {
@@ -180,7 +194,6 @@ async function githubRequest(
 
 }
 
-
 // ============================================================
 // GITHUB LIST FOLDER
 // ============================================================
@@ -196,11 +209,11 @@ async function githubListFolder(folder) {
         `/contents/${cleanFolder
             .split("/")
             .map(encodeURIComponent)
-            .join("/")}?ref=${encodeURIComponent(GITHUB_BRANCH)}`
+            .join("/")
+        }?ref=${encodeURIComponent(GITHUB_BRANCH)}`
     );
 
 }
-
 
 // ============================================================
 // GITHUB READ FILE
@@ -217,7 +230,8 @@ async function githubReadFile(filePath) {
             `/contents/${cleanPath
                 .split("/")
                 .map(encodeURIComponent)
-                .join("/")}?ref=${encodeURIComponent(GITHUB_BRANCH)}`
+                .join("/")
+            }?ref=${encodeURIComponent(GITHUB_BRANCH)}`
         );
 
     if (!data || !data.content) {
@@ -236,27 +250,6 @@ async function githubReadFile(filePath) {
         .toString("utf8");
 
 }
-
-
-// ============================================================
-// GITHUB GET FILE INFO
-// ============================================================
-
-async function githubGetFile(filePath) {
-
-    const cleanPath =
-        String(filePath || "")
-            .replace(/^\/+/, "");
-
-    return githubRequest(
-        `/contents/${cleanPath
-            .split("/")
-            .map(encodeURIComponent)
-            .join("/")}?ref=${encodeURIComponent(GITHUB_BRANCH)}`
-    );
-
-}
-
 
 // ============================================================
 // GITHUB WRITE FILE
@@ -285,8 +278,12 @@ async function githubWriteFile(
     try {
 
         const existing =
-            await githubGetFile(
-                cleanPath
+            await githubRequest(
+                `/contents/${cleanPath
+                    .split("/")
+                    .map(encodeURIComponent)
+                    .join("/")
+                }?ref=${encodeURIComponent(GITHUB_BRANCH)}`
             );
 
         sha =
@@ -296,9 +293,7 @@ async function githubWriteFile(
     catch (error) {
 
         if (error.status !== 404) {
-
             throw error;
-
         }
 
     }
@@ -311,10 +306,7 @@ async function githubWriteFile(
 
         content:
             Buffer
-                .from(
-                    content,
-                    "utf8"
-                )
+                .from(content, "utf8")
                 .toString("base64"),
 
         branch:
@@ -323,17 +315,15 @@ async function githubWriteFile(
     };
 
     if (sha) {
-
-        body.sha =
-            sha;
-
+        body.sha = sha;
     }
 
     return githubRequest(
         `/contents/${cleanPath
             .split("/")
             .map(encodeURIComponent)
-            .join("/")}`,
+            .join("/")
+        }`,
         {
             method: "PUT",
 
@@ -348,7 +338,6 @@ async function githubWriteFile(
     );
 
 }
-
 
 // ============================================================
 // GITHUB WRITE BUFFER
@@ -377,8 +366,12 @@ async function githubWriteBuffer(
     try {
 
         const existing =
-            await githubGetFile(
-                cleanPath
+            await githubRequest(
+                `/contents/${cleanPath
+                    .split("/")
+                    .map(encodeURIComponent)
+                    .join("/")
+                }?ref=${encodeURIComponent(GITHUB_BRANCH)}`
             );
 
         sha =
@@ -388,9 +381,7 @@ async function githubWriteBuffer(
     catch (error) {
 
         if (error.status !== 404) {
-
             throw error;
-
         }
 
     }
@@ -410,17 +401,15 @@ async function githubWriteBuffer(
     };
 
     if (sha) {
-
-        body.sha =
-            sha;
-
+        body.sha = sha;
     }
 
     return githubRequest(
         `/contents/${cleanPath
             .split("/")
             .map(encodeURIComponent)
-            .join("/")}`,
+            .join("/")
+        }`,
         {
             method: "PUT",
 
@@ -436,7 +425,6 @@ async function githubWriteBuffer(
 
 }
 
-
 // ============================================================
 // RANDOM ID
 // ============================================================
@@ -449,10 +437,12 @@ function randomId(length = 16) {
 
 }
 
-
 // ============================================================
 // PASSWORD HASH
 // ============================================================
+
+// SHA-256 conservé pour être compatible avec
+// les comptes créés par ta version actuelle.
 
 function hashPassword(password) {
 
@@ -466,9 +456,460 @@ function hashPassword(password) {
 
 }
 
+// ============================================================
+// ACCOUNT ENCRYPTION
+// ============================================================
+
+function getEncryptionKey() {
+
+    if (!ACCOUNT_ENCRYPTION_KEY) {
+
+        throw new Error(
+            "ACCOUNT_ENCRYPTION_KEY n'est pas configurée sur Render."
+        );
+
+    }
+
+    /*
+       SHA-256 permet d'obtenir exactement 32 octets
+       pour AES-256-GCM.
+    */
+
+    return crypto
+        .createHash("sha256")
+        .update(
+            ACCOUNT_ENCRYPTION_KEY,
+            "utf8"
+        )
+        .digest();
+
+}
 
 // ============================================================
-// SESSION TOKEN
+// ENCRYPT USERS
+// ============================================================
+
+function encryptAccounts(users) {
+
+    const key =
+        getEncryptionKey();
+
+    const iv =
+        crypto.randomBytes(12);
+
+    const cipher =
+        crypto.createCipheriv(
+            "aes-256-gcm",
+            key,
+            iv
+        );
+
+    const json =
+        JSON.stringify(
+            users,
+            null,
+            2
+        );
+
+    const encrypted =
+        Buffer.concat([
+            cipher.update(
+                json,
+                "utf8"
+            ),
+            cipher.final()
+        ]);
+
+    const authTag =
+        cipher.getAuthTag();
+
+    /*
+       Format :
+
+       DRAC1:
+       IV:
+       AUTH TAG:
+       DATA
+    */
+
+    return [
+        "DRAC1",
+        iv.toString("base64"),
+        authTag.toString("base64"),
+        encrypted.toString("base64")
+    ].join(":");
+
+}
+
+// ============================================================
+// DECRYPT USERS
+// ============================================================
+
+function decryptAccounts(text) {
+
+    const clean =
+        String(text || "").trim();
+
+    if (!clean) {
+        return [];
+    }
+
+    /*
+       Nouveau format DAVID RANDOM
+    */
+
+    if (clean.startsWith("DRAC1:")) {
+
+        const parts =
+            clean.split(":");
+
+        if (parts.length !== 4) {
+
+            throw new Error(
+                "FORMAT users.enc INVALIDE."
+            );
+
+        }
+
+        const iv =
+            Buffer.from(
+                parts[1],
+                "base64"
+            );
+
+        const authTag =
+            Buffer.from(
+                parts[2],
+                "base64"
+            );
+
+        const encrypted =
+            Buffer.from(
+                parts[3],
+                "base64"
+            );
+
+        const decipher =
+            crypto.createDecipheriv(
+                "aes-256-gcm",
+                getEncryptionKey(),
+                iv
+            );
+
+        decipher.setAuthTag(
+            authTag
+        );
+
+        const decrypted =
+            Buffer.concat([
+                decipher.update(
+                    encrypted
+                ),
+                decipher.final()
+            ]).toString("utf8");
+
+        const users =
+            JSON.parse(decrypted);
+
+        return Array.isArray(users)
+            ? users
+            : [];
+
+    }
+
+    /*
+       Compatibilité :
+       si users.enc contient directement du JSON.
+    */
+
+    try {
+
+        const decoded =
+            Buffer.from(
+                clean,
+                "base64"
+            ).toString("utf8");
+
+        const parsed =
+            JSON.parse(decoded);
+
+        if (Array.isArray(parsed)) {
+            return parsed;
+        }
+
+    }
+    catch {}
+
+    /*
+       Dernière possibilité :
+       users.enc contient du JSON normal.
+    */
+
+    try {
+
+        const parsed =
+            JSON.parse(clean);
+
+        if (Array.isArray(parsed)) {
+            return parsed;
+        }
+
+    }
+    catch {}
+
+    throw new Error(
+        "Impossible de déchiffrer accounts/users.enc avec le format actuel."
+    );
+
+}
+
+// ============================================================
+// ACCOUNTS.JSON
+// ============================================================
+
+function createAccountsIndex() {
+
+    const users =
+        Array.from(
+            accounts.values()
+        );
+
+    return {
+
+        version: 2,
+
+        storage:
+            "accounts/users.enc",
+
+        updatedAt:
+            new Date().toISOString(),
+
+        users:
+            users.map(user => ({
+                id: user.id,
+                username: user.username,
+                createdAt: user.createdAt
+            }))
+
+    };
+
+}
+
+// ============================================================
+// SAVE ACCOUNTS
+// ============================================================
+
+async function saveAccounts() {
+
+    const users =
+        Array.from(
+            accounts.values()
+        );
+
+    /*
+       users.enc contient les informations complètes
+       des utilisateurs.
+    */
+
+    const encrypted =
+        encryptAccounts(users);
+
+    await githubWriteFile(
+        "accounts/users.enc",
+        encrypted,
+        "Update encrypted accounts"
+    );
+
+    /*
+       accounts.json sert d'index public/non-secret.
+       AUCUN mot de passe n'y est enregistré.
+    */
+
+    const index =
+        createAccountsIndex();
+
+    await githubWriteFile(
+        "accounts.json",
+        JSON.stringify(
+            index,
+            null,
+            2
+        ),
+        "Update accounts index"
+    );
+
+}
+
+// ============================================================
+// LOAD ACCOUNTS
+// ============================================================
+
+async function loadAccounts() {
+
+    if (accountsLoaded) {
+        return;
+    }
+
+    accountsLoaded = true;
+
+    console.log(
+        "[ACCOUNTS] Chargement depuis GitHub..."
+    );
+
+    let users = [];
+
+    /*
+       1. On essaye users.enc
+    */
+
+    try {
+
+        const encrypted =
+            await githubReadFile(
+                "accounts/users.enc"
+            );
+
+        users =
+            decryptAccounts(
+                encrypted
+            );
+
+        console.log(
+            `[ACCOUNTS] users.enc chargé : ${users.length} compte(s)`
+        );
+
+    }
+    catch (error) {
+
+        if (error.status === 404) {
+
+            console.log(
+                "[ACCOUNTS] accounts/users.enc inexistant."
+            );
+
+        }
+        else {
+
+            console.error(
+                "[ACCOUNTS] Erreur users.enc:",
+                error.message
+            );
+
+        }
+
+    }
+
+    /*
+       2. Si users.enc ne contient rien,
+          on essaye accounts.json.
+    */
+
+    if (users.length === 0) {
+
+        try {
+
+            const text =
+                await githubReadFile(
+                    "accounts.json"
+                );
+
+            const data =
+                JSON.parse(text);
+
+            if (Array.isArray(data)) {
+
+                users = data;
+
+            }
+            else if (
+                Array.isArray(data.users)
+            ) {
+
+                /*
+                   Attention :
+                   accounts.json ne devrait normalement
+                   pas contenir les mots de passe.
+                */
+
+                users =
+                    data.users;
+
+            }
+
+            console.log(
+                `[ACCOUNTS] accounts.json chargé : ${users.length} compte(s)`
+            );
+
+        }
+        catch (error) {
+
+            if (error.status === 404) {
+
+                console.log(
+                    "[ACCOUNTS] Aucun ancien compte trouvé."
+                );
+
+            }
+            else {
+
+                console.error(
+                    "[ACCOUNTS] Erreur accounts.json:",
+                    error.message
+                );
+
+            }
+
+        }
+
+    }
+
+    /*
+       3. Mise en mémoire
+    */
+
+    for (const user of users) {
+
+        if (!user || !user.id) {
+            continue;
+        }
+
+        if (!user.username) {
+            continue;
+        }
+
+        accounts.set(
+            user.id,
+            {
+                id:
+                    String(user.id),
+
+                username:
+                    String(user.username),
+
+                password:
+                    String(user.password || ""),
+
+                profile_picture:
+                    user.profile_picture ||
+                    null,
+
+                createdAt:
+                    user.createdAt ||
+                    new Date().toISOString()
+
+            }
+        );
+
+    }
+
+    console.log(
+        `[ACCOUNTS] ${accounts.size} compte(s) disponible(s).`
+    );
+
+}
+
+// ============================================================
+// SESSION
 // ============================================================
 
 function createSession(user) {
@@ -493,9 +934,8 @@ function createSession(user) {
 
 }
 
-
 // ============================================================
-// AUTH
+// TOKEN
 // ============================================================
 
 function getTokenFromRequest(req) {
@@ -517,26 +957,19 @@ function getTokenFromRequest(req) {
 
 }
 
-
-// ============================================================
-// GET USER FROM TOKEN
 // ============================================================
 
 function getUserFromToken(token) {
 
     if (!token) {
-
         return null;
-
     }
 
     const session =
         sessions.get(token);
 
     if (!session) {
-
         return null;
-
     }
 
     const user =
@@ -548,16 +981,9 @@ function getUserFromToken(token) {
 
 }
 
-
-// ============================================================
-// AUTH MIDDLEWARE
 // ============================================================
 
-function authMiddleware(
-    req,
-    res,
-    next
-) {
+function authMiddleware(req, res, next) {
 
     const token =
         getTokenFromRequest(req);
@@ -567,13 +993,11 @@ function authMiddleware(
 
     if (!user) {
 
-        return res
-            .status(401)
-            .json({
-                success: false,
-                error:
-                    "AUTHENTICATION REQUIRED"
-            });
+        return res.status(401).json({
+            success: false,
+            error:
+                "AUTHENTICATION REQUIRED"
+        });
 
     }
 
@@ -587,7 +1011,6 @@ function authMiddleware(
 
 }
 
-
 // ============================================================
 // PUBLIC USER
 // ============================================================
@@ -595,9 +1018,7 @@ function authMiddleware(
 function publicUser(user) {
 
     if (!user) {
-
         return null;
-
     }
 
     return {
@@ -609,480 +1030,12 @@ function publicUser(user) {
             user.username,
 
         profile_picture:
-            user.profile_picture || null
+            user.profile_picture ||
+            null
 
     };
 
 }
-
-
-// ============================================================
-// ============================================================
-// ACCOUNTS ENCRYPTION
-// ============================================================
-// Format:
-// DR1:version:iv:authTag:encryptedData
-// ============================================================
-
-const ACCOUNTS_FILE =
-    "accounts/users.enc";
-
-const ACCOUNTS_JSON_FILE =
-    "accounts.json";
-
-
-// ============================================================
-// DERIVE ENCRYPTION KEY
-// ============================================================
-
-function getAccountsEncryptionKey() {
-
-    if (!ACCOUNTS_ENCRYPTION_KEY) {
-
-        throw new Error(
-            "ACCOUNTS_ENCRYPTION_KEY n'est pas configurée sur Render."
-        );
-
-    }
-
-    /*
-       SHA-256 permet de transformer la clé
-       Render en clé AES-256 de 32 octets.
-    */
-
-    return crypto
-        .createHash("sha256")
-        .update(
-            ACCOUNTS_ENCRYPTION_KEY,
-            "utf8"
-        )
-        .digest();
-
-}
-
-
-// ============================================================
-// ENCRYPT ACCOUNTS
-// ============================================================
-
-function encryptAccounts(users) {
-
-    const key =
-        getAccountsEncryptionKey();
-
-    const iv =
-        crypto.randomBytes(12);
-
-    const cipher =
-        crypto.createCipheriv(
-            "aes-256-gcm",
-            key,
-            iv
-        );
-
-    const plaintext =
-        JSON.stringify({
-            version:
-                1,
-
-            users
-        });
-
-    const encrypted =
-        Buffer.concat([
-            cipher.update(
-                plaintext,
-                "utf8"
-            ),
-            cipher.final()
-        ]);
-
-    const authTag =
-        cipher.getAuthTag();
-
-    return [
-        "DR1",
-
-        "1",
-
-        iv.toString("base64url"),
-
-        authTag.toString("base64url"),
-
-        encrypted.toString("base64url")
-
-    ].join(":");
-
-}
-
-
-// ============================================================
-// DECRYPT ACCOUNTS
-// ============================================================
-
-function decryptAccounts(text) {
-
-    const parts =
-        String(text || "")
-            .trim()
-            .split(":");
-
-    if (
-        parts.length !== 5
-    ) {
-
-        throw new Error(
-            "Format users.enc invalide."
-        );
-
-    }
-
-    const [
-        magic,
-        version,
-        ivText,
-        authTagText,
-        encryptedText
-    ] =
-        parts;
-
-    if (
-        magic !== "DR1"
-    ) {
-
-        throw new Error(
-            "Format users.enc inconnu."
-        );
-
-    }
-
-    if (
-        version !== "1"
-    ) {
-
-        throw new Error(
-            "Version users.enc non supportée."
-        );
-
-    }
-
-    const key =
-        getAccountsEncryptionKey();
-
-    const iv =
-        Buffer.from(
-            ivText,
-            "base64url"
-        );
-
-    const authTag =
-        Buffer.from(
-            authTagText,
-            "base64url"
-        );
-
-    const encrypted =
-        Buffer.from(
-            encryptedText,
-            "base64url"
-        );
-
-    const decipher =
-        crypto.createDecipheriv(
-            "aes-256-gcm",
-            key,
-            iv
-        );
-
-    decipher.setAuthTag(
-        authTag
-    );
-
-    const decrypted =
-        Buffer.concat([
-            decipher.update(
-                encrypted
-            ),
-            decipher.final()
-        ]);
-
-    return JSON.parse(
-        decrypted.toString("utf8")
-    );
-
-}
-
-
-// ============================================================
-// SAVE ACCOUNTS
-// ============================================================
-
-async function saveAccountsToGitHub() {
-
-    if (!GITHUB_TOKEN) {
-
-        throw new Error(
-            "GITHUB_TOKEN n'est pas configuré."
-        );
-
-    }
-
-    if (!ACCOUNTS_ENCRYPTION_KEY) {
-
-        throw new Error(
-            "ACCOUNTS_ENCRYPTION_KEY n'est pas configurée."
-        );
-
-    }
-
-    const users =
-        Array.from(
-            accounts.values()
-        );
-
-    /*
-       users.enc
-    */
-
-    const encrypted =
-        encryptAccounts(
-            users
-        );
-
-    /*
-       accounts.json contient uniquement
-       des informations publiques.
-       Aucun mot de passe.
-    */
-
-    const accountsJson = {
-
-        version:
-            2,
-
-        format:
-            "DR1",
-
-        encrypted:
-            true,
-
-        count:
-            users.length,
-
-        updatedAt:
-            new Date().toISOString(),
-
-        users:
-            users.map(
-                user => ({
-                    id:
-                        user.id,
-
-                    username:
-                        user.username,
-
-                    profile_picture:
-                        user.profile_picture ||
-                        null,
-
-                    createdAt:
-                        user.createdAt ||
-                        null
-                })
-            )
-
-    };
-
-    /*
-       On sauvegarde users.enc puis accounts.json.
-    */
-
-    await githubWriteFile(
-        ACCOUNTS_FILE,
-        encrypted,
-        "Update encrypted accounts"
-    );
-
-    await githubWriteFile(
-        ACCOUNTS_JSON_FILE,
-        JSON.stringify(
-            accountsJson,
-            null,
-            2
-        ),
-        "Update accounts metadata"
-    );
-
-}
-
-
-// ============================================================
-// QUEUED ACCOUNT SAVE
-// ============================================================
-
-function queueAccountsSave() {
-
-    accountsSaveQueue =
-        accountsSaveQueue
-            .then(
-                () =>
-                    saveAccountsToGitHub()
-            )
-            .catch(
-                error => {
-
-                    console.error(
-                        "[ACCOUNTS SAVE]",
-                        error
-                    );
-
-                }
-            );
-
-    return accountsSaveQueue;
-
-}
-
-
-// ============================================================
-// LOAD ACCOUNTS
-// ============================================================
-
-async function loadAccounts() {
-
-    if (accountsLoaded) {
-
-        return;
-
-    }
-
-    accounts.clear();
-
-    /*
-       Vérification de la clé.
-    */
-
-    if (!ACCOUNTS_ENCRYPTION_KEY) {
-
-        console.error(
-            "[ACCOUNTS] ACCOUNTS_ENCRYPTION_KEY absente."
-        );
-
-        console.error(
-            "[ACCOUNTS] Les comptes ne peuvent pas être chargés."
-        );
-
-        accountsLoaded =
-            true;
-
-        return;
-
-    }
-
-    try {
-
-        const encrypted =
-            await githubReadFile(
-                ACCOUNTS_FILE
-            );
-
-        const decoded =
-            decryptAccounts(
-                encrypted
-            );
-
-        const users =
-            Array.isArray(
-                decoded?.users
-            )
-                ? decoded.users
-                : [];
-
-        for (
-            const user
-            of users
-        ) {
-
-            if (
-                !user ||
-                !user.id ||
-                !user.username ||
-                !user.password
-            ) {
-
-                continue;
-
-            }
-
-            accounts.set(
-                user.id,
-                {
-                    id:
-                        user.id,
-
-                    username:
-                        user.username,
-
-                    password:
-                        user.password,
-
-                    profile_picture:
-                        user.profile_picture ||
-                        null,
-
-                    createdAt:
-                        user.createdAt ||
-                        null
-                }
-            );
-
-        }
-
-        console.log(
-            `[ACCOUNTS] ${accounts.size} compte(s) chargé(s) depuis GitHub.`
-        );
-
-    }
-    catch (error) {
-
-        if (
-            error.status === 404
-        ) {
-
-            console.log(
-                "[ACCOUNTS] users.enc n'existe pas encore."
-            );
-
-            console.log(
-                "[ACCOUNTS] Il sera créé à la première inscription."
-            );
-
-        }
-        else {
-
-            console.error(
-                "[ACCOUNTS] Impossible de charger users.enc:"
-            );
-
-            console.error(
-                error.message
-            );
-
-            /*
-               Si l'ancien users.enc est encore présent
-               mais utilise l'ancien format, on ne le détruit pas
-               automatiquement.
-            */
-
-        }
-
-    }
-
-    accountsLoaded =
-        true;
-
-}
-
 
 // ============================================================
 // STATUS
@@ -1109,6 +1062,9 @@ app.get(
             storage:
                 "GitHub",
 
+            accounts:
+                accounts.size,
+
             websocket:
                 true
 
@@ -1117,14 +1073,11 @@ app.get(
     }
 );
 
-
-// ============================================================
-// API STATUS
 // ============================================================
 
 app.get(
     "/api/status",
-    async (req, res) => {
+    (req, res) => {
 
         res.json({
 
@@ -1141,15 +1094,13 @@ app.get(
                 "Render",
 
             github:
-                Boolean(
-                    GITHUB_TOKEN
-                ),
+                Boolean(GITHUB_TOKEN),
 
             accounts:
                 accounts.size,
 
-            accounts_storage:
-                "accounts/users.enc",
+            accounts_loaded:
+                accountsLoaded,
 
             websocket:
                 true,
@@ -1160,7 +1111,6 @@ app.get(
 
     }
 );
-
 
 // ============================================================
 // VISITORS
@@ -1182,9 +1132,8 @@ app.get(
     }
 );
 
-
 // ============================================================
-// ACCOUNT REGISTER
+// REGISTER
 // ============================================================
 
 app.post(
@@ -1192,8 +1141,6 @@ app.post(
     async (req, res) => {
 
         try {
-
-            await loadAccounts();
 
             const username =
                 String(
@@ -1214,17 +1161,15 @@ app.post(
                 !password
             ) {
 
-                return res
-                    .status(400)
-                    .json({
+                return res.status(400).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "USERNAME AND PASSWORD REQUIRED"
+                    error:
+                        "USERNAME AND PASSWORD REQUIRED"
 
-                    });
+                });
 
             }
 
@@ -1233,35 +1178,29 @@ app.post(
                 username.length > 24
             ) {
 
-                return res
-                    .status(400)
-                    .json({
+                return res.status(400).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "USERNAME MUST BE 3-24 CHARACTERS"
+                    error:
+                        "USERNAME MUST BE 3-24 CHARACTERS"
 
-                    });
+                });
 
             }
 
-            if (
-                password.length < 4
-            ) {
+            if (password.length < 4) {
 
-                return res
-                    .status(400)
-                    .json({
+                return res.status(400).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "PASSWORD TOO SHORT"
+                    error:
+                        "PASSWORD TOO SHORT"
 
-                    });
+                });
 
             }
 
@@ -1279,17 +1218,15 @@ app.post(
                     usernameKey
                 ) {
 
-                    return res
-                        .status(409)
-                        .json({
+                    return res.status(409).json({
 
-                            success:
-                                false,
+                        success:
+                            false,
 
-                            error:
-                                "USERNAME ALREADY EXISTS"
+                        error:
+                            "USERNAME ALREADY EXISTS"
 
-                        });
+                    });
 
                 }
 
@@ -1303,9 +1240,7 @@ app.post(
                 username,
 
                 password:
-                    hashPassword(
-                        password
-                    ),
+                    hashPassword(password),
 
                 profile_picture:
                     profilePicture,
@@ -1321,35 +1256,49 @@ app.post(
             );
 
             /*
-               Sauvegarde immédiate sur GitHub.
+               Sauvegarde IMMÉDIATE sur GitHub.
             */
 
             try {
 
-                await saveAccountsToGitHub();
+                await saveAccounts();
 
             }
             catch (saveError) {
 
                 /*
-                   Si GitHub échoue, on retire le compte
-                   de la mémoire afin de ne pas créer
-                   un compte qui disparaîtrait au prochain
-                   redémarrage.
+                   On retire le compte de la mémoire
+                   si la sauvegarde échoue.
                 */
 
                 accounts.delete(
                     user.id
                 );
 
-                throw saveError;
+                console.error(
+                    "[REGISTER SAVE]",
+                    saveError
+                );
+
+                return res.status(500).json({
+
+                    success:
+                        false,
+
+                    error:
+                        "ACCOUNT SAVE ERROR: " +
+                        saveError.message
+
+                });
 
             }
 
             const token =
-                createSession(
-                    user
-                );
+                createSession(user);
+
+            console.log(
+                `[ACCOUNT] Nouveau compte : ${user.username}`
+            );
 
             res.json({
 
@@ -1359,9 +1308,7 @@ app.post(
                 token,
 
                 user:
-                    publicUser(
-                        user
-                    )
+                    publicUser(user)
 
             });
 
@@ -1373,27 +1320,23 @@ app.post(
                 error
             );
 
-            res
-                .status(500)
-                .json({
+            res.status(500).json({
 
-                    success:
-                        false,
+                success:
+                    false,
 
-                    error:
-                        error.message ||
-                        "REGISTRATION ERROR"
+                error:
+                    "REGISTRATION ERROR"
 
-                });
+            });
 
         }
 
     }
 );
 
-
 // ============================================================
-// ACCOUNT LOGIN
+// LOGIN
 // ============================================================
 
 app.post(
@@ -1401,6 +1344,11 @@ app.post(
     async (req, res) => {
 
         try {
+
+            /*
+               S'assurer que les comptes GitHub sont
+               chargés avant de chercher l'utilisateur.
+            */
 
             await loadAccounts();
 
@@ -1439,19 +1387,25 @@ app.post(
 
             if (!foundUser) {
 
-                return res
-                    .status(401)
-                    .json({
+                console.log(
+                    `[LOGIN] Utilisateur inconnu : ${username}`
+                );
 
-                        success:
-                            false,
+                return res.status(401).json({
 
-                        error:
-                            "INVALID USERNAME OR PASSWORD"
+                    success:
+                        false,
 
-                    });
+                    error:
+                        "INVALID USERNAME OR PASSWORD"
+
+                });
 
             }
+
+            /*
+               Vérification du mot de passe.
+            */
 
             const passwordHash =
                 hashPassword(
@@ -1463,24 +1417,35 @@ app.post(
                 passwordHash
             ) {
 
-                return res
-                    .status(401)
-                    .json({
+                console.log(
+                    `[LOGIN] Mauvais mot de passe : ${username}`
+                );
 
-                        success:
-                            false,
+                return res.status(401).json({
 
-                        error:
-                            "INVALID USERNAME OR PASSWORD"
+                    success:
+                        false,
 
-                    });
+                    error:
+                        "INVALID USERNAME OR PASSWORD"
+
+                });
 
             }
+
+            /*
+               IMPORTANT :
+               nouveau token de session.
+            */
 
             const token =
                 createSession(
                     foundUser
                 );
+
+            console.log(
+                `[LOGIN] Connexion réussie : ${foundUser.username}`
+            );
 
             res.json({
 
@@ -1504,27 +1469,24 @@ app.post(
                 error
             );
 
-            res
-                .status(500)
-                .json({
+            res.status(500).json({
 
-                    success:
-                        false,
+                success:
+                    false,
 
-                    error:
-                        error.message ||
-                        "LOGIN ERROR"
+                error:
+                    "LOGIN ERROR: " +
+                    error.message
 
-                });
+            });
 
         }
 
     }
 );
 
-
 // ============================================================
-// ACCOUNT ME
+// ME
 // ============================================================
 
 app.get(
@@ -1547,9 +1509,8 @@ app.get(
     }
 );
 
-
 // ============================================================
-// ACCOUNT LOGOUT
+// LOGOUT
 // ============================================================
 
 app.post(
@@ -1571,21 +1532,15 @@ app.post(
     }
 );
 
-
 // ============================================================
 // FILE EXTENSIONS
 // ============================================================
 
-function getAllowedExtensions(
-    folder
-) {
+function getAllowedExtensions(folder) {
 
-    if (
-        folder === "image"
-    ) {
+    if (folder === "image") {
 
         return [
-
             ".png",
             ".jpg",
             ".jpeg",
@@ -1593,40 +1548,31 @@ function getAllowedExtensions(
             ".webp",
             ".bmp",
             ".svg"
-
         ];
 
     }
 
-    if (
-        folder === "music"
-    ) {
+    if (folder === "music") {
 
         return [
-
             ".mp3",
             ".wav",
             ".ogg",
             ".flac",
             ".m4a",
             ".aac"
-
         ];
 
     }
 
-    if (
-        folder === "video"
-    ) {
+    if (folder === "video") {
 
         return [
-
             ".mp4",
             ".webm",
             ".mov",
             ".avi",
             ".mkv"
-
         ];
 
     }
@@ -1635,42 +1581,29 @@ function getAllowedExtensions(
 
 }
 
-
 // ============================================================
 // MEDIA URL
 // ============================================================
 
-function githubRawUrl(
-    folder,
-    filename
-) {
+function githubRawUrl(folder, filename) {
 
     return (
         "https://raw.githubusercontent.com/" +
-        encodeURIComponent(
-            GITHUB_OWNER
-        ) +
+        encodeURIComponent(GITHUB_OWNER) +
         "/" +
-        encodeURIComponent(
-            GITHUB_REPO
-        ) +
+        encodeURIComponent(GITHUB_REPO) +
         "/" +
-        encodeURIComponent(
-            GITHUB_BRANCH
-        ) +
+        encodeURIComponent(GITHUB_BRANCH) +
         "/" +
         folder +
         "/" +
         filename
             .split("/")
-            .map(
-                encodeURIComponent
-            )
+            .map(encodeURIComponent)
             .join("/")
     );
 
 }
-
 
 // ============================================================
 // LIST MEDIA
@@ -1693,17 +1626,15 @@ app.get(
             ].includes(folder)
         ) {
 
-            return res
-                .status(400)
-                .json({
+            return res.status(400).json({
 
-                    success:
-                        false,
+                success:
+                    false,
 
-                    error:
-                        "DOSSIER MEDIA INVALIDE"
+                error:
+                    "DOSSIER MEDIA INVALIDE"
 
-                });
+            });
 
         }
 
@@ -1720,64 +1651,51 @@ app.get(
                 );
 
             const files =
-                Array.isArray(
-                    entries
-                )
-                    ? entries
-                        .filter(
-                            item => {
+                Array.isArray(entries)
+                ? entries
+                    .filter(item => {
 
-                                if (
-                                    item.type !==
-                                    "file"
-                                ) {
+                        if (
+                            item.type !==
+                            "file"
+                        ) {
+                            return false;
+                        }
 
-                                    return false;
+                        if (
+                            item.name
+                                .toLowerCase()
+                                .endsWith(".gitkeep")
+                        ) {
+                            return false;
+                        }
 
-                                }
+                        return allowed.includes(
+                            path.extname(
+                                item.name
+                            ).toLowerCase()
+                        );
 
-                                if (
-                                    item.name
-                                        .toLowerCase()
-                                        .endsWith(
-                                            ".gitkeep"
-                                        )
-                                ) {
+                    })
+                    .map(item => ({
 
-                                    return false;
+                        name:
+                            item.name,
 
-                                }
+                        path:
+                            item.path,
 
-                                return allowed
-                                    .includes(
-                                        path.extname(
-                                            item.name
-                                        ).toLowerCase()
-                                    );
+                        size:
+                            item.size || 0,
 
-                            }
-                        )
-                        .map(
-                            item => ({
+                        download:
+                            githubRawUrl(
+                                folder,
+                                item.name
+                            )
 
-                                name:
-                                    item.name,
-
-                                path:
-                                    item.path,
-
-                                size:
-                                    item.size || 0,
-
-                                download:
-                                    githubRawUrl(
-                                        folder,
-                                        item.name
-                                    )
-
-                            })
-                        )
-                    : [];
+                    }))
+                : [];
 
             res.json({
 
@@ -1798,29 +1716,26 @@ app.get(
                 error
             );
 
-            res
-                .status(
+            res.status(
+                error.status === 404
+                    ? 404
+                    : 500
+            ).json({
+
+                success:
+                    false,
+
+                error:
                     error.status === 404
-                        ? 404
-                        : 500
-                )
-                .json({
+                    ? "DOSSIER INTROUVABLE"
+                    : error.message
 
-                    success:
-                        false,
-
-                    error:
-                        error.status === 404
-                            ? "DOSSIER INTROUVABLE"
-                            : error.message
-
-                });
+            });
 
         }
 
     }
 );
-
 
 // ============================================================
 // UPLOAD MEDIA
@@ -1854,17 +1769,15 @@ app.post(
                 !folder
             ) {
 
-                return res
-                    .status(400)
-                    .json({
+                return res.status(400).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "FILENAME, CONTENT AND FOLDER REQUIRED"
+                    error:
+                        "FILENAME, CONTENT AND FOLDER REQUIRED"
 
-                    });
+                });
 
             }
 
@@ -1876,17 +1789,15 @@ app.post(
                 ].includes(folder)
             ) {
 
-                return res
-                    .status(400)
-                    .json({
+                return res.status(400).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "INVALID MEDIA FOLDER"
+                    error:
+                        "INVALID MEDIA FOLDER"
 
-                    });
+                });
 
             }
 
@@ -1898,22 +1809,18 @@ app.post(
             if (
                 !getAllowedExtensions(
                     folder
-                ).includes(
-                    extension
-                )
+                ).includes(extension)
             ) {
 
-                return res
-                    .status(400)
-                    .json({
+                return res.status(400).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "FILE TYPE NOT ALLOWED"
+                    error:
+                        "FILE TYPE NOT ALLOWED"
 
-                    });
+                });
 
             }
 
@@ -1940,17 +1847,15 @@ app.post(
                 MAX_UPLOAD_SIZE
             ) {
 
-                return res
-                    .status(413)
-                    .json({
+                return res.status(413).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "FILE TOO LARGE. MAXIMUM 25 MB."
+                    error:
+                        "FILE TOO LARGE. MAXIMUM 25 MB."
 
-                    });
+                });
 
             }
 
@@ -2005,62 +1910,51 @@ app.post(
                 error
             );
 
-            res
-                .status(500)
-                .json({
+            res.status(500).json({
 
-                    success:
-                        false,
+                success:
+                    false,
 
-                    error:
-                        error.message ||
-                        "UPLOAD ERROR"
+                error:
+                    error.message ||
+                    "UPLOAD ERROR"
 
-                });
+            });
 
         }
 
     }
 );
 
-
 // ============================================================
-// CHAT LOG HELPERS
+// CHAT LOG
 // ============================================================
 
-function chatLogFilename(
-    number
-) {
+function chatLogFilename(number) {
 
     return (
         "chat-log/chat-log" +
-        String(number)
-            .padStart(3, "0") +
+        String(number).padStart(3, "0") +
         ".json"
     );
 
 }
 
+// ============================================================
 
-function calculateChatLogSize(
-    messages
-) {
+function calculateChatLogSize(messages) {
 
-    return Buffer
-        .byteLength(
-            JSON.stringify(
-                messages,
-                null,
-                2
-            ),
-            "utf8"
-        );
+    return Buffer.byteLength(
+        JSON.stringify(
+            messages,
+            null,
+            2
+        ),
+        "utf8"
+    );
 
 }
 
-
-// ============================================================
-// FIND CHAT LOG FILES
 // ============================================================
 
 async function getChatLogFiles() {
@@ -2072,17 +1966,13 @@ async function getChatLogFiles() {
                 "chat-log"
             );
 
-        return Array.isArray(
-            entries
-        )
+        return Array.isArray(entries)
             ? entries
                 .filter(
                     item =>
                         item.type === "file" &&
                         /^chat-log\d+\.json$/i
-                            .test(
-                                item.name
-                            )
+                            .test(item.name)
                 )
                 .sort(
                     (a, b) =>
@@ -2100,12 +1990,8 @@ async function getChatLogFiles() {
     }
     catch (error) {
 
-        if (
-            error.status === 404
-        ) {
-
+        if (error.status === 404) {
             return [];
-
         }
 
         throw error;
@@ -2114,23 +2000,15 @@ async function getChatLogFiles() {
 
 }
 
-
-// ============================================================
-// LOAD CHAT LOGS
 // ============================================================
 
 async function loadChatLogs() {
 
-    if (
-        chatLogLoaded
-    ) {
-
+    if (chatLogLoaded) {
         return chatLogCache;
-
     }
 
-    chatLogCache =
-        [];
+    chatLogCache = [];
 
     try {
 
@@ -2150,14 +2028,10 @@ async function loadChatLogs() {
                     );
 
                 const parsed =
-                    JSON.parse(
-                        text
-                    );
+                    JSON.parse(text);
 
                 if (
-                    Array.isArray(
-                        parsed
-                    )
+                    Array.isArray(parsed)
                 ) {
 
                     chatLogCache.push(
@@ -2201,27 +2075,20 @@ async function loadChatLogs() {
     }
 
     if (
-        chatLogCache.length >
-        1000
+        chatLogCache.length > 1000
     ) {
 
         chatLogCache =
-            chatLogCache.slice(
-                -1000
-            );
+            chatLogCache.slice(-1000);
 
     }
 
-    chatLogLoaded =
-        true;
+    chatLogLoaded = true;
 
     return chatLogCache;
 
 }
 
-
-// ============================================================
-// GET NEXT CHAT LOG NUMBER
 // ============================================================
 
 async function getNextChatLogNumber() {
@@ -2229,8 +2096,7 @@ async function getNextChatLogNumber() {
     const files =
         await getChatLogFiles();
 
-    let max =
-        0;
+    let max = 0;
 
     for (
         const file
@@ -2247,9 +2113,7 @@ async function getNextChatLogNumber() {
             max =
                 Math.max(
                     max,
-                    Number(
-                        match[1]
-                    )
+                    Number(match[1])
                 );
 
         }
@@ -2260,14 +2124,9 @@ async function getNextChatLogNumber() {
 
 }
 
-
-// ============================================================
-// SAVE CHAT MESSAGE
 // ============================================================
 
-async function saveChatMessage(
-    message
-) {
+async function saveChatMessage(message) {
 
     chatLogCache.push(
         message
@@ -2279,9 +2138,7 @@ async function saveChatMessage(
     ) {
 
         chatLogCache =
-            chatLogCache.slice(
-                -1000
-            );
+            chatLogCache.slice(-1000);
 
     }
 
@@ -2301,8 +2158,7 @@ async function saveChatMessage(
                 Math.max(
                     1,
                     Math.floor(
-                        chatLogCache.length /
-                        2
+                        chatLogCache.length / 2
                     )
                 )
             );
@@ -2316,9 +2172,7 @@ async function saveChatMessage(
             await getNextChatLogNumber();
 
         await githubWriteFile(
-            chatLogFilename(
-                number
-            ),
+            chatLogFilename(number),
             JSON.stringify(
                 previousMessages,
                 null,
@@ -2338,14 +2192,10 @@ async function saveChatMessage(
     let number =
         1;
 
-    if (
-        files.length > 0
-    ) {
+    if (files.length > 0) {
 
         const last =
-            files[
-                files.length - 1
-            ];
+            files[files.length - 1];
 
         const match =
             last.name.match(
@@ -2355,18 +2205,14 @@ async function saveChatMessage(
         if (match) {
 
             number =
-                Number(
-                    match[1]
-                );
+                Number(match[1]);
 
         }
 
     }
 
     await githubWriteFile(
-        chatLogFilename(
-            number
-        ),
+        chatLogFilename(number),
         JSON.stringify(
             chatLogCache,
             null,
@@ -2376,7 +2222,6 @@ async function saveChatMessage(
     );
 
 }
-
 
 // ============================================================
 // CHAT HISTORY
@@ -2397,9 +2242,7 @@ app.get(
                     true,
 
                 messages:
-                    messages.slice(
-                        -200
-                    )
+                    messages.slice(-200)
 
             });
 
@@ -2411,23 +2254,20 @@ app.get(
                 error
             );
 
-            res
-                .status(500)
-                .json({
+            res.status(500).json({
 
-                    success:
-                        false,
+                success:
+                    false,
 
-                    error:
-                        error.message
+                error:
+                    error.message
 
-                });
+            });
 
         }
 
     }
 );
-
 
 // ============================================================
 // CHAT LOG LIST
@@ -2479,26 +2319,23 @@ app.get(
                 error
             );
 
-            res
-                .status(500)
-                .json({
+            res.status(500).json({
 
-                    success:
-                        false,
+                success:
+                    false,
 
-                    error:
-                        error.message
+                error:
+                    error.message
 
-                });
+            });
 
         }
 
     }
 );
 
-
 // ============================================================
-// READ CHAT LOG
+// INDIVIDUAL CHAT LOG
 // ============================================================
 
 app.get(
@@ -2513,23 +2350,19 @@ app.get(
                 );
 
             if (
-                !Number.isInteger(
-                    number
-                ) ||
+                !Number.isInteger(number) ||
                 number < 1
             ) {
 
-                return res
-                    .status(400)
-                    .json({
+                return res.status(400).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "INVALID LOG NUMBER"
+                    error:
+                        "INVALID LOG NUMBER"
 
-                    });
+                });
 
             }
 
@@ -2548,24 +2381,20 @@ app.get(
             try {
 
                 data =
-                    JSON.parse(
-                        text
-                    );
+                    JSON.parse(text);
 
             }
             catch {
 
-                return res
-                    .status(500)
-                    .json({
+                return res.status(500).json({
 
-                        success:
-                            false,
+                    success:
+                        false,
 
-                        error:
-                            "CHAT LOG JSON INVALID"
+                    error:
+                        "CHAT LOG JSON INVALID"
 
-                    });
+                });
 
             }
 
@@ -2577,17 +2406,9 @@ app.get(
                 number,
 
                 messages:
-                    Array.isArray(
-                        data
-                    )
-                        ? data
-                        : (
-                            Array.isArray(
-                                data.messages
-                            )
-                                ? data.messages
-                                : []
-                        )
+                    Array.isArray(data)
+                    ? data
+                    : data.messages || []
 
             });
 
@@ -2599,29 +2420,26 @@ app.get(
                 error
             );
 
-            res
-                .status(
+            res.status(
+                error.status === 404
+                    ? 404
+                    : 500
+            ).json({
+
+                success:
+                    false,
+
+                error:
                     error.status === 404
-                        ? 404
-                        : 500
-                )
-                .json({
+                    ? "CHAT LOG NOT FOUND"
+                    : error.message
 
-                    success:
-                        false,
-
-                    error:
-                        error.status === 404
-                            ? "CHAT LOG NOT FOUND"
-                            : error.message
-
-                });
+            });
 
         }
 
     }
 );
-
 
 // ============================================================
 // WEBSOCKET
@@ -2637,22 +2455,18 @@ const wss =
 const clients =
     new Set();
 
-function sendWS(
-    ws,
-    data
-) {
+// ============================================================
+
+function sendWS(ws, data) {
 
     if (
-        ws.readyState ===
-        1
+        ws.readyState === 1
     ) {
 
         try {
 
             ws.send(
-                JSON.stringify(
-                    data
-                )
+                JSON.stringify(data)
             );
 
         }
@@ -2662,15 +2476,12 @@ function sendWS(
 
 }
 
+// ============================================================
 
-function broadcast(
-    data
-) {
+function broadcast(data) {
 
     const text =
-        JSON.stringify(
-            data
-        );
+        JSON.stringify(data);
 
     for (
         const ws
@@ -2678,15 +2489,12 @@ function broadcast(
     ) {
 
         if (
-            ws.readyState ===
-            1
+            ws.readyState === 1
         ) {
 
             try {
 
-                ws.send(
-                    text
-                );
+                ws.send(text);
 
             }
             catch {}
@@ -2697,38 +2505,43 @@ function broadcast(
 
 }
 
-
 // ============================================================
 // WEBSOCKET CONNECTION
 // ============================================================
 
 wss.on(
     "connection",
-    async ws => {
+    (ws) => {
 
-        clients.add(
-            ws
-        );
+        clients.add(ws);
 
         let authenticatedUser =
             null;
 
         console.log(
-            "[WSS] Client connecté"
+            `[WSS] Client connecté (${clients.size})`
         );
 
-        sendWS(
-            ws,
-            {
+        sendWS(ws, {
 
-                type:
-                    "system",
+            type:
+                "system",
 
-                message:
-                    "Connexion au serveur DAVID RANDOM ✓"
+            message:
+                "Connexion au serveur DAVID RANDOM ✓"
 
-            }
-        );
+        });
+
+        /*
+           Le client DOIT envoyer :
+
+           {
+               type: "auth",
+               token: "..."
+           }
+
+           avant de pouvoir envoyer un message.
+        */
 
         ws.on(
             "message",
@@ -2741,39 +2554,71 @@ wss.on(
                             raw.toString()
                         );
 
-                    // ========================================
-                    // AUTH
-                    // ========================================
-
                     if (
-                        data.type ===
-                        "auth"
+                        !data ||
+                        typeof data !==
+                        "object"
                     ) {
 
-                        await loadAccounts();
+                        return;
+
+                    }
+
+                    // ====================================================
+                    // AUTH
+                    // ====================================================
+
+                    if (
+                        data.type === "auth"
+                    ) {
+
+                        const token =
+                            String(
+                                data.token || ""
+                            ).trim();
+
+                        if (!token) {
+
+                            sendWS(ws, {
+
+                                type:
+                                    "auth",
+
+                                success:
+                                    false,
+
+                                message:
+                                    "TOKEN MISSING"
+
+                            });
+
+                            return;
+
+                        }
 
                         const user =
                             getUserFromToken(
-                                data.token
+                                token
                             );
 
                         if (!user) {
 
-                            sendWS(
-                                ws,
-                                {
-
-                                    type:
-                                        "auth",
-
-                                    success:
-                                        false,
-
-                                    message:
-                                        "TOKEN INVALID"
-
-                                }
+                            console.log(
+                                "[WSS] Token invalide"
                             );
+
+                            sendWS(ws, {
+
+                                type:
+                                    "auth",
+
+                                success:
+                                    false,
+
+                                message:
+                                    "TOKEN INVALID"
+
+                            });
 
                             return;
 
@@ -2782,47 +2627,52 @@ wss.on(
                         authenticatedUser =
                             user;
 
-                        sendWS(
-                            ws,
-                            {
+                        sendWS(ws, {
 
-                                type:
-                                    "auth",
+                            type:
+                                "auth",
 
-                                success:
-                                    true,
+                            success:
+                                true,
 
-                                user:
-                                    publicUser(
-                                        user
-                                    )
+                            user:
+                                publicUser(
+                                    user
+                                )
 
-                            }
-                        );
+                        });
 
                         console.log(
-                            `[WSS] Auth: ${user.username}`
+                            `[WSS] Auth OK: ${user.username}`
                         );
 
                         return;
 
                     }
 
-                    // ========================================
+                    // ====================================================
                     // CHAT
-                    // ========================================
+                    // ====================================================
 
                     if (
-                        data.type ===
-                            "chat" ||
-                        data.type ===
-                            "message"
+                        data.type === "chat" ||
+                        data.type === "message"
                     ) {
 
-                        await loadAccounts();
+                        /*
+                           IMPORTANT :
+                           On vérifie d'abord l'utilisateur déjà
+                           authentifié avec le message auth.
+                        */
 
                         let user =
                             authenticatedUser;
+
+                        /*
+                           Compatibilité :
+                           le client peut aussi envoyer son token
+                           directement dans le message.
+                        */
 
                         if (
                             !user &&
@@ -2831,25 +2681,24 @@ wss.on(
 
                             user =
                                 getUserFromToken(
-                                    data.token
+                                    String(
+                                        data.token
+                                    ).trim()
                                 );
 
                         }
 
                         if (!user) {
 
-                            sendWS(
-                                ws,
-                                {
+                            sendWS(ws, {
 
-                                    type:
-                                        "error",
+                                type:
+                                    "error",
 
-                                    message:
-                                        "LOGIN REQUIRED"
+                                message:
+                                    "LOGIN REQUIRED"
 
-                                }
-                            );
+                            });
 
                             return;
 
@@ -2860,14 +2709,11 @@ wss.on(
 
                         const message =
                             String(
-                                data.message ||
-                                ""
+                                data.message || ""
                             ).trim();
 
                         if (!message) {
-
                             return;
-
                         }
 
                         if (
@@ -2875,18 +2721,15 @@ wss.on(
                             MAX_MESSAGE_LENGTH
                         ) {
 
-                            sendWS(
-                                ws,
-                                {
+                            sendWS(ws, {
 
-                                    type:
-                                        "error",
+                                type:
+                                    "error",
 
-                                    message:
-                                        "MESSAGE TOO LONG"
+                                message:
+                                    "MESSAGE TOO LONG"
 
-                                }
-                            );
+                            });
 
                             return;
 
@@ -2898,9 +2741,7 @@ wss.on(
                                 "chat",
 
                             id:
-                                randomId(
-                                    6
-                                ),
+                                randomId(6),
 
                             username:
                                 user.username,
@@ -2913,9 +2754,17 @@ wss.on(
 
                         };
 
+                        /*
+                           Broadcast immédiat.
+                        */
+
                         broadcast(
                             chatMessage
                         );
+
+                        /*
+                           Sauvegarde GitHub.
+                        */
 
                         try {
 
@@ -2931,67 +2780,57 @@ wss.on(
                                 error
                             );
 
-                            sendWS(
-                                ws,
-                                {
-
-                                    type:
-                                        "error",
-
-                                    message:
-                                        "Message envoyé mais sauvegarde GitHub échouée."
-
-                                }
-                            );
-
-                        }
-
-                        return;
-
-                    }
-
-                    // ========================================
-                    // PING
-                    // ========================================
-
-                    if (
-                        data.type ===
-                        "ping"
-                    ) {
-
-                        sendWS(
-                            ws,
-                            {
+                            sendWS(ws, {
 
                                 type:
-                                    "pong",
+                                    "error",
 
-                                time:
-                                    Date.now()
+                                message:
+                                    "Message envoyé mais sauvegarde GitHub échouée."
 
-                            }
-                        );
+                            });
+
+                        }
 
                         return;
 
                     }
 
-                    // ========================================
-                    // UNKNOWN
-                    // ========================================
+                    // ====================================================
+                    // PING
+                    // ====================================================
 
-                    sendWS(
-                        ws,
-                        {
+                    if (
+                        data.type === "ping"
+                    ) {
+
+                        sendWS(ws, {
 
                             type:
-                                "error",
+                                "pong",
 
-                            message:
-                                "UNKNOWN MESSAGE TYPE"
+                            time:
+                                Date.now()
 
-                        }
-                    );
+                        });
+
+                        return;
+
+                    }
+
+                    // ====================================================
+                    // UNKNOWN
+                    // ====================================================
+
+                    sendWS(ws, {
+
+                        type:
+                            "error",
+
+                        message:
+                            "UNKNOWN MESSAGE TYPE"
+
+                    });
 
                 }
                 catch (error) {
@@ -3001,23 +2840,24 @@ wss.on(
                         error
                     );
 
-                    sendWS(
-                        ws,
-                        {
+                    sendWS(ws, {
 
-                            type:
-                                "error",
+                        type:
+                            "error",
 
-                            message:
-                                "INVALID JSON"
+                        message:
+                            "INVALID JSON"
 
-                        }
-                    );
+                    });
 
                 }
 
             }
         );
+
+        // ============================================================
+        // CLOSE
+        // ============================================================
 
         ws.on(
             "close",
@@ -3028,11 +2868,15 @@ wss.on(
                 );
 
                 console.log(
-                    "[WSS] Client déconnecté"
+                    `[WSS] Client déconnecté (${clients.size})`
                 );
 
             }
         );
+
+        // ============================================================
+        // ERROR
+        // ============================================================
 
         ws.on(
             "error",
@@ -3053,7 +2897,6 @@ wss.on(
     }
 );
 
-
 // ============================================================
 // HTTP 404
 // ============================================================
@@ -3061,24 +2904,21 @@ wss.on(
 app.use(
     (req, res) => {
 
-        res
-            .status(404)
-            .json({
+        res.status(404).json({
 
-                success:
-                    false,
+            success:
+                false,
 
-                error:
-                    "Route introuvable.",
+            error:
+                "Route introuvable.",
 
-                path:
-                    req.originalUrl
+            path:
+                req.originalUrl
 
-            });
+        });
 
     }
 );
-
 
 // ============================================================
 // ERROR HANDLER
@@ -3092,25 +2932,22 @@ app.use(
             error
         );
 
-        res
-            .status(500)
-            .json({
+        res.status(500).json({
 
-                success:
-                    false,
+            success:
+                false,
 
-                error:
-                    error.message ||
-                    "Internal server error"
+            error:
+                error.message ||
+                "Internal server error"
 
-            });
+        });
 
     }
 );
 
-
 // ============================================================
-// START SERVER
+// START
 // ============================================================
 
 server.listen(
@@ -3152,8 +2989,8 @@ server.listen(
         );
 
         console.log(
-            "ACCOUNTS ENCRYPTION KEY:",
-            ACCOUNTS_ENCRYPTION_KEY
+            "ACCOUNT ENCRYPTION:",
+            ACCOUNT_ENCRYPTION_KEY
                 ? "PRESENT"
                 : "MISSING"
         );
@@ -3223,10 +3060,6 @@ server.listen(
         );
 
         console.log(
-            "  /api/upload"
-        );
-
-        console.log(
             "  /api/chat/history"
         );
 
@@ -3250,17 +3083,13 @@ server.listen(
             "======================================"
         );
 
-        // ================================================
-        // LOAD ACCOUNTS
-        // ================================================
+        // ============================================================
+        // CHARGEMENT DES COMPTES
+        // ============================================================
 
         try {
 
             await loadAccounts();
-
-            console.log(
-                `[ACCOUNTS] ${accounts.size} compte(s) disponible(s)`
-            );
 
         }
         catch (error) {
@@ -3272,9 +3101,9 @@ server.listen(
 
         }
 
-        // ================================================
-        // LOAD CHAT
-        // ================================================
+        // ============================================================
+        // CHARGEMENT CHAT
+        // ============================================================
 
         try {
 
@@ -3294,5 +3123,19 @@ server.listen(
 
         }
 
+        console.log(
+            "======================================"
+        );
+
+        console.log(
+            "DAVID RANDOM V2 READY"
+        );
+
+        console.log(
+            "======================================"
+
+        );
+
     }
 );
+```
