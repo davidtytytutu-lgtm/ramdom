@@ -7,6 +7,13 @@
       "user_id": "75a9cf6b-e91c-4e97-a214-acb3fd6e9447",
       "message": "salut",
       "timestamp": "2026-08-30T12:21:21.875Z"
+    },
+    {
+      "id": "522cad6a-be68-4682-9c42-03dccae2cb65",
+      "username": "david_officiel",
+      "user_id": "75a9cf6b-e91c-4e97-a214-acb3fd6e9447",
+      "message": "test",
+      "timestamp": "2026-08-30T12:21:40.757Z"
     }
   ]
 }
