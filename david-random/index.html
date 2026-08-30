@@ -5936,115 +5936,6 @@ function randomMatrix(){
 
 }
 
-/* =========================================================
-   RANDOM AUTO SCROLL
-========================================================= */
-
-let randomAutoScroll = null;
-
-let randomScrollPaused = false;
-
-let randomResumeTimer = null;
-
-
-function startRandomAutoScroll(){
-
-    if(randomAutoScroll){
-        clearInterval(randomAutoScroll);
-    }
-
-
-    randomAutoScroll =
-        setInterval(
-            () => {
-
-                /*
-                   Ne défile pas si l'utilisateur
-                   vient d'utiliser la molette.
-                */
-
-                if(randomScrollPaused){
-                    return;
-                }
-
-
-                /*
-                   Si on arrive en bas,
-                   on recommence doucement
-                   depuis le haut.
-                */
-
-                if(
-                    window.innerHeight +
-                    window.scrollY >=
-                    document.documentElement.scrollHeight - 5
-                ){
-
-                    window.scrollTo({
-                        top:0,
-                        behavior:"smooth"
-                    });
-
-                    return;
-
-                }
-
-
-                window.scrollBy({
-                    top:1,
-                    left:0
-                });
-
-            },
-            35
-        );
-
-}
-
-
-/*
-   L'utilisateur utilise la molette :
-   arrêt immédiat.
-*/
-
-window.addEventListener(
-    "wheel",
-    () => {
-
-        randomScrollPaused =
-            true;
-
-
-        if(randomResumeTimer){
-
-            clearTimeout(
-                randomResumeTimer
-            );
-
-        }
-
-
-        /*
-           Reprise après 5 secondes
-           sans nouvelle molette.
-        */
-
-        randomResumeTimer =
-            setTimeout(
-                () => {
-
-                    randomScrollPaused =
-                        false;
-
-                },
-                5000
-            );
-
-    },
-    {
-        passive:true
-    }
-);
 
 /* =========================================================
    INIT
@@ -6065,7 +5956,7 @@ async function init(){
 
 
     /*
-       Restore local account.
+       Restore local accoun.
     */
 
     restoreSavedUser();
@@ -6075,7 +5966,6 @@ async function init(){
 
   loadRandomGallery();
   
-  startRandomAutoScroll();
 
     /*
        Check Render.
