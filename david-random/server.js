@@ -1,104 +1,252 @@
 "use strict";
 
 const express = require("express");
-const http = require("http");
-const WebSocket = require("ws");
+const cors = require("cors");
 const crypto = require("crypto");
 const multer = require("multer");
+const WebSocket = require("ws");
 
 const app = express();
-const server = http.createServer(app);
 
 const PORT = process.env.PORT || 10000;
 
-/* =========================================================
-   CONFIGURATION GITHUB
-   ========================================================= */
+/*
+===========================================================
+CONFIGURATION
+===========================================================
+*/
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OWNER = process.env.GITHUB_OWNER;
 const GITHUB_REPO = process.env.GITHUB_REPO;
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
 
-/*
-Exemple :
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 
-GITHUB_OWNER = davidtytytutu-lgtm
-GITHUB_REPO  = ramdom
-GITHUB_BRANCH = main
+/*
+URL facultative de ton site NeoCities.
+Si elle n'est pas définie, CORS autorise tout.
 */
 
-if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
-    console.warn("⚠️ VARIABLES GITHUB MANQUANTES");
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+
+/*
+===========================================================
+GITHUB
+===========================================================
+*/
+
+if (!GITHUB_TOKEN) {
+    console.warn("WARNING: GITHUB_TOKEN absent");
 }
 
-/* =========================================================
-   EXPRESS
-   ========================================================= */
+if (!GITHUB_OWNER) {
+    console.warn("WARNING: GITHUB_OWNER absent");
+}
+
+if (!GITHUB_REPO) {
+    console.warn("WARNING: GITHUB_REPO absent");
+}
+
+if (!ENCRYPTION_KEY) {
+    console.warn("WARNING: ENCRYPTION_KEY absent");
+}
+
+const GITHUB_API =
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents`;
+
+const githubHeaders = {
+    "Authorization": `Bearer ${GITHUB_TOKEN}`,
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "DAVID-RANDOM"
+};
+
+/*
+===========================================================
+EXPRESS
+===========================================================
+*/
+
+app.use(cors({
+    origin: ALLOWED_ORIGIN === "*" ? true : ALLOWED_ORIGIN,
+    credentials: true
+}));
 
 app.use(express.json({
     limit: "2mb"
 }));
 
-app.use(express.urlencoded({
-    extended: true,
-    limit: "2mb"
-}));
-
-app.use((req, res, next) => {
-
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization"
-    );
-    res.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
-    );
-
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(204);
-    }
-
-    next();
-});
-
-/* =========================================================
-   MULTER
-   ========================================================= */
+/*
+===========================================================
+MULTER
+===========================================================
+*/
 
 const upload = multer({
     storage: multer.memoryStorage(),
-
     limits: {
         fileSize: 25 * 1024 * 1024
     }
 });
 
-/* =========================================================
-   GITHUB API
-   ========================================================= */
+/*
+===========================================================
+VARIABLES MEMOIRE
+===========================================================
+*/
 
-const githubHeaders = {
-    "Accept": "application/vnd.github+json",
-    "Authorization": `Bearer ${GITHUB_TOKEN}`,
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "DAVID-RANDOM"
-};
+/*
+Les comptes permanents sont dans GitHub.
 
-function githubPath(path) {
-    return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;
+Les sessions sont volontairement en mémoire sur Render.
+Un redémarrage Render invalide donc les sessions.
+Le compte lui-même reste dans GitHub.
+*/
+
+const sessions = new Map();
+
+const connectedSockets = new Set();
+
+/*
+===========================================================
+UTILITAIRES
+===========================================================
+*/
+
+function randomId(length = 24) {
+    return crypto.randomBytes(length).toString("hex");
 }
 
-/* =========================================================
-   GITHUB : LIRE UN FICHIER
-   ========================================================= */
+function hashPassword(password, salt) {
+    return crypto
+        .pbkdf2Sync(
+            password,
+            salt,
+            120000,
+            64,
+            "sha512"
+        )
+        .toString("hex");
+}
 
-async function githubGetFile(path) {
+function createPasswordHash(password) {
+    const salt = crypto.randomBytes(32).toString("hex");
+
+    return {
+        salt,
+        hash: hashPassword(password, salt)
+    };
+}
+
+function verifyPassword(password, salt, hash) {
+    const calculated = hashPassword(password, salt);
+
+    return crypto.timingSafeEqual(
+        Buffer.from(calculated, "hex"),
+        Buffer.from(hash, "hex")
+    );
+}
+
+function normalizeUsername(username) {
+    return String(username || "")
+        .trim()
+        .toLowerCase();
+}
+
+function publicUser(user) {
+    return {
+        id: user.id,
+        username: user.username,
+        profile_picture: user.profile_picture || null,
+        created_at: user.created_at
+    };
+}
+
+/*
+===========================================================
+CHIFFREMENT users.enc
+===========================================================
+*/
+
+function getEncryptionKey() {
+    if (!ENCRYPTION_KEY) {
+        throw new Error("ENCRYPTION_KEY NOT CONFIGURED");
+    }
+
+    return crypto
+        .createHash("sha256")
+        .update(ENCRYPTION_KEY)
+        .digest();
+}
+
+function encryptUsers(data) {
+    const key = getEncryptionKey();
+
+    const iv = crypto.randomBytes(12);
+
+    const cipher = crypto.createCipheriv(
+        "aes-256-gcm",
+        key,
+        iv
+    );
+
+    const json = JSON.stringify(data);
+
+    const encrypted = Buffer.concat([
+        cipher.update(json, "utf8"),
+        cipher.final()
+    ]);
+
+    const tag = cipher.getAuthTag();
+
+    return [
+        "DR1",
+        iv.toString("base64url"),
+        tag.toString("base64url"),
+        encrypted.toString("base64url")
+    ].join(":");
+}
+
+function decryptUsers(text) {
+    const key = getEncryptionKey();
+
+    const parts = String(text).trim().split(":");
+
+    if (parts.length !== 4 || parts[0] !== "DR1") {
+        throw new Error("INVALID USERS ENC FORMAT");
+    }
+
+    const iv = Buffer.from(parts[1], "base64url");
+    const tag = Buffer.from(parts[2], "base64url");
+    const encrypted = Buffer.from(parts[3], "base64url");
+
+    const decipher = crypto.createDecipheriv(
+        "aes-256-gcm",
+        key,
+        iv
+    );
+
+    decipher.setAuthTag(tag);
+
+    const decrypted = Buffer.concat([
+        decipher.update(encrypted),
+        decipher.final()
+    ]);
+
+    return JSON.parse(decrypted.toString("utf8"));
+}
+
+/*
+===========================================================
+GITHUB FILES
+===========================================================
+*/
+
+async function githubGet(path) {
 
     const response = await fetch(
-        githubPath(path) + `?ref=${encodeURIComponent(GITHUB_BRANCH)}`,
+        `${GITHUB_API}/${path}?ref=${encodeURIComponent(GITHUB_BRANCH)}`,
         {
             headers: githubHeaders
         }
@@ -112,46 +260,43 @@ async function githubGetFile(path) {
         const text = await response.text();
 
         throw new Error(
-            `GitHub GET ${response.status}: ${text}`
+            `GITHUB GET ${response.status}: ${text}`
         );
     }
 
     return await response.json();
 }
 
-/* =========================================================
-   GITHUB : CONTENU D'UN FICHIER
-   ========================================================= */
-
 async function githubReadText(path) {
 
-    const file = await githubGetFile(path);
+    const file = await githubGet(path);
 
     if (!file) {
         return null;
     }
 
     if (!file.content) {
-        throw new Error("GitHub file content missing");
+        throw new Error("GITHUB FILE HAS NO CONTENT");
     }
 
-    return Buffer
-        .from(file.content.replace(/\n/g, ""), "base64")
-        .toString("utf8");
+    return Buffer.from(
+        file.content.replace(/\n/g, ""),
+        "base64"
+    ).toString("utf8");
 }
 
-/* =========================================================
-   GITHUB : ECRIRE UN FICHIER
-   ========================================================= */
+async function githubWriteText(
+    path,
+    content,
+    message
+) {
 
-async function githubWriteFile(path, content, message) {
-
-    const existing = await githubGetFile(path);
+    const existing = await githubGet(path);
 
     const body = {
         message,
         content: Buffer
-            .from(content)
+            .from(content, "utf8")
             .toString("base64"),
         branch: GITHUB_BRANCH
     };
@@ -161,7 +306,7 @@ async function githubWriteFile(path, content, message) {
     }
 
     const response = await fetch(
-        githubPath(path),
+        `${GITHUB_API}/${path}`,
         {
             method: "PUT",
             headers: {
@@ -173,330 +318,228 @@ async function githubWriteFile(path, content, message) {
     );
 
     if (!response.ok) {
-
         const text = await response.text();
 
         throw new Error(
-            `GitHub PUT ${response.status}: ${text}`
+            `GITHUB WRITE ${response.status}: ${text}`
         );
     }
 
     return await response.json();
 }
 
-/* =========================================================
-   GITHUB : SUPPRIMER
-   ========================================================= */
+async function githubWriteBuffer(
+    path,
+    buffer,
+    message
+) {
 
-async function githubDeleteFile(path, message) {
+    const existing = await githubGet(path);
 
-    const existing = await githubGetFile(path);
+    const body = {
+        message,
+        content: buffer.toString("base64"),
+        branch: GITHUB_BRANCH
+    };
 
-    if (!existing) {
-        return false;
+    if (existing && existing.sha) {
+        body.sha = existing.sha;
     }
 
     const response = await fetch(
-        githubPath(path),
+        `${GITHUB_API}/${path}`,
         {
-            method: "DELETE",
+            method: "PUT",
             headers: {
                 ...githubHeaders,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                message,
-                sha: existing.sha,
-                branch: GITHUB_BRANCH
-            })
+            body: JSON.stringify(body)
         }
     );
 
     if (!response.ok) {
-
         const text = await response.text();
 
         throw new Error(
-            `GitHub DELETE ${response.status}: ${text}`
-        );
-    }
-
-    return true;
-}
-
-/* =========================================================
-   GITHUB : LISTE D'UN DOSSIER
-   ========================================================= */
-
-async function githubList(path) {
-
-    const response = await fetch(
-        githubPath(path) +
-        `?ref=${encodeURIComponent(GITHUB_BRANCH)}`,
-        {
-            headers: githubHeaders
-        }
-    );
-
-    if (response.status === 404) {
-        return [];
-    }
-
-    if (!response.ok) {
-
-        const text = await response.text();
-
-        throw new Error(
-            `GitHub LIST ${response.status}: ${text}`
+            `GITHUB WRITE ${response.status}: ${text}`
         );
     }
 
     return await response.json();
 }
 
-/* =========================================================
-   COMPTES
-   ========================================================= */
-
-const ACCOUNTS_JSON = "accounts/accounts.json";
-const USERS_ENC = "accounts/users.enc";
-
 /*
-accounts.json contient la structure publique :
-
-{
-    "version": 2,
-    "users": [...]
-}
-
-users.enc contient une copie chiffrée des informations
-sensibles.
+===========================================================
+ACCOUNTS
+===========================================================
 */
 
-let accountsCache = null;
-
-/* =========================================================
-   HASH MOT DE PASSE
-   ========================================================= */
-
-function hashPassword(password, salt) {
-
-    return crypto
-        .scryptSync(password, salt, 64)
-        .toString("hex");
-}
-
-function createPassword(password) {
-
-    const salt = crypto
-        .randomBytes(32)
-        .toString("hex");
-
-    const hash = hashPassword(password, salt);
-
-    return {
-        salt,
-        hash
-    };
-}
-
-function verifyPassword(password, salt, hash) {
-
-    try {
-
-        const calculated = hashPassword(
-            password,
-            salt
-        );
-
-        return crypto.timingSafeEqual(
-            Buffer.from(calculated, "hex"),
-            Buffer.from(hash, "hex")
-        );
-
-    } catch {
-        return false;
-    }
-}
-
-/* =========================================================
-   CHIFFREMENT users.enc
-   ========================================================= */
-
-const ENC_KEY = crypto
-    .createHash("sha256")
-    .update(
-        process.env.ACCOUNTS_ENCRYPTION_KEY ||
-        "CHANGE_THIS_SECRET_KEY"
-    )
-    .digest();
-
-function encryptUsers(data) {
-
-    const iv = crypto.randomBytes(16);
-
-    const cipher = crypto.createCipheriv(
-        "aes-256-cbc",
-        ENC_KEY,
-        iv
-    );
-
-    const encrypted = Buffer.concat([
-        cipher.update(
-            JSON.stringify(data),
-            "utf8"
-        ),
-        cipher.final()
-    ]);
-
-    return JSON.stringify({
-        version: 1,
-        iv: iv.toString("base64"),
-        data: encrypted.toString("base64")
-    });
-}
-
-function decryptUsers(text) {
-
-    try {
-
-        const obj = JSON.parse(text);
-
-        const iv = Buffer.from(
-            obj.iv,
-            "base64"
-        );
-
-        const encrypted = Buffer.from(
-            obj.data,
-            "base64"
-        );
-
-        const decipher = crypto.createDecipheriv(
-            "aes-256-cbc",
-            ENC_KEY,
-            iv
-        );
-
-        const decrypted = Buffer.concat([
-            decipher.update(encrypted),
-            decipher.final()
-        ]);
-
-        return JSON.parse(
-            decrypted.toString("utf8")
-        );
-
-    } catch {
-
-        return null;
-    }
-}
-
-/* =========================================================
-   CHARGER LES COMPTES
-   ========================================================= */
+const ACCOUNTS_FILE = "accounts/accounts.json";
+const USERS_FILE = "accounts/users.enc";
 
 async function loadAccounts() {
 
-    if (accountsCache) {
-        return accountsCache;
-    }
-
     const text = await githubReadText(
-        ACCOUNTS_JSON
+        ACCOUNTS_FILE
     );
 
     if (!text) {
-
-        accountsCache = {
-            version: 2,
+        return {
             users: []
         };
+    }
 
-        return accountsCache;
+    try {
+        const data = JSON.parse(text);
+
+        if (!Array.isArray(data.users)) {
+            data.users = [];
+        }
+
+        return data;
+
+    } catch {
+        throw new Error(
+            "accounts.json IS INVALID JSON"
+        );
+    }
+}
+
+async function saveAccounts(accounts) {
+
+    await githubWriteText(
+        ACCOUNTS_FILE,
+        JSON.stringify(accounts, null, 2),
+        "Update accounts.json"
+    );
+}
+
+/*
+===========================================================
+USERS.ENCRYPTED
+===========================================================
+*/
+
+async function loadEncryptedUsers() {
+
+    const text = await githubReadText(
+        USERS_FILE
+    );
+
+    if (!text) {
+        return {
+            users: []
+        };
+    }
+
+    try {
+        return decryptUsers(text);
+    } catch (error) {
+        console.error(
+            "users.enc decrypt error:",
+            error.message
+        );
+
+        throw new Error(
+            "USERS DATABASE CORRUPTED OR ENCRYPTION KEY INVALID"
+        );
+    }
+}
+
+async function saveEncryptedUsers(data) {
+
+    const encrypted = encryptUsers(data);
+
+    await githubWriteText(
+        USERS_FILE,
+        encrypted,
+        "Update encrypted users database"
+    );
+}
+
+/*
+===========================================================
+DATABASE INITIALISATION
+===========================================================
+*/
+
+async function ensureDatabase() {
+
+    if (!GITHUB_TOKEN ||
+        !GITHUB_OWNER ||
+        !GITHUB_REPO ||
+        !ENCRYPTION_KEY) {
+
+        console.warn(
+            "GitHub database cannot initialize: missing environment variables."
+        );
+
+        return;
     }
 
     try {
 
-        accountsCache = JSON.parse(text);
+        let accounts = await loadAccounts();
 
-    } catch {
+        if (!accounts) {
+            accounts = {
+                users: []
+            };
+        }
 
-        console.error(
-            "accounts.json invalide"
+        if (!Array.isArray(accounts.users)) {
+            accounts.users = [];
+        }
+
+        /*
+        Crée accounts.json si absent.
+        */
+
+        if (!(await githubGet(ACCOUNTS_FILE))) {
+
+            await saveAccounts(accounts);
+
+            console.log(
+                "Created accounts/accounts.json"
+            );
+        }
+
+        /*
+        Crée users.enc si absent.
+        */
+
+        if (!(await githubGet(USERS_FILE))) {
+
+            await saveEncryptedUsers({
+                users: []
+            });
+
+            console.log(
+                "Created accounts/users.enc"
+            );
+        }
+
+        console.log(
+            "GitHub account database ready."
         );
 
-        accountsCache = {
-            version: 2,
-            users: []
-        };
+    } catch (error) {
+
+        console.error(
+            "Database initialization error:",
+            error
+        );
     }
-
-    if (!Array.isArray(accountsCache.users)) {
-        accountsCache.users = [];
-    }
-
-    return accountsCache;
 }
 
-/* =========================================================
-   SAUVEGARDER LES COMPTES
-   ========================================================= */
+/*
+===========================================================
+AUTHENTICATION
+===========================================================
+*/
 
-async function saveAccounts(accounts) {
-
-    accountsCache = accounts;
-
-    await githubWriteFile(
-        ACCOUNTS_JSON,
-        JSON.stringify(
-            accounts,
-            null,
-            2
-        ),
-        "Update accounts.json"
-    );
-
-    /*
-    Création de users.enc.
-
-    On ne met pas le mot de passe en clair.
-    */
-
-    const encrypted = encryptUsers(
-        accounts.users
-    );
-
-    await githubWriteFile(
-        USERS_ENC,
-        encrypted,
-        "Update users.enc"
-    );
-}
-
-/* =========================================================
-   SESSION
-   ========================================================= */
-
-const sessions = new Map();
-
-function createSession(user) {
-
-    const token = crypto
-        .randomBytes(48)
-        .toString("hex");
-
-    sessions.set(token, {
-        userId: user.id,
-        username: user.username,
-        created: Date.now()
-    });
-
-    return token;
-}
-
-function getSession(req) {
+function getTokenFromRequest(req) {
 
     const auth =
         req.headers.authorization || "";
@@ -505,66 +548,53 @@ function getSession(req) {
         return null;
     }
 
-    const token =
-        auth.substring(7).trim();
+    return auth.substring(7).trim() || null;
+}
 
-    if (!token) {
+async function authenticateRequest(req) {
+
+    const authToken =
+        getTokenFromRequest(req);
+
+    if (!authToken) {
         return null;
     }
 
-    return sessions.get(token) || null;
-}
-
-function requireAuth(req, res, next) {
-
-    const session = getSession(req);
+    const session =
+        sessions.get(authToken);
 
     if (!session) {
-
-        return res.status(401).json({
-            error: "LOGIN REQUIRED"
-        });
+        return null;
     }
 
-    req.session = session;
-    req.token =
-        req.headers.authorization
-            .substring(7)
-            .trim();
+    /*
+    Recharge le compte depuis GitHub.
+    */
 
-    next();
-}
+    const accounts =
+        await loadAccounts();
 
-/* =========================================================
-   NORMALISATION PSEUDO
-   ========================================================= */
+    const user =
+        accounts.users.find(
+            u => u.id === session.userId
+        );
 
-function normalizeUsername(username) {
-
-    return String(username || "")
-        .trim()
-        .toLowerCase();
-}
-
-/* =========================================================
-   PUBLIC USER
-   ========================================================= */
-
-function publicUser(user) {
+    if (!user) {
+        sessions.delete(authToken);
+        return null;
+    }
 
     return {
-        id: user.id,
-        username: user.username,
-        profile_picture:
-            user.profile_picture || null,
-        created_at:
-            user.created_at
+        token: authToken,
+        user
     };
 }
 
-/* =========================================================
-   STATUS
-   ========================================================= */
+/*
+===========================================================
+STATUS
+===========================================================
+*/
 
 app.get(
     "/api/status",
@@ -572,16 +602,27 @@ app.get(
 
         try {
 
-            const accounts =
-                await loadAccounts();
+            let users = 0;
+
+            if (
+                GITHUB_TOKEN &&
+                GITHUB_OWNER &&
+                GITHUB_REPO
+            ) {
+
+                const accounts =
+                    await loadAccounts();
+
+                users =
+                    accounts.users.length;
+            }
 
             res.json({
                 online: true,
-                users: accounts.users.length,
+                service: "DAVID RANDOM V2",
+                users,
                 github: true,
-                render: true,
-                websocket: true,
-                accounts: "github"
+                websocket: true
             });
 
         } catch (error) {
@@ -596,9 +637,11 @@ app.get(
     }
 );
 
-/* =========================================================
-   REGISTER
-   ========================================================= */
+/*
+===========================================================
+REGISTER
+===========================================================
+*/
 
 app.post(
     "/api/account/register",
@@ -607,20 +650,14 @@ app.post(
         try {
 
             const username =
-                String(
-                    req.body.username || ""
-                ).trim();
+                String(req.body.username || "").trim();
 
             const password =
-                String(
-                    req.body.password || ""
-                );
+                String(req.body.password || "");
 
-            const profile_picture =
+            const profilePicture =
                 req.body.profile_picture
-                    ? String(
-                        req.body.profile_picture
-                    ).trim()
+                    ? String(req.body.profile_picture).trim()
                     : null;
 
             if (
@@ -635,12 +672,12 @@ app.post(
             }
 
             if (
-                !/^[a-zA-Z0-9_.-]+$/.test(username)
+                !/^[a-zA-Z0-9_-]+$/.test(username)
             ) {
 
                 return res.status(400).json({
                     error:
-                        "INVALID USERNAME"
+                        "USERNAME CAN ONLY CONTAIN LETTERS, NUMBERS, _ AND -"
                 });
             }
 
@@ -664,9 +701,8 @@ app.post(
             const exists =
                 accounts.users.some(
                     u =>
-                        normalizeUsername(
-                            u.username
-                        ) === normalized
+                        normalizeUsername(u.username) ===
+                        normalized
                 );
 
             if (exists) {
@@ -677,36 +713,72 @@ app.post(
                 });
             }
 
-            const passwordData =
-                createPassword(password);
+            const {
+                salt,
+                hash
+            } = createPasswordHash(password);
 
             const user = {
-
-                id: crypto
-                    .randomUUID(),
-
+                id: randomId(12),
                 username,
-
-                password_hash:
-                    passwordData.hash,
-
-                password_salt:
-                    passwordData.salt,
-
-                profile_picture,
-
+                username_normalized: normalized,
+                password_hash: hash,
+                password_salt: salt,
+                profile_picture:
+                    profilePicture || null,
                 created_at:
                     new Date().toISOString()
             };
 
-            accounts.users.push(user);
+            accounts.users.push({
+                id: user.id,
+                username: user.username,
+                username_normalized:
+                    user.username_normalized,
+                profile_picture:
+                    user.profile_picture,
+                created_at:
+                    user.created_at
+            });
+
+            /*
+            Les informations sensibles sont conservées
+            dans users.enc.
+            */
+
+            const encryptedUsers =
+                await loadEncryptedUsers();
+
+            encryptedUsers.users.push({
+                id: user.id,
+                username_normalized:
+                    user.username_normalized,
+                password_hash:
+                    user.password_hash,
+                password_salt:
+                    user.password_salt
+            });
 
             await saveAccounts(accounts);
 
-            const token =
-                createSession(user);
+            await saveEncryptedUsers(
+                encryptedUsers
+            );
 
-            res.json({
+            const token =
+                crypto.randomBytes(48)
+                    .toString("base64url");
+
+            sessions.set(token, {
+                userId: user.id,
+                createdAt: Date.now()
+            });
+
+            console.log(
+                `Account created: ${username}`
+            );
+
+            res.status(201).json({
                 success: true,
                 token,
                 user: publicUser(user)
@@ -720,16 +792,17 @@ app.post(
             );
 
             res.status(500).json({
-                error:
-                    "REGISTER FAILED"
+                error: error.message
             });
         }
     }
 );
 
-/* =========================================================
-   LOGIN
-   ========================================================= */
+/*
+===========================================================
+LOGIN
+===========================================================
+*/
 
 app.post(
     "/api/account/login",
@@ -738,22 +811,26 @@ app.post(
         try {
 
             const username =
-                String(
-                    req.body.username || ""
-                ).trim();
+                String(req.body.username || "").trim();
 
             const password =
-                String(
-                    req.body.password || ""
-                );
+                String(req.body.password || "");
 
-            const accounts =
-                await loadAccounts();
+            if (!username || !password) {
+
+                return res.status(400).json({
+                    error:
+                        "USERNAME AND PASSWORD REQUIRED"
+                });
+            }
 
             const normalized =
                 normalizeUsername(username);
 
-            const user =
+            const accounts =
+                await loadAccounts();
+
+            const publicAccount =
                 accounts.users.find(
                     u =>
                         normalizeUsername(
@@ -761,7 +838,7 @@ app.post(
                         ) === normalized
                 );
 
-            if (!user) {
+            if (!publicAccount) {
 
                 return res.status(401).json({
                     error:
@@ -769,24 +846,29 @@ app.post(
                 });
             }
 
-            /*
-            Nouveau format
-            */
+            const encryptedUsers =
+                await loadEncryptedUsers();
 
-            let valid = false;
+            const secureUser =
+                encryptedUsers.users.find(
+                    u =>
+                        u.id === publicAccount.id
+                );
 
-            if (
-                user.password_hash &&
-                user.password_salt
-            ) {
+            if (!secureUser) {
 
-                valid =
-                    verifyPassword(
-                        password,
-                        user.password_salt,
-                        user.password_hash
-                    );
+                return res.status(401).json({
+                    error:
+                        "INVALID USERNAME OR PASSWORD"
+                });
             }
+
+            const valid =
+                verifyPassword(
+                    password,
+                    secureUser.password_salt,
+                    secureUser.password_hash
+                );
 
             if (!valid) {
 
@@ -797,12 +879,24 @@ app.post(
             }
 
             const token =
-                createSession(user);
+                crypto.randomBytes(48)
+                    .toString("base64url");
+
+            sessions.set(token, {
+                userId: publicAccount.id,
+                createdAt: Date.now()
+            });
+
+            console.log(
+                `Login: ${publicAccount.username}`
+            );
 
             res.json({
                 success: true,
                 token,
-                user: publicUser(user)
+                user: publicUser(
+                    publicAccount
+                )
             });
 
         } catch (error) {
@@ -813,25 +907,28 @@ app.post(
             );
 
             res.status(500).json({
-                error:
-                    "LOGIN FAILED"
+                error: error.message
             });
         }
     }
 );
 
-/* =========================================================
-   LOGOUT
-   ========================================================= */
+/*
+===========================================================
+LOGOUT
+===========================================================
+*/
 
 app.post(
     "/api/account/logout",
-    requireAuth,
-    (req, res) => {
+    async (req, res) => {
 
-        sessions.delete(
-            req.token
-        );
+        const token =
+            getTokenFromRequest(req);
+
+        if (token) {
+            sessions.delete(token);
+        }
 
         res.json({
             success: true
@@ -839,16 +936,105 @@ app.post(
     }
 );
 
-/* =========================================================
-   ME
-   ========================================================= */
+/*
+===========================================================
+ME
+===========================================================
+*/
 
 app.get(
     "/api/account/me",
-    requireAuth,
     async (req, res) => {
 
         try {
+
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth) {
+
+                return res.status(401).json({
+                    error: "LOGIN REQUIRED"
+                });
+            }
+
+            res.json({
+                success: true,
+                user: publicUser(
+                    auth.user
+                )
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+                error: error.message
+            });
+        }
+    }
+);
+
+/*
+===========================================================
+CHANGE PROFILE PICTURE
+===========================================================
+*/
+
+app.post(
+    "/api/account/profile-picture",
+    async (req, res) => {
+
+        try {
+
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth) {
+
+                return res.status(401).json({
+                    error: "LOGIN REQUIRED"
+                });
+            }
+
+            let profilePicture =
+                req.body.profile_picture;
+
+            if (
+                profilePicture === undefined ||
+                profilePicture === null
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "PROFILE PICTURE REQUIRED"
+                });
+            }
+
+            profilePicture =
+                String(profilePicture).trim();
+
+            if (
+                profilePicture.length > 2000
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "PROFILE PICTURE URL TOO LONG"
+                });
+            }
+
+            if (
+                profilePicture &&
+                !/^https?:\/\//i.test(
+                    profilePicture
+                )
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "PROFILE PICTURE MUST BE A HTTP/HTTPS URL"
+                });
+            }
 
             const accounts =
                 await loadAccounts();
@@ -856,35 +1042,54 @@ app.get(
             const user =
                 accounts.users.find(
                     u =>
-                        u.id ===
-                        req.session.userId
+                        u.id === auth.user.id
                 );
 
             if (!user) {
 
-                return res.status(401).json({
-                    error:
-                        "LOGIN REQUIRED"
+                return res.status(404).json({
+                    error: "USER NOT FOUND"
                 });
             }
 
+            user.profile_picture =
+                profilePicture || null;
+
+            await saveAccounts(accounts);
+
+            /*
+            Envoie la nouvelle PDP aux clients
+            connectés avec ce compte.
+            */
+
+            broadcastUserUpdate(
+                user
+            );
+
             res.json({
+                success: true,
                 user: publicUser(user)
             });
 
         } catch (error) {
 
+            console.error(
+                "PROFILE PICTURE ERROR:",
+                error
+            );
+
             res.status(500).json({
-                error:
-                    "ACCOUNT ERROR"
+                error: error.message
             });
         }
     }
 );
 
-/* =========================================================
-   LISTE FICHIERS GITHUB
-   ========================================================= */
+/*
+===========================================================
+FILES / GITHUB
+===========================================================
+*/
 
 app.get(
     "/api/files/:folder",
@@ -892,16 +1097,16 @@ app.get(
 
         try {
 
-            const allowed = [
-                "image",
-                "music",
-                "video"
-            ];
-
             const folder =
                 req.params.folder;
 
-            if (!allowed.includes(folder)) {
+            if (
+                ![
+                    "image",
+                    "music",
+                    "video"
+                ].includes(folder)
+            ) {
 
                 return res.status(400).json({
                     error:
@@ -909,8 +1114,20 @@ app.get(
                 });
             }
 
+            const file =
+                await githubGet(folder);
+
+            if (!file) {
+
+                return res.json({
+                    files: []
+                });
+            }
+
             const files =
-                await githubList(folder);
+                Array.isArray(file)
+                    ? file
+                    : [file];
 
             const result =
                 files
@@ -919,16 +1136,11 @@ app.get(
                             f.type === "file"
                     )
                     .map(f => ({
-
                         name: f.name,
-
                         path: f.path,
-
                         size: f.size,
-
                         download:
                             `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${f.path}`
-
                     }));
 
             res.json({
@@ -943,49 +1155,70 @@ app.get(
             );
 
             res.status(500).json({
-                error:
-                    error.message
+                error: error.message
             });
         }
     }
 );
 
-/* =========================================================
-   UPLOAD
-   ========================================================= */
+/*
+===========================================================
+UPLOAD
+===========================================================
+*/
 
 app.post(
     "/api/upload",
-    requireAuth,
     upload.single("file"),
     async (req, res) => {
 
         try {
 
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth) {
+
+                return res.status(401).json({
+                    error: "LOGIN REQUIRED"
+                });
+            }
+
             if (!req.file) {
 
                 return res.status(400).json({
                     error:
-                        "NO FILE"
+                        "NO FILE PROVIDED"
                 });
             }
 
             const folder =
                 String(
                     req.body.folder || ""
-                );
+                ).trim();
 
-            const allowed = [
-                "image",
-                "music",
-                "video"
-            ];
-
-            if (!allowed.includes(folder)) {
+            if (
+                ![
+                    "image",
+                    "music",
+                    "video"
+                ].includes(folder)
+            ) {
 
                 return res.status(400).json({
                     error:
                         "INVALID FOLDER"
+                });
+            }
+
+            if (
+                req.file.size >
+                25 * 1024 * 1024
+            ) {
+
+                return res.status(413).json({
+                    error:
+                        "FILE TOO LARGE. MAXIMUM 25 MB"
                 });
             }
 
@@ -996,62 +1229,31 @@ app.post(
                         "_"
                     );
 
-            const safeName =
-                `${Date.now()}_${originalName}`;
+            const timestamp =
+                Date.now();
+
+            const random =
+                crypto.randomBytes(4)
+                    .toString("hex");
+
+            const filename =
+                `${timestamp}_${random}_${originalName}`;
 
             const path =
-                `${folder}/${safeName}`;
+                `${folder}/${filename}`;
 
-            const existing =
-                await githubGetFile(path);
-
-            const body = {
-
-                message:
-                    `Upload ${path}`,
-
-                content:
-                    req.file.buffer.toString(
-                        "base64"
-                    ),
-
-                branch:
-                    GITHUB_BRANCH
-            };
-
-            if (existing?.sha) {
-                body.sha = existing.sha;
-            }
-
-            const response =
-                await fetch(
-                    githubPath(path),
-                    {
-                        method: "PUT",
-                        headers: {
-                            ...githubHeaders,
-                            "Content-Type":
-                                "application/json"
-                        },
-                        body:
-                            JSON.stringify(body)
-                    }
-                );
-
-            if (!response.ok) {
-
-                const text =
-                    await response.text();
-
-                throw new Error(text);
-            }
+            await githubWriteBuffer(
+                path,
+                req.file.buffer,
+                `Upload ${folder}/${filename} by ${auth.user.username}`
+            );
 
             const download =
                 `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
 
             res.json({
                 success: true,
-                name: safeName,
+                name: filename,
                 path,
                 download
             });
@@ -1064,29 +1266,31 @@ app.post(
             );
 
             res.status(500).json({
-                error:
-                    error.message
+                error: error.message
             });
         }
     }
 );
 
-/* =========================================================
-   CHAT LOG
-   ========================================================= */
+/*
+===========================================================
+CHAT LOG
+===========================================================
+*/
 
-const CHAT_FOLDER =
-    "chat-log";
+async function getChatLogs() {
 
-const CHAT_LIMIT =
-    15 * 1024 * 1024;
+    const data =
+        await githubGet("chat-log");
 
-async function listChatLogs() {
+    if (!data) {
+        return [];
+    }
 
     const files =
-        await githubList(
-            CHAT_FOLDER
-        );
+        Array.isArray(data)
+            ? data
+            : [data];
 
     return files
         .filter(
@@ -1096,41 +1300,47 @@ async function listChatLogs() {
         )
         .sort(
             (a, b) =>
-                a.name.localeCompare(
-                    b.name,
-                    undefined,
-                    {
-                        numeric: true
-                    }
-                )
+                a.name.localeCompare(b.name)
         );
 }
 
 app.get(
     "/api/chat/logs",
-    requireAuth,
     async (req, res) => {
 
         try {
 
-            const files =
-                await listChatLogs();
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth) {
+
+                return res.status(401).json({
+                    error: "LOGIN REQUIRED"
+                });
+            }
+
+            const logs =
+                await getChatLogs();
 
             res.json({
-                logs:
-                    files.map(
-                        f => ({
-                            name: f.name,
-                            size: f.size
-                        })
-                    )
+                logs: logs.map(
+                    f => ({
+                        name: f.name,
+                        path: f.path
+                    })
+                )
             });
 
         } catch (error) {
 
+            console.error(
+                "CHAT LOG LIST ERROR:",
+                error
+            );
+
             res.status(500).json({
-                error:
-                    error.message
+                error: error.message
             });
         }
     }
@@ -1138,21 +1348,37 @@ app.get(
 
 app.get(
     "/api/chat/log/:number",
-    requireAuth,
     async (req, res) => {
 
         try {
 
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth) {
+
+                return res.status(401).json({
+                    error: "LOGIN REQUIRED"
+                });
+            }
+
             const number =
-                String(
-                    req.params.number
-                ).replace(
-                    /[^0-9]/g,
-                    ""
-                );
+                String(req.params.number)
+                    .replace(
+                        /[^0-9]/g,
+                        ""
+                    );
+
+            if (!number) {
+
+                return res.status(400).json({
+                    error:
+                        "INVALID LOG NUMBER"
+                });
+            }
 
             const path =
-                `${CHAT_FOLDER}/chat-${number}.json`;
+                `chat-log/chat-${number}.json`;
 
             const text =
                 await githubReadText(path);
@@ -1172,415 +1398,391 @@ app.get(
 
         } catch (error) {
 
+            console.error(
+                "CHAT LOG ERROR:",
+                error
+            );
+
             res.status(500).json({
-                error:
-                    error.message
+                error: error.message
             });
         }
     }
 );
 
-/* =========================================================
-   CHAT : SAUVEGARDE
-   ========================================================= */
+/*
+===========================================================
+CHAT LOG WRITE
+===========================================================
+*/
 
-let chatMessages = [];
-let chatLoaded = false;
-
-async function loadChat() {
-
-    if (chatLoaded) {
-        return;
-    }
-
-    chatLoaded = true;
+async function appendChatMessage(message) {
 
     try {
 
-        const logs =
-            await listChatLogs();
+        let logs =
+            await getChatLogs();
 
-        if (!logs.length) {
-            chatMessages = [];
-            return;
+        let target = null;
+
+        if (logs.length) {
+
+            target =
+                logs[logs.length - 1];
         }
 
-        const latest =
-            logs[logs.length - 1];
+        let messages = [];
 
-        const text =
-            await githubReadText(
-                latest.path
+        if (target) {
+
+            try {
+
+                const text =
+                    await githubReadText(
+                        target.path
+                    );
+
+                const data =
+                    JSON.parse(text);
+
+                messages =
+                    Array.isArray(data.messages)
+                        ? data.messages
+                        : [];
+
+            } catch {
+
+                messages = [];
+            }
+        }
+
+        messages.push(message);
+
+        /*
+        Nouveau fichier si > 15 MB approximativement.
+        */
+
+        const serialized =
+            JSON.stringify(
+                {
+                    messages
+                },
+                null,
+                2
             );
 
-        if (!text) {
-            chatMessages = [];
-            return;
+        if (
+            !target ||
+            Buffer.byteLength(
+                serialized,
+                "utf8"
+            ) > 15 * 1024 * 1024
+        ) {
+
+            let nextNumber = 1;
+
+            if (logs.length) {
+
+                const numbers =
+                    logs
+                        .map(
+                            f =>
+                                Number(
+                                    (f.name.match(
+                                        /(\d+)/
+                                    ) || [])[1]
+                                ) || 0
+                        );
+
+                nextNumber =
+                    Math.max(...numbers) + 1;
+            }
+
+            const path =
+                `chat-log/chat-${nextNumber}.json`;
+
+            await githubWriteText(
+                path,
+                JSON.stringify(
+                    {
+                        messages: [message]
+                    },
+                    null,
+                    2
+                ),
+                `Create chat log ${nextNumber}`
+            );
+
+        } else {
+
+            await githubWriteText(
+                target.path,
+                serialized,
+                `Update chat log by ${message.username}`
+            );
         }
-
-        const data =
-            JSON.parse(text);
-
-        chatMessages =
-            Array.isArray(
-                data.messages
-            )
-                ? data.messages
-                : [];
 
     } catch (error) {
 
         console.error(
-            "CHAT LOAD:",
+            "CHAT LOG WRITE ERROR:",
             error
         );
-
-        chatMessages = [];
     }
 }
 
-async function saveChat() {
+/*
+===========================================================
+WEBSOCKET
+===========================================================
+*/
 
-    const json =
-        JSON.stringify(
-            {
-                version: 2,
-                messages:
-                    chatMessages
-            },
-            null,
-            2
-        );
-
-    /*
-    Si le fichier devient trop gros,
-    on crée un nouveau log.
-    */
-
-    let logs =
-        await listChatLogs();
-
-    let filename =
-        "chat-1.json";
-
-    if (logs.length) {
-
-        filename =
-            logs[logs.length - 1]
-                .name;
-
-        const latest =
-            await githubReadText(
-                `${CHAT_FOLDER}/${filename}`
-            );
-
-        if (
-            latest &&
-            Buffer.byteLength(
-                json,
-                "utf8"
-            ) > CHAT_LIMIT
-        ) {
-
-            const nums =
-                logs
-                    .map(
-                        x =>
-                            Number(
-                                (
-                                    x.name.match(
-                                        /(\d+)/
-                                    ) || []
-                                )[1] || 0
-                            )
-                    );
-
-            const next =
-                Math.max(
-                    0,
-                    ...nums
-                ) + 1;
-
-            filename =
-                `chat-${next}.json`;
-
-            chatMessages =
-                chatMessages.slice(
-                    -200
-                );
-        }
-    }
-
-    await githubWriteFile(
-        `${CHAT_FOLDER}/${filename}`,
-        json,
-        `Update ${filename}`
-    );
-}
-
-/* =========================================================
-   WEBSOCKET
-   ========================================================= */
+const server =
+    require("http").createServer(app);
 
 const wss =
     new WebSocket.Server({
-        noServer: true
+        server,
+        path: "/ws"
     });
 
-const clients =
-    new Set();
-
-async function authenticateToken(token) {
+async function authenticateSocket(
+    ws,
+    token
+) {
 
     if (!token) {
         return null;
     }
 
-    return sessions.get(token) || null;
+    const session =
+        sessions.get(token);
+
+    if (!session) {
+        return null;
+    }
+
+    try {
+
+        const accounts =
+            await loadAccounts();
+
+        const user =
+            accounts.users.find(
+                u =>
+                    u.id === session.userId
+            );
+
+        if (!user) {
+            return null;
+        }
+
+        return user;
+
+    } catch {
+
+        return null;
+    }
 }
 
-server.on(
-    "upgrade",
-    async (request, socket, head) => {
+wss.on(
+    "connection",
+    async (ws, req) => {
 
         try {
 
             const url =
                 new URL(
-                    request.url,
-                    `http://${request.headers.host}`
+                    req.url,
+                    `http://${req.headers.host}`
                 );
-
-            if (url.pathname !== "/ws") {
-
-                socket.destroy();
-                return;
-            }
 
             const token =
                 url.searchParams.get(
                     "token"
                 );
 
-            const session =
-                await authenticateToken(
+            const user =
+                await authenticateSocket(
+                    ws,
                     token
                 );
 
-            if (!session) {
+            if (!user) {
 
-                socket.write(
-                    "HTTP/1.1 401 Unauthorized\r\n\r\n"
+                ws.send(
+                    JSON.stringify({
+                        type: "error",
+                        message:
+                            "LOGIN REQUIRED"
+                    })
                 );
 
-                socket.destroy();
+                ws.close(
+                    1008,
+                    "LOGIN REQUIRED"
+                );
 
                 return;
             }
 
-            wss.handleUpgrade(
-                request,
-                socket,
-                head,
-                ws => {
+            ws.user = user;
+            ws.authenticated = true;
 
-                    wss.emit(
-                        "connection",
-                        ws,
-                        request,
-                        session
-                    );
-                }
+            connectedSockets.add(ws);
+
+            ws.send(
+                JSON.stringify({
+                    type: "welcome",
+                    authenticated: true,
+                    username:
+                        user.username,
+                    user_id:
+                        user.id,
+                    profile_picture:
+                        user.profile_picture
+                })
             );
 
-        } catch {
+            broadcastUsers();
 
-            socket.destroy();
-        }
-    }
-);
-
-wss.on(
-    "connection",
-    async (ws, request, session) => {
-
-        clients.add(ws);
-
-        ws.user = session;
-
-        await loadChat();
-
-        ws.send(
-            JSON.stringify({
-                type: "welcome",
-                authenticated: true,
-                username:
-                    session.username,
-                user_id:
-                    session.userId
-            })
-        );
-
-        ws.send(
-            JSON.stringify({
-                type: "users",
-                count:
-                    clients.size
-            })
-        );
-
-        broadcastUsers();
-
-        ws.on(
-            "message",
-            async raw => {
-
-                try {
-
-                    const data =
-                        JSON.parse(
-                            raw.toString()
-                        );
-
-                    if (
-                        data.type !==
-                        "message"
-                    ) {
-                        return;
-                    }
-
-                    const message =
-                        String(
-                            data.message || ""
-                        ).trim();
-
-                    if (!message) {
-                        return;
-                    }
-
-                    if (
-                        message.length > 500
-                    ) {
-                        return;
-                    }
-
-                    const chatMessage = {
-
-                        id:
-                            crypto.randomUUID(),
-
-                        username:
-                            session.username,
-
-                        user_id:
-                            session.userId,
-
-                        message,
-
-                        timestamp:
-                            new Date()
-                                .toISOString()
-                    };
-
-                    chatMessages.push(
-                        chatMessage
-                    );
-
-                    /*
-                    Garde les derniers messages
-                    en mémoire.
-                    */
-
-                    if (
-                        chatMessages.length >
-                        1000
-                    ) {
-
-                        chatMessages =
-                            chatMessages.slice(
-                                -1000
-                            );
-                    }
-
-                    broadcast({
-                        type:
-                            "message",
-
-                        data:
-                            chatMessage
-                    });
+            ws.on(
+                "message",
+                async raw => {
 
                     try {
 
-                        await saveChat();
+                        const data =
+                            JSON.parse(
+                                raw.toString()
+                            );
+
+                        if (
+                            data.type !==
+                            "message"
+                        ) {
+                            return;
+                        }
+
+                        const message =
+                            String(
+                                data.message || ""
+                            ).trim();
+
+                        if (!message) {
+                            return;
+                        }
+
+                        if (
+                            message.length > 500
+                        ) {
+                            return;
+                        }
+
+                        const chatMessage = {
+                            id:
+                                randomId(8),
+                            username:
+                                ws.user.username,
+                            user_id:
+                                ws.user.id,
+                            profile_picture:
+                                ws.user.profile_picture ||
+                                null,
+                            message,
+                            timestamp:
+                                new Date()
+                                    .toISOString()
+                        };
+
+                        broadcast({
+                            type:
+                                "message",
+                            data:
+                                chatMessage
+                        });
+
+                        await appendChatMessage(
+                            chatMessage
+                        );
 
                     } catch (error) {
 
                         console.error(
-                            "CHAT SAVE ERROR:",
+                            "WSS MESSAGE ERROR:",
                             error
                         );
+
+                        ws.send(
+                            JSON.stringify({
+                                type: "error",
+                                message:
+                                    "INVALID MESSAGE"
+                            })
+                        );
                     }
+                }
+            );
 
-                } catch (error) {
+            ws.on(
+                "close",
+                () => {
 
-                    console.error(
-                        "WSS MESSAGE ERROR:",
-                        error
+                    connectedSockets.delete(
+                        ws
                     );
 
-                    ws.send(
-                        JSON.stringify({
-                            type:
-                                "error",
+                    broadcastUsers();
+                }
+            );
 
-                            message:
-                                "INVALID MESSAGE"
-                        })
+            ws.on(
+                "error",
+                () => {
+
+                    connectedSockets.delete(
+                        ws
                     );
                 }
-            }
-        );
+            );
 
-        ws.on(
-            "close",
-            () => {
+        } catch (error) {
 
-                clients.delete(ws);
+            console.error(
+                "WSS CONNECTION ERROR:",
+                error
+            );
 
-                broadcastUsers();
-            }
-        );
-
-        ws.on(
-            "error",
-            () => {
-
-                clients.delete(ws);
-
-                broadcastUsers();
-            }
-        );
+            try {
+                ws.close();
+            } catch {}
+        }
     }
 );
 
-/* =========================================================
-   BROADCAST
-   ========================================================= */
+/*
+===========================================================
+WEBSOCKET BROADCAST
+===========================================================
+*/
 
 function broadcast(data) {
 
     const text =
         JSON.stringify(data);
 
-    for (const client of clients) {
+    for (
+        const ws of connectedSockets
+    ) {
 
         if (
-            client.readyState ===
+            ws.readyState ===
             WebSocket.OPEN
         ) {
 
-            client.send(text);
+            try {
+                ws.send(text);
+            } catch {}
         }
     }
 }
@@ -1589,13 +1791,47 @@ function broadcastUsers() {
 
     broadcast({
         type: "users",
-        count: clients.size
+        count:
+            connectedSockets.size
     });
 }
 
-/* =========================================================
-   ROOT
-   ========================================================= */
+function broadcastUserUpdate(user) {
+
+    for (
+        const ws of connectedSockets
+    ) {
+
+        if (
+            ws.user &&
+            ws.user.id === user.id &&
+            ws.readyState === WebSocket.OPEN
+        ) {
+
+            ws.user =
+                user;
+
+            ws.send(
+                JSON.stringify({
+                    type:
+                        "profile_updated",
+                    username:
+                        user.username,
+                    user_id:
+                        user.id,
+                    profile_picture:
+                        user.profile_picture
+                })
+            );
+        }
+    }
+}
+
+/*
+===========================================================
+ROOT
+===========================================================
+*/
 
 app.get(
     "/",
@@ -1604,66 +1840,102 @@ app.get(
         res.json({
             name:
                 "DAVID RANDOM V2 API",
-
-            online:
-                true,
-
-            accounts:
-                "GitHub",
-
-            storage:
-                "GitHub",
-
+            status:
+                "ONLINE",
+            github:
+                "STORAGE ACTIVE",
             websocket:
-                "/ws"
+                "wss://david-random.onrender.com/ws"
         });
     }
 );
 
-/* =========================================================
-   START
-   ========================================================= */
+/*
+===========================================================
+404
+===========================================================
+*/
+
+app.use(
+    (req, res) => {
+
+        res.status(404).json({
+            error:
+                "ENDPOINT NOT FOUND"
+        });
+    }
+);
+
+/*
+===========================================================
+ERROR HANDLER
+===========================================================
+*/
+
+app.use(
+    (error, req, res, next) => {
+
+        console.error(
+            "EXPRESS ERROR:",
+            error
+        );
+
+        res.status(500).json({
+            error:
+                error.message ||
+                "INTERNAL SERVER ERROR"
+        });
+    }
+);
+
+/*
+===========================================================
+START
+===========================================================
+*/
 
 server.listen(
     PORT,
-    () => {
+    async () => {
 
         console.log(
-            "======================================"
+            "========================================"
         );
 
         console.log(
-            " DAVID RANDOM V2 SERVER"
+            "      DAVID RANDOM V2 SERVER"
         );
 
         console.log(
-            " PORT:",
+            "========================================"
+        );
+
+        console.log(
+            "PORT:",
             PORT
         );
 
         console.log(
-            " GITHUB:",
-            GITHUB_OWNER +
-            "/" +
-            GITHUB_REPO
+            "GITHUB:",
+            GITHUB_OWNER && GITHUB_REPO
+                ? `${GITHUB_OWNER}/${GITHUB_REPO}`
+                : "NOT CONFIGURED"
         );
 
         console.log(
-            " ACCOUNTS:",
-            ACCOUNTS_JSON
+            "WEBSOCKET:",
+            "/ws"
         );
 
         console.log(
-            " ENCRYPTED:",
-            USERS_ENC
+            "ACCOUNT STORAGE:",
+            "GitHub"
         );
 
         console.log(
-            " WEBSOCKET: /ws"
+            "========================================"
         );
 
-        console.log(
-            "======================================"
-        );
+        await ensureDatabase();
     }
 );
