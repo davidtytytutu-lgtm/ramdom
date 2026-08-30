@@ -420,128 +420,40 @@ async function loadUsers() {
 
     try {
 
-        let data;
-
-        try {
-
-            data =
-                await githubRequest(
-                    USERS_FILE
-                );
-
-        } catch (error) {
-
-            /*
-            404 = users.enc n'existe pas encore.
-            C'est normal pour une nouvelle installation.
-            */
-
-            if (
-                String(
-                    error.message
-                ).includes("404")
-            ) {
-
-                console.log(
-                    "[USERS] users.enc absent."
-                );
-
-                console.log(
-                    "[USERS] Création d'une nouvelle base vide."
-                );
-
-                users = [];
-
-                usersLoaded =
-                    true;
-
-                /*
-                On ne crée pas encore le fichier.
-                Il sera créé au premier register.
-                */
-
-                return true;
-            }
-
-            throw error;
-        }
+        const data =
+            await githubRequest(USERS_FILE);
 
         if (!data.content) {
-
-            throw new Error(
-                "USERS DATABASE VIDE"
-            );
+            throw new Error("USERS DATABASE VIDE");
         }
 
-        const fileText =
-            Buffer
-                .from(
-                    data.content,
-                    "base64"
-                )
-                .toString("utf8")
-                .trim();
-
-        if (!fileText) {
-
-            throw new Error(
-                "USERS DATABASE VIDE"
-            );
-        }
-
-        console.log(
-            "[USERS] Lecture du fichier users.enc..."
-        );
-
-        let parsed;
-
-        try {
-
-            parsed =
-                JSON.parse(
-                    fileText
-                );
-
-        } catch {
-
-            throw new Error(
-                "FORMAT USERS.ENC INCONNU"
-            );
-        }
-
-        const loadedUsers =
-            decryptJSON(
-                parsed
-            );
-
-        if (
-            !Array.isArray(
-                loadedUsers
-            )
-        ) {
-
-            throw new Error(
-                "USERS DATABASE NON VALIDE"
-            );
-        }
-
-        users =
-            loadedUsers;
-
-        usersLoaded =
-            true;
-
-        console.log(
-            `[USERS] ${users.length} comptes chargés`
-        );
-
-        return true;
+        // lecture / déchiffrement normal...
 
     } catch (error) {
 
-        usersLoaded =
-            false;
+        const message =
+            String(error.message || "").toLowerCase();
 
+        if (
+            message.includes("not found") ||
+            message.includes("404")
+        ) {
+
+            console.log(
+                "[USERS] users.enc absent."
+            );
+
+            console.log(
+                "[USERS] Nouvelle base de comptes vide."
+            );
+
+            users = [];
+            usersLoaded = true;
+
+            return true;
+        }
+
+        usersLoaded = false;
         users = [];
 
         console.error(
