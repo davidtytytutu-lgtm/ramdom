@@ -1474,7 +1474,6 @@ END OF TRANSMISSION <span class="blink">█</span>
 <script>
 "use strict";
 
-
 /* =========================================================
    CONFIG
 ========================================================= */
@@ -1482,16 +1481,17 @@ END OF TRANSMISSION <span class="blink">█</span>
 const API = "https://david-random.onrender.com";
 
 const SOCKET_URL =
-"wss://david-random.onrender.com/ws";
+    "wss://david-random.onrender.com/ws";
 
 const TOKEN_KEY =
-"david_random_token";
+    "david_random_token";
 
 const USER_KEY =
-"david_random_user";
+    "david_random_user";
 
 const MAX_FILE_SIZE =
-25 * 1024 * 1024;
+    25 * 1024 * 1024;
+
 
 /* =========================================================
    AUTH STATE
@@ -1502,39 +1502,10 @@ let token =
 
 let currentUser = null;
 
-/* Restaurer l'utilisateur affiché */
-try {
-
-    const savedUser =
-        localStorage.getItem(USER_KEY);
-
-    if (savedUser) {
-
-        currentUser =
-            JSON.parse(savedUser);
-
-    }
-
-} catch (error) {
-
-    console.error(
-        "[AUTH] Impossible de lire le compte sauvegardé:",
-        error
-    );
-
-    localStorage.removeItem(USER_KEY);
-
-    currentUser = null;
-}
 
 /* =========================================================
-   STATE
+   SOCKET STATE
 ========================================================= */
-
-let token =
-localStorage.getItem(TOKEN_KEY) || null;
-
-let currentUser = null;
 
 let socket = null;
 
@@ -1544,33 +1515,119 @@ let socketReconnectTimer = null;
 
 
 /* =========================================================
+   GAME STATE
+========================================================= */
+
+let score = 0;
+
+let gameRunning = false;
+
+let gameTimer = 10;
+
+let gameInterval = null;
+
+
+/* =========================================================
    HELPERS
 ========================================================= */
 
-function escapeHTML(value){
+function escapeHTML(value) {
 
-const div =
-document.createElement("div");
+    const div =
+        document.createElement("div");
 
-div.textContent =
-String(value ?? "");
+    div.textContent =
+        String(value ?? "");
 
-return div.innerHTML;
-
+    return div.innerHTML;
 }
 
 
-function createDefaultAvatar(username){
+function createDefaultAvatar(username) {
 
-return (
-"https://ui-avatars.com/api/?" +
-"name=" +
-encodeURIComponent(username) +
-"&background=020502" +
-"&color=35ff5a" +
-"&bold=true"
-);
+    return (
+        "https://ui-avatars.com/api/?" +
+        "name=" +
+        encodeURIComponent(username) +
+        "&background=020502" +
+        "&color=35ff5a" +
+        "&bold=true"
+    );
+}
 
+
+/* =========================================================
+   ACCOUNT STORAGE
+========================================================= */
+
+function saveAccount(newToken, user) {
+
+    token = newToken || null;
+
+    currentUser = user || null;
+
+    if (token) {
+
+        localStorage.setItem(
+            TOKEN_KEY,
+            token
+        );
+
+    } else {
+
+        localStorage.removeItem(
+            TOKEN_KEY
+        );
+
+    }
+
+
+    if (currentUser) {
+
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(currentUser)
+        );
+
+    } else {
+
+        localStorage.removeItem(
+            USER_KEY
+        );
+
+    }
+}
+
+
+function restoreAccount() {
+
+    token =
+        localStorage.getItem(TOKEN_KEY) || null;
+
+
+    try {
+
+        const saved =
+            localStorage.getItem(USER_KEY);
+
+        currentUser =
+            saved
+                ? JSON.parse(saved)
+                : null;
+
+    } catch (error) {
+
+        console.error(
+            "[AUTH] USER STORAGE CORRUPTED:",
+            error
+        );
+
+        localStorage.removeItem(
+            USER_KEY
+        );
+
+        currentUser = null;
+    }
 }
 
 
@@ -1587,10 +1644,21 @@ async function apiRequest(
         ...(options.headers || {})
     };
 
+
     /*
-    Ajoute automatiquement le token
-    à toutes les requêtes.
+       Toujours utiliser le token
+       actuellement présent dans localStorage.
     */
+
+    const storedToken =
+        localStorage.getItem(TOKEN_KEY);
+
+    if (storedToken) {
+
+        token = storedToken;
+
+    }
+
 
     if (token) {
 
@@ -1598,6 +1666,7 @@ async function apiRequest(
             `Bearer ${token}`;
 
     }
+
 
     const response =
         await fetch(
@@ -1608,14 +1677,28 @@ async function apiRequest(
             }
         );
 
-    let data;
+
+    let data = null;
+
 
     try {
 
-        data =
-            await response.json();
+        const text =
+            await response.text();
 
-    } catch {
+        if (text) {
+
+            data =
+                JSON.parse(text);
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "[API] JSON ERROR:",
+            error
+        );
 
         throw new Error(
             `SERVER RETURNED INVALID JSON (${response.status})`
@@ -1623,17 +1706,43 @@ async function apiRequest(
 
     }
 
+
     if (!response.ok) {
 
+        /*
+           Si le token est invalide,
+           on ne le supprime PAS immédiatement.
+
+           Cela évite qu'un simple problème
+           temporaire déconnecte le compte.
+        */
+
+        if (
+            response.status === 401 ||
+            response.status === 403
+        ) {
+
+            throw new Error(
+                data?.error ||
+                "SESSION INVALID OR EXPIRED"
+            );
+
+        }
+
+
         throw new Error(
-            data.error ||
+            data?.error ||
+            data?.message ||
             `HTTP ${response.status}`
         );
 
     }
 
-    return data;
+
+    return data || {};
+
 }
+
 
 /* =========================================================
    RESTORE SESSION
@@ -1642,11 +1751,13 @@ async function apiRequest(
 async function restoreSession() {
 
     /*
-    Récupère le token après F5
+       On récupère TOUJOURS le token
+       depuis localStorage après un F5.
     */
 
     token =
-        localStorage.getItem(TOKEN_KEY);
+        localStorage.getItem(TOKEN_KEY) || null;
+
 
     if (!token) {
 
@@ -1654,13 +1765,46 @@ async function restoreSession() {
             "[AUTH] Aucun token sauvegardé"
         );
 
+        currentUser = null;
+
+        updateAccountUI();
+
         return false;
+    }
+
+
+    /*
+       Affichage immédiat du compte sauvegardé.
+       Cela évite que l'interface affiche GUEST
+       pendant la vérification.
+    */
+
+    try {
+
+        const saved =
+            localStorage.getItem(USER_KEY);
+
+        if (saved) {
+
+            currentUser =
+                JSON.parse(saved);
+
+        }
+
+    } catch {
+
+        currentUser = null;
 
     }
+
+
+    updateAccountUI();
+
 
     console.log(
         "[AUTH] Vérification de la session..."
     );
+
 
     try {
 
@@ -1672,155 +1816,128 @@ async function restoreSession() {
                 }
             );
 
+
         if (
             !data ||
-            !data.success ||
             !data.user
         ) {
 
             throw new Error(
-                "SESSION INVALID"
+                "INVALID SESSION RESPONSE"
             );
 
         }
 
+
         /*
-        Le serveur nous donne
-        les informations actuelles du compte.
+           IMPORTANT :
+           Le serveur devient la source
+           officielle des informations utilisateur.
         */
 
         currentUser =
             data.user;
 
-        /*
-        On remet à jour le compte sauvegardé.
-        */
 
         localStorage.setItem(
             USER_KEY,
             JSON.stringify(currentUser)
         );
 
+
+        updateAccountUI();
+
+
         console.log(
-            "[AUTH] Session restaurée:",
+            "[AUTH] SESSION RESTORED:",
             currentUser.username
         );
 
-        /*
-        Met à jour ton interface.
-        */
-
-        if (
-            typeof updateAccountUI ===
-            "function"
-        ) {
-
-            updateAccountUI();
-
-        }
 
         return true;
+
 
     } catch (error) {
 
         console.error(
-            "[AUTH] Session invalide:",
+            "[AUTH] Session verification failed:",
             error
         );
 
+
         /*
-        Seulement ici on supprime
-        le token.
+           On ne supprime le token que si
+           le serveur confirme réellement
+           que la session est invalide.
         */
 
-        token = null;
-        currentUser = null;
+        const message =
+            String(error.message || "").toUpperCase();
 
-        localStorage.removeItem(
-            TOKEN_KEY
-        );
-
-        localStorage.removeItem(
-            USER_KEY
-        );
 
         if (
-            typeof updateAccountUI ===
-            "function"
+            message.includes("401") ||
+            message.includes("403") ||
+            message.includes("SESSION INVALID") ||
+            message.includes("EXPIRED")
         ) {
+
+            console.warn(
+                "[AUTH] Token rejected by server."
+            );
+
+
+            token = null;
+
+            currentUser = null;
+
+
+            localStorage.removeItem(
+                TOKEN_KEY
+            );
+
+            localStorage.removeItem(
+                USER_KEY
+            );
+
+
+            if (socket) {
+
+                try {
+                    socket.close();
+                } catch {}
+
+                socket = null;
+
+            }
+
+
+            socketConnected =
+                false;
+
+
+            updateSocketUI();
 
             updateAccountUI();
 
+            return false;
+
         }
 
-        return false;
+
+        /*
+           Erreur réseau / Render réveil / etc.
+           On garde le token.
+        */
+
+        console.warn(
+            "[AUTH] Temporary API error. Token kept."
+        );
+
+
+        return !!currentUser;
+
     }
-}
-
-/* =========================================================
-   ACCOUNT STORAGE
-========================================================= */
-
-function saveAccount(t,u){
-
-token = t || null;
-
-currentUser = u || null;
-
-
-if(token){
-
-localStorage.setItem(
-TOKEN_KEY,
-token
-);
-
-}else{
-
-localStorage.removeItem(
-TOKEN_KEY
-);
-
-}
-
-
-if(currentUser){
-
-localStorage.setItem(
-USER_KEY,
-JSON.stringify(currentUser)
-);
-
-}else{
-
-localStorage.removeItem(
-USER_KEY
-);
-
-}
-
-}
-
-
-function restoreAccount(){
-
-try{
-
-currentUser =
-JSON.parse(
-localStorage.getItem(USER_KEY) ||
-"null"
-);
-
-}catch{
-
-currentUser = null;
-
-}
-
-token =
-localStorage.getItem(TOKEN_KEY) ||
-null;
 
 }
 
@@ -1829,170 +1946,266 @@ null;
    ACCOUNT UI
 ========================================================= */
 
-function updateAccountUI(){
+function updateAccountUI() {
 
-const out =
-document.getElementById(
-"loggedOutAccount"
-);
-
-const inn =
-document.getElementById(
-"loggedInAccount"
-);
-
-const head =
-document.getElementById(
-"headerAccountStatus"
-);
-
-const side =
-document.getElementById(
-"sidebarAccount"
-);
-
-const who =
-document.getElementById(
-"homeWhoami"
-);
-
-const cu =
-document.getElementById(
-"chatUsername"
-);
+    const out =
+        document.getElementById(
+            "loggedOutAccount"
+        );
 
 
-if(currentUser && token){
-
-out.style.display =
-"none";
-
-inn.style.display =
-"block";
+    const inn =
+        document.getElementById(
+            "loggedInAccount"
+        );
 
 
-const username =
-currentUser.username ||
-"USER";
+    const head =
+        document.getElementById(
+            "headerAccountStatus"
+        );
 
 
-const profile =
-currentUser.profile_picture ||
-currentUser.profilePicture ||
-"";
+    const side =
+        document.getElementById(
+            "sidebarAccount"
+        );
 
 
-const avatar =
-profile ||
-createDefaultAvatar(username);
+    const who =
+        document.getElementById(
+            "homeWhoami"
+        );
 
 
-document.getElementById(
-"accountUsername"
-).textContent =
-username;
+    const cu =
+        document.getElementById(
+            "chatUsername"
+        );
 
 
-document.getElementById(
-"accountId"
-).textContent =
-currentUser.id
-?
-"ID: " + currentUser.id
-:
-"ACCOUNT ACTIVE";
+    if (!out || !inn) {
+
+        return;
+
+    }
 
 
-document.getElementById(
-"accountAvatar"
-).src =
-avatar;
+    if (
+        currentUser &&
+        token
+    ) {
+
+        out.style.display =
+            "none";
+
+        inn.style.display =
+            "block";
 
 
-document.getElementById(
-"avatarPreview"
-).src =
-avatar;
+        const username =
+            currentUser.username ||
+            "USER";
 
 
-document.getElementById(
-"avatarPreviewText"
-).textContent =
-profile ||
-"Avatar automatique";
+        const profile =
+            currentUser.profile_picture ||
+            currentUser.profilePicture ||
+            "";
 
 
-document.getElementById(
-"newProfilePicture"
-).value =
-profile;
+        const avatar =
+            profile ||
+            createDefaultAvatar(username);
 
 
-head.textContent =
-username;
+        const accountUsername =
+            document.getElementById(
+                "accountUsername"
+            );
 
-head.className =
-"online";
+        if (accountUsername) {
 
+            accountUsername.textContent =
+                username;
 
-who.textContent =
-username;
-
-
-side.innerHTML = `
-<div class="account-mini">
-<img
-src="${escapeHTML(avatar)}"
-alt="Avatar"
->
-<div class="account-mini-name">
-${escapeHTML(username)}
-</div>
-<br>
-<span class="online">
-CONNECTED
-</span>
-</div>
-`;
+        }
 
 
-cu.value =
-username;
+        const accountId =
+            document.getElementById(
+                "accountId"
+            );
 
-cu.disabled =
-true;
+        if (accountId) {
 
-}else{
+            accountId.textContent =
+                currentUser.id
+                    ? "ID: " + currentUser.id
+                    : "ACCOUNT ACTIVE";
 
-out.style.display =
-"block";
-
-inn.style.display =
-"none";
-
-
-head.textContent =
-"GUEST";
-
-head.className =
-"offline";
+        }
 
 
-side.textContent =
-"GUEST";
+        const accountAvatar =
+            document.getElementById(
+                "accountAvatar"
+            );
+
+        if (accountAvatar) {
+
+            accountAvatar.src =
+                avatar;
+
+        }
 
 
-who.textContent =
-"visitor";
+        const avatarPreview =
+            document.getElementById(
+                "avatarPreview"
+            );
+
+        if (avatarPreview) {
+
+            avatarPreview.src =
+                avatar;
+
+        }
 
 
-cu.value =
-"";
+        const avatarText =
+            document.getElementById(
+                "avatarPreviewText"
+            );
 
-cu.disabled =
-true;
+        if (avatarText) {
 
-}
+            avatarText.textContent =
+                profile ||
+                "Avatar automatique";
+
+        }
+
+
+        const newProfile =
+            document.getElementById(
+                "newProfilePicture"
+            );
+
+        if (
+            newProfile &&
+            document.activeElement !== newProfile
+        ) {
+
+            newProfile.value =
+                profile;
+
+        }
+
+
+        if (head) {
+
+            head.textContent =
+                username;
+
+            head.className =
+                "online";
+
+        }
+
+
+        if (who) {
+
+            who.textContent =
+                username;
+
+        }
+
+
+        if (side) {
+
+            side.innerHTML = `
+                <div class="account-mini">
+
+                    <img
+                        src="${escapeHTML(avatar)}"
+                        alt="Avatar"
+                    >
+
+                    <div class="account-mini-name">
+                        ${escapeHTML(username)}
+                    </div>
+
+                    <br>
+
+                    <span class="online">
+                        CONNECTED
+                    </span>
+
+                </div>
+            `;
+
+        }
+
+
+        if (cu) {
+
+            cu.value =
+                username;
+
+            cu.disabled =
+                true;
+
+        }
+
+
+    } else {
+
+        out.style.display =
+            "block";
+
+        inn.style.display =
+            "none";
+
+
+        if (head) {
+
+            head.textContent =
+                "GUEST";
+
+            head.className =
+                "offline";
+
+        }
+
+
+        if (side) {
+
+            side.textContent =
+                "GUEST";
+
+        }
+
+
+        if (who) {
+
+            who.textContent =
+                "visitor";
+
+        }
+
+
+        if (cu) {
+
+            cu.value =
+                "";
+
+            cu.disabled =
+                true;
+
+        }
+
+    }
 
 }
 
@@ -2001,22 +2214,66 @@ true;
    AUTH STATUS
 ========================================================= */
 
-function setAuthStatus(text,error=false){
+function setAuthStatus(
+    text,
+    error = false
+) {
 
-const status =
-document.getElementById(
-"authStatus"
-);
+    const status =
+        document.getElementById(
+            "authStatus"
+        );
 
-status.textContent =
-"STATUS: " + text;
 
-status.className =
-error
-?
-"auth-status error"
-:
-"auth-status success";
+    if (!status) {
+
+        return;
+
+    }
+
+
+    status.textContent =
+        "STATUS: " + text;
+
+
+    status.className =
+        error
+            ? "auth-status error"
+            : "auth-status success";
+
+}
+
+
+/* =========================================================
+   AVATAR STATUS
+========================================================= */
+
+function setAvatarStatus(
+    text,
+    error = false
+) {
+
+    const status =
+        document.getElementById(
+            "avatarStatus"
+        );
+
+
+    if (!status) {
+
+        return;
+
+    }
+
+
+    status.textContent =
+        "STATUS: " + text;
+
+
+    status.className =
+        error
+            ? "auth-status error"
+            : "auth-status success";
 
 }
 
@@ -2025,114 +2282,127 @@ error
    REGISTER
 ========================================================= */
 
-async function registerAccount(){
+async function registerAccount() {
 
-const username =
-document.getElementById(
-"registerUsername"
-).value.trim();
-
-
-const password =
-document.getElementById(
-"registerPassword"
-).value;
+    const username =
+        document.getElementById(
+            "registerUsername"
+        ).value.trim();
 
 
-const profile =
-document.getElementById(
-"profilePicture"
-).value.trim() ||
-null;
+    const password =
+        document.getElementById(
+            "registerPassword"
+        ).value;
 
 
-if(
-username.length < 3 ||
-username.length > 24
-){
-
-return setAuthStatus(
-"USERNAME MUST BE 3-24 CHARACTERS",
-true
-);
-
-}
+    const profile =
+        document.getElementById(
+            "profilePicture"
+        ).value.trim() ||
+        null;
 
 
-if(
-password.length < 8 ||
-password.length > 128
-){
+    if (
+        username.length < 3 ||
+        username.length > 24
+    ) {
 
-return setAuthStatus(
-"PASSWORD MUST BE 8-128 CHARACTERS",
-true
-);
+        return setAuthStatus(
+            "USERNAME MUST BE 3-24 CHARACTERS",
+            true
+        );
 
-}
-
-
-setAuthStatus(
-"CREATING ACCOUNT..."
-);
+    }
 
 
-try{
+    if (
+        password.length < 8 ||
+        password.length > 128
+    ) {
 
-const data =
-await apiRequest(
-"/api/account/register",
-{
-method:"POST",
+        return setAuthStatus(
+            "PASSWORD MUST BE 8-128 CHARACTERS",
+            true
+        );
 
-headers:{
-"Content-Type":
-"application/json"
-},
-
-body:JSON.stringify({
-username,
-password,
-profile_picture:profile
-})
-
-}
-);
+    }
 
 
-saveAccount(
-data.token,
-data.user
-);
+    setAuthStatus(
+        "CREATING ACCOUNT..."
+    );
 
 
-document.getElementById(
-"registerPassword"
-).value =
-"";
+    try {
+
+        const data =
+            await apiRequest(
+                "/api/account/register",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            username,
+                            password,
+                            profile_picture:
+                                profile
+                        })
+                }
+            );
 
 
-updateAccountUI();
+        if (!data.token) {
+
+            throw new Error(
+                "SERVER DID NOT RETURN TOKEN"
+            );
+
+        }
 
 
-setAuthStatus(
-"ACCOUNT CREATED ✓"
-);
+        saveAccount(
+            data.token,
+            data.user
+        );
 
 
-connectSocket();
+        document.getElementById(
+            "registerPassword"
+        ).value = "";
 
 
-}catch(error){
+        updateAccountUI();
 
-console.error(error);
 
-setAuthStatus(
-error.message,
-true
-);
+        setAuthStatus(
+            "ACCOUNT CREATED ✓"
+        );
 
-}
+
+        connectSocket();
+
+
+    } catch (error) {
+
+        console.error(
+            "[REGISTER]",
+            error
+        );
+
+
+        setAuthStatus(
+            error.message,
+            true
+        );
+
+    }
 
 }
 
@@ -2141,198 +2411,119 @@ true
    LOGIN
 ========================================================= */
 
-async function loginAccount(){
+async function loginAccount() {
 
-const username =
-document.getElementById(
-"loginUsername"
-).value.trim();
-
-
-const password =
-document.getElementById(
-"loginPassword"
-).value;
+    const username =
+        document.getElementById(
+            "loginUsername"
+        ).value.trim();
 
 
-if(!username || !password){
-
-return setAuthStatus(
-"USERNAME AND PASSWORD REQUIRED",
-true
-);
-
-}
+    const password =
+        document.getElementById(
+            "loginPassword"
+        ).value;
 
 
-setAuthStatus(
-"AUTHENTICATING..."
-);
+    if (
+        !username ||
+        !password
+    ) {
+
+        return setAuthStatus(
+            "USERNAME AND PASSWORD REQUIRED",
+            true
+        );
+
+    }
 
 
-try{
-
-const data =
-await apiRequest(
-"/api/account/login",
-{
-method:"POST",
-
-headers:{
-"Content-Type":
-"application/json"
-},
-
-body:JSON.stringify({
-username,
-password
-})
-
-}
-);
+    setAuthStatus(
+        "AUTHENTICATING..."
+    );
 
 
-saveAccount(
-data.token,
-data.user
-);
+    try {
+
+        const data =
+            await apiRequest(
+                "/api/account/login",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            username,
+                            password
+                        })
+                }
+            );
 
 
-document.getElementById(
-"loginPassword"
-).value =
-"";
+        if (!data.token) {
+
+            throw new Error(
+                "SERVER DID NOT RETURN TOKEN"
+            );
+
+        }
 
 
-updateAccountUI();
+        saveAccount(
+            data.token,
+            data.user
+        );
 
 
-setAuthStatus(
-"LOGIN SUCCESSFUL ✓"
-);
+        document.getElementById(
+            "loginPassword"
+        ).value = "";
 
 
-connectSocket();
+        updateAccountUI();
 
 
-}catch(error){
+        setAuthStatus(
+            "LOGIN SUCCESSFUL ✓"
+        );
 
-console.error(error);
 
-setAuthStatus(
-error.message,
-true
-);
+        connectSocket();
 
-}
+
+    } catch (error) {
+
+        console.error(
+            "[LOGIN]",
+            error
+        );
+
+
+        setAuthStatus(
+            error.message,
+            true
+        );
+
+    }
 
 }
 
 
 /* =========================================================
-   CHANGE PROFILE PICTURE
+   PREVIEW AVATAR
 ========================================================= */
 
-function previewAvatar(){
+function previewAvatar() {
 
-if(!currentUser || !token){
-
-return;
-
-}
-
-
-const url =
-document.getElementById(
-"newProfilePicture"
-).value.trim();
-
-
-if(!url){
-
-return setAvatarStatus(
-"ENTER A PROFILE PICTURE URL",
-true
-);
-
-}
-
-
-const preview =
-document.getElementById(
-"avatarPreview"
-);
-
-
-preview.src =
-url;
-
-
-document.getElementById(
-"avatarPreviewText"
-).textContent =
-url;
-
-
-preview.onerror = () => {
-
-setAvatarStatus(
-"IMAGE URL INVALID OR IMAGE CANNOT BE LOADED",
-true
-);
-
-};
-
-}
-
-
-function setAvatarStatus(text,error=false){
-
-const status =
-document.getElementById(
-"avatarStatus"
-);
-
-status.textContent =
-"STATUS: " + text;
-
-status.className =
-error
-?
-"auth-status error"
-:
-"auth-status success";
-
-}
-
-
-/*
-   IMPORTANT:
-
-   Le serveur doit fournir :
-
-   PATCH /api/account/profile
-
-   Body:
-
-   {
-      "profile_picture":"https://..."
-   }
-
-   Le serveur doit répondre avec :
-
-   {
-      "user": {
-         ...
-      }
-   }
-
-   ou directement l'utilisateur.
-*/
-
-async function changeProfilePicture() {
-
-    if (!currentUser || !token) {
+    if (
+        !currentUser ||
+        !token
+    ) {
 
         return setAvatarStatus(
             "LOGIN REQUIRED",
@@ -2341,20 +2532,16 @@ async function changeProfilePicture() {
 
     }
 
+
     const input =
-        document.getElementById("newProfilePicture");
-
-    if (!input) {
-
-        return setAvatarStatus(
-            "PROFILE PICTURE INPUT NOT FOUND",
-            true
+        document.getElementById(
+            "newProfilePicture"
         );
 
-    }
 
     const url =
         input.value.trim();
+
 
     if (!url) {
 
@@ -2364,6 +2551,7 @@ async function changeProfilePicture() {
         );
 
     }
+
 
     if (
         !/^https?:\/\/.+/i.test(url)
@@ -2376,7 +2564,108 @@ async function changeProfilePicture() {
 
     }
 
-    if (url.length > 2000) {
+
+    const preview =
+        document.getElementById(
+            "avatarPreview"
+        );
+
+
+    preview.onerror = () => {
+
+        setAvatarStatus(
+            "IMAGE URL INVALID OR IMAGE CANNOT BE LOADED",
+            true
+        );
+
+    };
+
+
+    preview.onload = () => {
+
+        setAvatarStatus(
+            "PREVIEW READY ✓"
+        );
+
+    };
+
+
+    preview.src =
+        url;
+
+
+    document.getElementById(
+        "avatarPreviewText"
+    ).textContent =
+        url;
+
+}
+
+
+/* =========================================================
+   CHANGE PROFILE PICTURE
+========================================================= */
+
+async function changeProfilePicture() {
+
+    if (
+        !currentUser ||
+        !token
+    ) {
+
+        return setAvatarStatus(
+            "LOGIN REQUIRED",
+            true
+        );
+
+    }
+
+
+    const input =
+        document.getElementById(
+            "newProfilePicture"
+        );
+
+
+    if (!input) {
+
+        return setAvatarStatus(
+            "PROFILE PICTURE INPUT NOT FOUND",
+            true
+        );
+
+    }
+
+
+    const url =
+        input.value.trim();
+
+
+    if (!url) {
+
+        return setAvatarStatus(
+            "ENTER A PROFILE PICTURE URL",
+            true
+        );
+
+    }
+
+
+    if (
+        !/^https?:\/\/.+/i.test(url)
+    ) {
+
+        return setAvatarStatus(
+            "INVALID IMAGE URL",
+            true
+        );
+
+    }
+
+
+    if (
+        url.length > 2000
+    ) {
 
         return setAvatarStatus(
             "PROFILE PICTURE URL TOO LONG",
@@ -2385,11 +2674,23 @@ async function changeProfilePicture() {
 
     }
 
+
     setAvatarStatus(
         "UPDATING PROFILE PICTURE..."
     );
 
+
     try {
+
+        /*
+           Endpoint utilisé par ton serveur.
+           
+           D'après ton erreur précédente,
+           ton ancien endpoint /api/account/profile
+           n'existait pas.
+
+           Celui-ci doit correspondre au server.js.
+        */
 
         const data =
             await apiRequest(
@@ -2402,15 +2703,17 @@ async function changeProfilePicture() {
                             "application/json"
                     },
 
-                    body: JSON.stringify({
-                        profile_picture: url
-                    })
+                    body:
+                        JSON.stringify({
+                            profile_picture:
+                                url
+                        })
                 }
             );
 
+
         if (
             !data ||
-            !data.success ||
             !data.user
         ) {
 
@@ -2420,21 +2723,29 @@ async function changeProfilePicture() {
 
         }
 
+
+        /*
+           IMPORTANT :
+           Le token reste inchangé.
+        */
+
         currentUser =
             data.user;
+
 
         localStorage.setItem(
             USER_KEY,
             JSON.stringify(currentUser)
         );
 
+
         updateAccountUI();
+
 
         setAvatarStatus(
             "PROFILE PICTURE UPDATED ✓"
         );
 
-        input.value = "";
 
     } catch (error) {
 
@@ -2442,6 +2753,7 @@ async function changeProfilePicture() {
             "[PROFILE PICTURE]",
             error
         );
+
 
         setAvatarStatus(
             error.message ||
@@ -2458,64 +2770,75 @@ async function changeProfilePicture() {
    LOGOUT
 ========================================================= */
 
-async function logoutAccount(){
+async function logoutAccount() {
 
-try{
+    try {
 
-if(token){
+        if (token) {
 
-await apiRequest(
-"/api/account/logout",
-{
-method:"POST"
-}
-);
+            await apiRequest(
+                "/api/account/logout",
+                {
+                    method: "POST"
+                }
+            );
 
-}
+        }
 
-}catch{}
+    } catch (error) {
 
+        console.warn(
+            "[LOGOUT] Server logout error:",
+            error
+        );
 
-token = null;
-
-currentUser = null;
-
-
-localStorage.removeItem(
-TOKEN_KEY
-);
-
-localStorage.removeItem(
-USER_KEY
-);
+    }
 
 
-if(socket){
+    token = null;
 
-try{
-socket.close();
-}catch{}
-
-socket = null;
-
-}
+    currentUser = null;
 
 
-socketConnected =
-false;
+    localStorage.removeItem(
+        TOKEN_KEY
+    );
+
+    localStorage.removeItem(
+        USER_KEY
+    );
 
 
-updateSocketUI();
+    if (socket) {
 
-updateAccountUI();
+        try {
 
-setAuthStatus(
-"LOGGED OUT ✓"
-);
+            socket.close();
 
-updateChatStatus(
-"WSS déconnecté."
-);
+        } catch {}
+
+        socket = null;
+
+    }
+
+
+    socketConnected =
+        false;
+
+
+    updateSocketUI();
+
+    updateAccountUI();
+
+
+    setAuthStatus(
+        "LOGGED OUT ✓"
+    );
+
+
+    updateChatStatus(
+        "WSS déconnecté."
+    );
 
 }
 
@@ -2524,1042 +2847,1304 @@ updateChatStatus(
    SERVER STATUS
 ========================================================= */
 
-async function checkServer(){
+async function checkServer() {
 
-try{
+    try {
 
-const data =
-await apiRequest(
-"/api/status"
-);
-
-
-if(!data.online){
-
-throw new Error(
-"OFFLINE"
-);
-
-}
+        const data =
+            await apiRequest(
+                "/api/status"
+            );
 
 
-document.getElementById(
-"serverStatus"
-).textContent =
-"SYSTEM ONLINE";
+        if (!data.online) {
+
+            throw new Error(
+                "OFFLINE"
+            );
+
+        }
 
 
-document.getElementById(
-"serverStatus"
-).className =
-"online";
+        const serverStatus =
+            document.getElementById(
+                "serverStatus"
+            );
 
 
-document.getElementById(
-"renderSide"
-).textContent =
-"ONLINE";
+        serverStatus.textContent =
+            "SYSTEM ONLINE";
+
+        serverStatus.className =
+            "online";
 
 
-document.getElementById(
-"renderSide"
-).className =
-"online";
+        const renderSide =
+            document.getElementById(
+                "renderSide"
+            );
 
 
-document.getElementById(
-"apiSide"
-).textContent =
-"ONLINE";
+        renderSide.textContent =
+            "ONLINE";
+
+        renderSide.className =
+            "online";
 
 
-document.getElementById(
-"apiSide"
-).className =
-"online";
+        const apiSide =
+            document.getElementById(
+                "apiSide"
+            );
 
 
-document.getElementById(
-"visitors"
-).textContent =
-data.users ?? 0;
+        apiSide.textContent =
+            "ONLINE";
+
+        apiSide.className =
+            "online";
 
 
-}catch(error){
-
-console.error(
-"[SERVER]",
-error
-);
+        document.getElementById(
+            "visitors"
+        ).textContent =
+            data.users ?? 0;
 
 
-document.getElementById(
-"serverStatus"
-).textContent =
-"API OFFLINE";
+    } catch (error) {
+
+        console.error(
+            "[SERVER]",
+            error
+        );
 
 
-document.getElementById(
-"serverStatus"
-).className =
-"offline";
+        document.getElementById(
+            "serverStatus"
+        ).textContent =
+            "API OFFLINE";
 
 
-document.getElementById(
-"renderSide"
-).textContent =
-"ERROR";
+        document.getElementById(
+            "serverStatus"
+        ).className =
+            "offline";
 
 
-document.getElementById(
-"apiSide"
-).textContent =
-"ERROR";
+        document.getElementById(
+            "renderSide"
+        ).textContent =
+            "ERROR";
 
-}
+
+        document.getElementById(
+            "renderSide"
+        ).className =
+            "offline";
+
+
+        document.getElementById(
+            "apiSide"
+        ).textContent =
+            "ERROR";
+
+
+        document.getElementById(
+            "apiSide"
+        ).className =
+            "offline";
+
+    }
 
 }
 
 
 /* =========================================================
-   WSS
+   SOCKET UI
 ========================================================= */
 
-function updateSocketUI(){
+function updateSocketUI() {
 
-const status =
-document.getElementById(
-"sidebarSocket"
-);
+    const status =
+        document.getElementById(
+            "sidebarSocket"
+        );
 
 
-status.textContent =
-socketConnected
-?
-"ONLINE"
-:
-"OFFLINE";
+    if (!status) {
 
+        return;
 
-status.className =
-socketConnected
-?
-"online"
-:
-"offline";
+    }
 
-}
 
+    status.textContent =
+        socketConnected
+            ? "ONLINE"
+            : "OFFLINE";
 
-function scheduleSocketReconnect(){
 
-if(
-socketReconnectTimer ||
-!token
-){
-
-return;
-
-}
-
-
-socketReconnectTimer =
-setTimeout(
-()=>{
-socketReconnectTimer = null;
-connectSocket();
-},
-3000
-);
-
-}
-
-
-function connectSocket(){
-
-if(!token){
-
-return;
-
-}
-
-
-if(
-socket &&
-(
-socket.readyState === WebSocket.OPEN ||
-socket.readyState === WebSocket.CONNECTING
-)
-){
-
-return;
-
-}
-
-
-try{
-
-socket =
-new WebSocket(
-SOCKET_URL +
-"?token=" +
-encodeURIComponent(token)
-);
-
-}catch(error){
-
-scheduleSocketReconnect();
-
-return;
-
-}
-
-
-socket.onopen = () => {
-
-socketConnected =
-true;
-
-updateSocketUI();
-
-updateChatStatus(
-"WSS connecté ✓"
-);
-
-};
-
-
-socket.onmessage = event => {
-
-try{
-
-const data =
-JSON.parse(event.data);
-
-
-if(data.type === "welcome"){
-
-if(
-data.authenticated &&
-data.username
-){
-
-currentUser = {
-
-username:
-data.username,
-
-id:
-data.user_id,
-
-profile_picture:
-data.profile_picture
-
-};
-
-
-localStorage.setItem(
-USER_KEY,
-JSON.stringify(currentUser)
-);
-
-
-updateAccountUI();
-
-}
-
-}
-
-
-else if(data.type === "users"){
-
-document.getElementById(
-"visitors"
-).textContent =
-data.count ?? 0;
-
-}
-
-
-else if(
-data.type === "message" ||
-data.type === "chat"
-){
-
-displayChatMessage(
-data.data || data
-);
-
-}
-
-
-else if(data.type === "error"){
-
-updateChatStatus(
-"ERREUR : " +
-(
-data.message ||
-"Erreur serveur"
-)
-);
-
-}
-
-}catch(error){
-
-console.error(
-"[WSS JSON]",
-error
-);
-
-}
-
-};
-
-
-socket.onclose = () => {
-
-socketConnected =
-false;
-
-updateSocketUI();
-
-if(token){
-
-scheduleSocketReconnect();
-
-}
-
-};
-
-
-socket.onerror = () => {
-
-socketConnected =
-false;
-
-updateSocketUI();
-
-updateChatStatus(
-"ERREUR WSS"
-);
-
-};
+    status.className =
+        socketConnected
+            ? "online"
+            : "offline";
 
 }
 
 
 /* =========================================================
-   CHAT
+   SOCKET RECONNECT
 ========================================================= */
 
-function updateChatStatus(text){
+function scheduleSocketReconnect() {
 
-document.getElementById(
-"chatStatus"
-).textContent =
-text;
+    if (
+        socketReconnectTimer ||
+        !token
+    ) {
 
-}
+        return;
 
+    }
 
-function showChatLoginRequired(){
 
-document.getElementById(
-"chatBox"
-).innerHTML = `
-<div class="chat-message">
-<span class="chat-user">
-SYSTEM
-</span>
-<br><br>
-⚠ ACCÈS REFUSÉ
-<br><br>
-Tu dois être connecté pour utiliser le chat.
-</div>
-`;
+    socketReconnectTimer =
+        setTimeout(
+            () => {
 
-updateChatStatus(
-"Connexion requise."
-);
+                socketReconnectTimer =
+                    null;
 
-}
+                /*
+                   Relire le token au cas où
+                   il aurait changé.
+                */
 
+                token =
+                    localStorage.getItem(
+                        TOKEN_KEY
+                    ) || null;
 
-function displayChatMessage(data){
 
-const box =
-document.getElementById(
-"chatBox"
-);
+                if (token) {
 
+                    connectSocket();
 
-const element =
-document.createElement(
-"div"
-);
+                }
 
-
-element.className =
-"chat-message";
-
-
-const time =
-data.timestamp ||
-data.time;
-
-
-let formattedTime = "";
-
-
-if(time){
-
-try{
-
-formattedTime =
-new Date(time)
-.toLocaleTimeString(
-"fr-FR"
-);
-
-}catch{}
-
-}
-
-
-element.innerHTML = `
-
-<span class="chat-user">
-${escapeHTML(
-data.username || "USER"
-)}
-</span>
-
-${
-formattedTime
-?
-`<span class="chat-time">
-[${formattedTime}]
-</span>`
-:
-""
-}
-
-<br>
-
-${escapeHTML(
-data.message || ""
-)}
-
-`;
-
-
-box.appendChild(
-element
-);
-
-
-box.scrollTop =
-box.scrollHeight;
-
-}
-
-
-function clearChat(){
-
-document.getElementById(
-"chatBox"
-).innerHTML =
-"";
-
-}
-
-
-async function loadChatHistory(){
-
-if(
-!currentUser ||
-!token
-){
-
-return showChatLoginRequired();
-
-}
-
-
-clearChat();
-
-addSystemMessage(
-"Chargement de chat-log/..."
-);
-
-
-try{
-
-const list =
-await apiRequest(
-"/api/chat/logs"
-);
-
-
-const logs =
-list.logs || [];
-
-
-for(
-const log of logs
-){
-
-const match =
-log.name.match(/(\d+)/);
-
-
-const number =
-match && match[1];
-
-
-if(!number){
-
-continue;
-
-}
-
-
-const data =
-await apiRequest(
-"/api/chat/log/" +
-number
-);
-
-
-for(
-const message of
-data.messages || []
-){
-
-displayChatMessage(
-message
-);
-
-}
-
-}
-
-
-if(!logs.length){
-
-addSystemMessage(
-"Aucun historique dans chat-log."
-);
-
-}
-
-
-updateChatStatus(
-"Historique chargé ✓"
-);
-
-
-}catch(error){
-
-console.error(
-"[CHAT LOG]",
-error
-);
-
-
-addSystemMessage(
-"Impossible de charger chat-log : " +
-error.message
-);
-
-}
-
-}
-
-
-function addSystemMessage(message){
-
-const box =
-document.getElementById(
-"chatBox"
-);
-
-
-const element =
-document.createElement(
-"div"
-);
-
-
-element.className =
-"chat-message";
-
-
-element.innerHTML = `
-
-<span class="chat-user">
-SYSTEM
-</span>
-
-<br>
-
-${escapeHTML(message)}
-
-`;
-
-
-box.appendChild(
-element
-);
-
-
-box.scrollTop =
-box.scrollHeight;
-
-}
-
-
-function sendChat(){
-
-if(
-!currentUser ||
-!token
-){
-
-showPage(
-"account"
-);
-
-return;
-
-}
-
-
-const input =
-document.getElementById(
-"chatMessage"
-);
-
-
-const message =
-input.value.trim();
-
-
-if(!message){
-
-return updateChatStatus(
-"Entre un message."
-);
-
-}
-
-
-if(
-!socket ||
-socket.readyState !==
-WebSocket.OPEN
-){
-
-updateChatStatus(
-"WSS non connecté."
-);
-
-connectSocket();
-
-return;
-
-}
-
-
-socket.send(
-JSON.stringify({
-type:"message",
-message
-})
-);
-
-
-input.value =
-"";
-
-
-updateChatStatus(
-"Message envoyé ✓"
-);
+            },
+            3000
+        );
 
 }
 
 
 /* =========================================================
-   MEDIA
+   CONNECT SOCKET
 ========================================================= */
 
-async function uploadFile(type){
+function connectSocket() {
 
-const ids = {
+    /*
+       Relire le token depuis localStorage.
+    */
 
-image:[
-"imageFile",
-"imageUploadStatus"
-],
-
-music:[
-"musicFile",
-"musicUploadStatus"
-],
-
-video:[
-"videoFile",
-"videoUploadStatus"
-]
-
-};
+    token =
+        localStorage.getItem(
+            TOKEN_KEY
+        ) || null;
 
 
-const [
-inputId,
-statusId
-] =
-ids[type];
+    if (!token) {
+
+        console.log(
+            "[WSS] No authentication token."
+        );
+
+        return;
+
+    }
 
 
-const input =
-document.getElementById(
-inputId
-);
+    if (
+        socket &&
+        (
+            socket.readyState ===
+                WebSocket.OPEN ||
+
+            socket.readyState ===
+                WebSocket.CONNECTING
+        )
+    ) {
+
+        return;
+
+    }
 
 
-const status =
-document.getElementById(
-statusId
-);
+    console.log(
+        "[WSS] Connecting..."
+    );
 
 
-const file =
-input.files[0];
+    try {
+
+        socket =
+            new WebSocket(
+                SOCKET_URL +
+                "?token=" +
+                encodeURIComponent(token)
+            );
+
+    } catch (error) {
+
+        console.error(
+            "[WSS] Connection error:",
+            error
+        );
+
+        scheduleSocketReconnect();
+
+        return;
+
+    }
 
 
-if(!file){
+    socket.onopen = () => {
 
-return status.textContent =
-"Aucun fichier sélectionné.";
+        socketConnected =
+            true;
+
+
+        updateSocketUI();
+
+
+        updateChatStatus(
+            "WSS connecté ✓"
+        );
+
+
+        console.log(
+            "[WSS] Connected."
+        );
+
+    };
+
+
+    socket.onmessage =
+        event => {
+
+            try {
+
+                const data =
+                    JSON.parse(
+                        event.data
+                    );
+
+
+                if (
+                    data.type ===
+                    "welcome"
+                ) {
+
+                    if (
+                        data.authenticated
+                    ) {
+
+                        /*
+                           Met à jour uniquement
+                           les données reçues.
+                        */
+
+                        if (!currentUser) {
+
+                            currentUser = {};
+
+                        }
+
+
+                        if (
+                            data.username
+                        ) {
+
+                            currentUser.username =
+                                data.username;
+
+                        }
+
+
+                        if (
+                            data.user_id
+                        ) {
+
+                            currentUser.id =
+                                data.user_id;
+
+                        }
+
+
+                        if (
+                            data.profile_picture !==
+                            undefined
+                        ) {
+
+                            currentUser.profile_picture =
+                                data.profile_picture;
+
+                        }
+
+
+                        localStorage.setItem(
+                            USER_KEY,
+                            JSON.stringify(
+                                currentUser
+                            )
+                        );
+
+
+                        updateAccountUI();
+
+                    }
+
+                }
+
+
+                else if (
+                    data.type ===
+                    "users"
+                ) {
+
+                    document.getElementById(
+                        "visitors"
+                    ).textContent =
+                        data.count ?? 0;
+
+                }
+
+
+                else if (
+                    data.type ===
+                        "message" ||
+                    data.type ===
+                        "chat"
+                ) {
+
+                    displayChatMessage(
+                        data.data ||
+                        data
+                    );
+
+                }
+
+
+                else if (
+                    data.type ===
+                    "error"
+                ) {
+
+                    updateChatStatus(
+                        "ERREUR : " +
+                        (
+                            data.message ||
+                            "Erreur serveur"
+                        )
+                    );
+
+                }
+
+
+            } catch (error) {
+
+                console.error(
+                    "[WSS JSON]",
+                    error
+                );
+
+            }
+
+        };
+
+
+    socket.onclose =
+        event => {
+
+            socketConnected =
+                false;
+
+
+            updateSocketUI();
+
+
+            console.log(
+                "[WSS] Closed:",
+                event.code,
+                event.reason
+            );
+
+
+            if (token) {
+
+                scheduleSocketReconnect();
+
+            }
+
+        };
+
+
+    socket.onerror =
+        error => {
+
+            socketConnected =
+                false;
+
+
+            updateSocketUI();
+
+
+            updateChatStatus(
+                "ERREUR WSS"
+            );
+
+
+            console.error(
+                "[WSS]",
+                error
+            );
+
+        };
 
 }
 
 
-if(
-file.size >
-MAX_FILE_SIZE
-){
+/* =========================================================
+   CHAT STATUS
+========================================================= */
 
-return status.textContent =
-"Fichier trop gros. Maximum : 25 MB.";
+function updateChatStatus(text) {
 
-}
-
-
-if(!token){
-
-return status.textContent =
-"Connecte-toi pour uploader.";
-
-}
+    const element =
+        document.getElementById(
+            "chatStatus"
+        );
 
 
-status.textContent =
-"Upload vers GitHub...";
+    if (element) {
 
+        element.textContent =
+            text;
 
-try{
-
-const form =
-new FormData();
-
-
-form.append(
-"file",
-file
-);
-
-
-form.append(
-"folder",
-type
-);
-
-
-const response =
-await fetch(
-API + "/api/upload",
-{
-method:"POST",
-headers:{
-Authorization:
-"Bearer " + token
-},
-body:form
-}
-);
-
-
-const data =
-await response
-.json()
-.catch(
-() => ({})
-);
-
-
-if(!response.ok){
-
-throw new Error(
-data.error ||
-`HTTP ${response.status}`
-);
+    }
 
 }
 
 
-status.innerHTML = `
-UPLOAD OK ✓
-<br>
-<a
-href="${escapeHTML(data.download)}"
-target="_blank"
-rel="noopener"
->
-Ouvrir le fichier
-</a>
-`;
+/* =========================================================
+   CHAT LOGIN REQUIRED
+========================================================= */
+
+function showChatLoginRequired() {
+
+    document.getElementById(
+        "chatBox"
+    ).innerHTML = `
+        <div class="chat-message">
+
+            <span class="chat-user">
+                SYSTEM
+            </span>
+
+            <br><br>
+
+            ⚠ ACCÈS REFUSÉ
+
+            <br><br>
+
+            Tu dois être connecté pour utiliser le chat.
+
+        </div>
+    `;
 
 
-input.value = "";
-
-loadMedia();
-
-
-}catch(error){
-
-console.error(error);
-
-status.textContent =
-"ERREUR : " +
-error.message;
-
-}
-
-}
-
-
-async function loadMedia(){
-
-await Promise.all([
-
-loadFolder(
-"image",
-"imageList",
-"image"
-),
-
-loadFolder(
-"music",
-"musicList",
-"music"
-),
-
-loadFolder(
-"video",
-"videoList",
-"video"
-)
-
-]);
+    updateChatStatus(
+        "Connexion requise."
+    );
 
 }
 
+
+/* =========================================================
+   CHAT MESSAGE
+========================================================= */
+
+function displayChatMessage(data) {
+
+    const box =
+        document.getElementById(
+            "chatBox"
+        );
+
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+
+    element.className =
+        "chat-message";
+
+
+    const time =
+        data.timestamp ||
+        data.time;
+
+
+    let formattedTime =
+        "";
+
+
+    if (time) {
+
+        try {
+
+            formattedTime =
+                new Date(time)
+                    .toLocaleTimeString(
+                        "fr-FR"
+                    );
+
+        } catch {}
+
+    }
+
+
+    element.innerHTML = `
+
+        <span class="chat-user">
+            ${escapeHTML(
+                data.username ||
+                "USER"
+            )}
+        </span>
+
+        ${
+            formattedTime
+                ? `
+                    <span class="chat-time">
+                        [${formattedTime}]
+                    </span>
+                `
+                : ""
+        }
+
+        <br>
+
+        ${escapeHTML(
+            data.message ||
+            ""
+        )}
+
+    `;
+
+
+    box.appendChild(
+        element
+    );
+
+
+    box.scrollTop =
+        box.scrollHeight;
+
+}
+
+
+/* =========================================================
+   CLEAR CHAT
+========================================================= */
+
+function clearChat() {
+
+    document.getElementById(
+        "chatBox"
+    ).innerHTML =
+        "";
+
+}
+
+
+/* =========================================================
+   SYSTEM MESSAGE
+========================================================= */
+
+function addSystemMessage(message) {
+
+    const box =
+        document.getElementById(
+            "chatBox"
+        );
+
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+
+    element.className =
+        "chat-message";
+
+
+    element.innerHTML = `
+
+        <span class="chat-user">
+            SYSTEM
+        </span>
+
+        <br>
+
+        ${escapeHTML(message)}
+
+    `;
+
+
+    box.appendChild(
+        element
+    );
+
+
+    box.scrollTop =
+        box.scrollHeight;
+
+}
+
+
+/* =========================================================
+   LOAD CHAT HISTORY
+========================================================= */
+
+async function loadChatHistory() {
+
+    if (
+        !currentUser ||
+        !token
+    ) {
+
+        return showChatLoginRequired();
+
+    }
+
+
+    clearChat();
+
+
+    addSystemMessage(
+        "Chargement de chat-log/..."
+    );
+
+
+    try {
+
+        const list =
+            await apiRequest(
+                "/api/chat/logs"
+            );
+
+
+        const logs =
+            list.logs || [];
+
+
+        for (
+            const log of logs
+        ) {
+
+            const match =
+                String(
+                    log.name || ""
+                ).match(
+                    /(\d+)/
+                );
+
+
+            const number =
+                match &&
+                match[1];
+
+
+            if (!number) {
+
+                continue;
+
+            }
+
+
+            const data =
+                await apiRequest(
+                    "/api/chat/log/" +
+                    number
+                );
+
+
+            for (
+                const message of
+                data.messages || []
+            ) {
+
+                displayChatMessage(
+                    message
+                );
+
+            }
+
+        }
+
+
+        if (!logs.length) {
+
+            addSystemMessage(
+                "Aucun historique dans chat-log."
+            );
+
+        }
+
+
+        updateChatStatus(
+            "Historique chargé ✓"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "[CHAT LOG]",
+            error
+        );
+
+
+        addSystemMessage(
+            "Impossible de charger chat-log : " +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SEND CHAT
+========================================================= */
+
+function sendChat() {
+
+    /*
+       Relire le token.
+    */
+
+    token =
+        localStorage.getItem(
+            TOKEN_KEY
+        ) || null;
+
+
+    if (
+        !currentUser ||
+        !token
+    ) {
+
+        showPage(
+            "account"
+        );
+
+        return;
+
+    }
+
+
+    const input =
+        document.getElementById(
+            "chatMessage"
+        );
+
+
+    const message =
+        input.value.trim();
+
+
+    if (!message) {
+
+        return updateChatStatus(
+            "Entre un message."
+        );
+
+    }
+
+
+    if (
+        !socket ||
+        socket.readyState !==
+        WebSocket.OPEN
+    ) {
+
+        updateChatStatus(
+            "WSS non connecté..."
+        );
+
+
+        connectSocket();
+
+
+        return;
+
+    }
+
+
+    socket.send(
+        JSON.stringify({
+            type: "message",
+            message
+        })
+    );
+
+
+    input.value =
+        "";
+
+
+    updateChatStatus(
+        "Message envoyé ✓"
+    );
+
+}
+
+
+/* =========================================================
+   MEDIA UPLOAD
+========================================================= */
+
+async function uploadFile(type) {
+
+    const ids = {
+
+        image: [
+            "imageFile",
+            "imageUploadStatus"
+        ],
+
+        music: [
+            "musicFile",
+            "musicUploadStatus"
+        ],
+
+        video: [
+            "videoFile",
+            "videoUploadStatus"
+        ]
+
+    };
+
+
+    const [
+        inputId,
+        statusId
+    ] =
+        ids[type];
+
+
+    const input =
+        document.getElementById(
+            inputId
+        );
+
+
+    const status =
+        document.getElementById(
+            statusId
+        );
+
+
+    const file =
+        input.files[0];
+
+
+    if (!file) {
+
+        return status.textContent =
+            "Aucun fichier sélectionné.";
+
+    }
+
+
+    if (
+        file.size >
+        MAX_FILE_SIZE
+    ) {
+
+        return status.textContent =
+            "Fichier trop gros. Maximum : 25 MB.";
+
+    }
+
+
+    /*
+       Toujours relire le token.
+    */
+
+    token =
+        localStorage.getItem(
+            TOKEN_KEY
+        ) || null;
+
+
+    if (!token) {
+
+        return status.textContent =
+            "Connecte-toi pour uploader.";
+
+    }
+
+
+    status.textContent =
+        "Upload vers GitHub...";
+
+
+    try {
+
+        const form =
+            new FormData();
+
+
+        form.append(
+            "file",
+            file
+        );
+
+
+        form.append(
+            "folder",
+            type
+        );
+
+
+        const response =
+            await fetch(
+                API +
+                "/api/upload",
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            "Bearer " +
+                            token
+                    },
+
+                    body: form
+                }
+            );
+
+
+        const data =
+            await response
+                .json()
+                .catch(
+                    () => ({})
+                );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                `HTTP ${response.status}`
+            );
+
+        }
+
+
+        status.innerHTML = `
+
+            UPLOAD OK ✓
+
+            <br>
+
+            <a
+                href="${escapeHTML(
+                    data.download ||
+                    "#"
+                )}"
+                target="_blank"
+                rel="noopener"
+            >
+                Ouvrir le fichier
+            </a>
+
+        `;
+
+
+        input.value =
+            "";
+
+
+        loadMedia();
+
+
+    } catch (error) {
+
+        console.error(
+            "[UPLOAD]",
+            error
+        );
+
+
+        status.textContent =
+            "ERREUR : " +
+            error.message;
+
+    }
+
+}
+
+
+/* =========================================================
+   LOAD MEDIA
+========================================================= */
+
+async function loadMedia() {
+
+    await Promise.all([
+
+        loadFolder(
+            "image",
+            "imageList",
+            "image"
+        ),
+
+        loadFolder(
+            "music",
+            "musicList",
+            "music"
+        ),
+
+        loadFolder(
+            "video",
+            "videoList",
+            "video"
+        )
+
+    ]);
+
+}
+
+
+/* =========================================================
+   LOAD MEDIA FOLDER
+========================================================= */
 
 async function loadFolder(
-folder,
-id,
-type
-){
+    folder,
+    id,
+    type
+) {
 
-const container =
-document.getElementById(id);
+    const container =
+        document.getElementById(id);
 
 
-container.innerHTML =
-"Chargement...";
+    container.innerHTML =
+        "Chargement...";
 
 
-try{
+    try {
 
-const data =
-await apiRequest(
-"/api/files/" +
-encodeURIComponent(folder)
-);
+        const data =
+            await apiRequest(
+                "/api/files/" +
+                encodeURIComponent(
+                    folder
+                )
+            );
 
 
-const files =
-(data.files || [])
-.filter(
-file =>
-file.name &&
-!file.name.endsWith(".gitkeep")
-);
+        const files =
+            (data.files || [])
+                .filter(
+                    file =>
+                        file.name &&
+                        !file.name.endsWith(
+                            ".gitkeep"
+                        )
+                );
 
 
-if(!files.length){
+        if (!files.length) {
 
-container.textContent =
-"Aucun fichier.";
+            container.textContent =
+                "Aucun fichier.";
 
-return;
+            return;
 
-}
+        }
 
 
-container.innerHTML =
-"";
+        container.innerHTML =
+            "";
 
 
-files.forEach(file => {
+        files.forEach(
+            file => {
 
-const item =
-document.createElement(
-"div"
-);
+                const item =
+                    document.createElement(
+                        "div"
+                    );
 
 
-item.className =
-"media-item";
+                item.className =
+                    "media-item";
 
 
-const name =
-escapeHTML(
-file.name
-);
+                const name =
+                    escapeHTML(
+                        file.name
+                    );
 
 
-const url =
-escapeHTML(
-file.download
-);
+                const url =
+                    escapeHTML(
+                        file.download
+                    );
 
 
-if(type === "image"){
+                if (
+                    type === "image"
+                ) {
 
-item.innerHTML = `
+                    item.innerHTML = `
 
-<img
-src="${url}"
-alt="${name}"
-loading="lazy"
->
+                        <img
+                            src="${url}"
+                            alt="${name}"
+                            loading="lazy"
+                        >
 
-<br><br>
+                        <br><br>
 
-<b>${name}</b>
+                        <b>
+                            ${name}
+                        </b>
 
-<br><br>
+                        <br><br>
 
-<a
-href="${url}"
-target="_blank"
->
-OPEN
-</a>
+                        <a
+                            href="${url}"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            OPEN
+                        </a>
 
-`;
+                    `;
 
-}
+                }
 
 
-else if(type === "music"){
+                else if (
+                    type === "music"
+                ) {
 
-item.innerHTML = `
+                    item.innerHTML = `
 
-<b>${name}</b>
+                        <b>
+                            ${name}
+                        </b>
 
-<br><br>
+                        <br><br>
 
-<audio
-controls
-preload="metadata"
-src="${url}"
->
-</audio>
+                        <audio
+                            controls
+                            preload="metadata"
+                            src="${url}"
+                        >
+                        </audio>
 
-<br><br>
+                        <br><br>
 
-<a
-href="${url}"
-target="_blank"
->
-OPEN
-</a>
+                        <a
+                            href="${url}"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            OPEN
+                        </a>
 
-`;
+                    `;
 
-}
+                }
 
 
-else{
+                else {
 
-item.innerHTML = `
+                    item.innerHTML = `
 
-<video
-controls
-preload="metadata"
-src="${url}"
->
-</video>
+                        <video
+                            controls
+                            preload="metadata"
+                            src="${url}"
+                        >
+                        </video>
 
-<br><br>
+                        <br><br>
 
-<b>${name}</b>
+                        <b>
+                            ${name}
+                        </b>
 
-<br><br>
+                        <br><br>
 
-<a
-href="${url}"
-target="_blank"
->
-OPEN
-</a>
+                        <a
+                            href="${url}"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            OPEN
+                        </a>
 
-`;
+                    `;
 
-}
+                }
 
 
-container.appendChild(
-item
-);
+                container.appendChild(
+                    item
+                );
 
-});
+            }
+        );
 
 
-}catch(error){
+    } catch (error) {
 
-console.error(
-"[MEDIA " + folder + "]",
-error
-);
+        console.error(
+            "[MEDIA " +
+            folder +
+            "]",
+            error
+        );
 
 
-container.innerHTML = `
+        container.innerHTML = `
 
-<span class="offline">
-ERREUR :
-${escapeHTML(error.message)}
-</span>
+            <span class="offline">
+                ERREUR :
+                ${escapeHTML(
+                    error.message
+                )}
+            </span>
 
-`;
+        `;
 
-}
+    }
 
 }
 
@@ -3568,143 +4153,171 @@ ${escapeHTML(error.message)}
    PAGE NAVIGATION
 ========================================================= */
 
-function showPage(name){
+function showPage(name) {
+
+    document
+        .querySelectorAll(
+            ".page"
+        )
+        .forEach(
+            page =>
+                page.classList.remove(
+                    "active"
+                )
+        );
+
+
+    document
+        .getElementById(name)
+        ?.classList.add(
+            "active"
+        );
+
+
+    document
+        .querySelectorAll(
+            "nav button"
+        )
+        .forEach(
+            button =>
+                button.classList.toggle(
+                    "active",
+                    button.dataset.page ===
+                    name
+                )
+        );
+
+
+    if (
+        name === "chat"
+    ) {
+
+        /*
+           Toujours relire le token.
+        */
+
+        token =
+            localStorage.getItem(
+                TOKEN_KEY
+            ) || null;
+
+
+        if (
+            !currentUser ||
+            !token
+        ) {
+
+            showChatLoginRequired();
+
+
+            setTimeout(
+                () =>
+                    showPage(
+                        "account"
+                    ),
+                900
+            );
+
+
+            return;
+
+        }
+
+
+        loadChatHistory();
+
+
+        if (!socketConnected) {
+
+            connectSocket();
+
+        }
+
+    }
+
+
+    if (
+        name === "media"
+    ) {
+
+        loadMedia();
+
+    }
+
+
+    if (
+        name === "account"
+    ) {
+
+        updateAccountUI();
+
+    }
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+}
+
+
+/* =========================================================
+   NAVIGATION EVENTS
+========================================================= */
 
 document
-.querySelectorAll(".page")
-.forEach(
-page =>
-page.classList.remove(
-"active"
-)
-);
-
-
-document
-.getElementById(name)
-?.classList.add(
-"active"
-);
-
-
-document
-.querySelectorAll(
-"nav button"
-)
-.forEach(
-button =>
-button.classList.toggle(
-"active",
-button.dataset.page === name
-)
-);
-
-
-if(name === "chat"){
-
-if(
-!currentUser ||
-!token
-){
-
-showChatLoginRequired();
-
-setTimeout(
-() => showPage("account"),
-900
-);
-
-return;
-
-}
-
-
-loadChatHistory();
-
-
-if(!socketConnected){
-
-connectSocket();
-
-}
-
-}
-
-
-if(name === "media"){
-
-loadMedia();
-
-}
-
-
-if(name === "account"){
-
-updateAccountUI();
-
-}
-
-
-window.scrollTo({
-top:0,
-behavior:"smooth"
-});
-
-}
-
-
-document
-.querySelectorAll(
-"nav button,.side-link"
-)
-.forEach(
-element =>
-element.addEventListener(
-"click",
-() =>
-showPage(
-element.dataset.page
-)
-)
-);
+    .querySelectorAll(
+        "nav button,.side-link"
+    )
+    .forEach(
+        element =>
+            element.addEventListener(
+                "click",
+                () =>
+                    showPage(
+                        element.dataset.page
+                    )
+            )
+    );
 
 
 /* =========================================================
    TERMINAL
 ========================================================= */
 
-function terminalPrint(text){
+function terminalPrint(text) {
 
-document.getElementById(
-"terminalOutput"
-).textContent +=
-"\n" + text;
-
-}
-
-
-function terminalCommand(raw){
-
-const command =
-raw.trim().toLowerCase();
-
-
-if(!command){
-
-return;
+    document.getElementById(
+        "terminalOutput"
+    ).textContent +=
+        "\n" + text;
 
 }
 
 
-terminalPrint(
-"\nguest@david:~$ " +
-raw
-);
+function terminalCommand(raw) {
+
+    const command =
+        raw.trim().toLowerCase();
 
 
-const commands = {
+    if (!command) {
 
-help:
+        return;
+
+    }
+
+
+    terminalPrint(
+        "\nguest@david:~$ " +
+        raw
+    );
+
+
+    const commands = {
+
+        help:
 `COMMANDS
 help
 clear
@@ -3723,149 +4336,191 @@ chat
 games
 wss`,
 
-about:
-"DAVID RANDOM V2 // Render + GitHub + WSS",
+        about:
+            "DAVID RANDOM V2 // Render + GitHub + WSS",
 
-ls:
+        ls:
 `image/
 music/
 video/
 chat-log/
 accounts/`,
 
-whoami:
-currentUser?.username ||
-"guest",
+        whoami:
+            currentUser?.username ||
+            "guest",
 
-wss:
-socketConnected
-?
-"WSS = ONLINE"
-:
-"WSS = OFFLINE"
+        wss:
+            socketConnected
+                ? "WSS = ONLINE"
+                : "WSS = OFFLINE"
 
-};
+    };
 
 
-if(command === "clear"){
+    if (
+        command === "clear"
+    ) {
 
-document.getElementById(
-"terminalOutput"
-).textContent =
-"";
+        document.getElementById(
+            "terminalOutput"
+        ).textContent =
+            "";
+
+    }
+
+
+    else if (
+        command === "account" ||
+        command === "login"
+    ) {
+
+        showPage(
+            "account"
+        );
+
+    }
+
+
+    else if (
+        command === "media"
+    ) {
+
+        showPage(
+            "media"
+        );
+
+    }
+
+
+    else if (
+        command === "chat"
+    ) {
+
+        showPage(
+            "chat"
+        );
+
+    }
+
+
+    else if (
+        command === "games"
+    ) {
+
+        showPage(
+            "games"
+        );
+
+    }
+
+
+    else if (
+        command === "logout"
+    ) {
+
+        logoutAccount();
+
+    }
+
+
+    else if (
+        command === "status"
+    ) {
+
+        terminalPrint(
+            "Checking server..."
+        );
+
+        checkServer();
+
+    }
+
+
+    else if (
+        command === "date"
+    ) {
+
+        terminalPrint(
+            new Date()
+                .toLocaleDateString(
+                    "fr-FR"
+                )
+        );
+
+    }
+
+
+    else if (
+        command === "time"
+    ) {
+
+        terminalPrint(
+            new Date()
+                .toLocaleTimeString(
+                    "fr-FR"
+                )
+        );
+
+    }
+
+
+    else if (
+        command === "random"
+    ) {
+
+        terminalPrint(
+            "RANDOM = " +
+            Math.floor(
+                Math.random() *
+                999999
+            )
+        );
+
+    }
+
+
+    else {
+
+        terminalPrint(
+            commands[command] ??
+            "Command not found: " +
+            raw
+        );
+
+    }
 
 }
 
-else if(
-command === "account" ||
-command === "login"
-){
 
-showPage("account");
-
-}
-
-else if(command === "media"){
-
-showPage("media");
-
-}
-
-else if(command === "chat"){
-
-showPage("chat");
-
-}
-
-else if(command === "games"){
-
-showPage("games");
-
-}
-
-else if(command === "logout"){
-
-logoutAccount();
-
-}
-
-else if(command === "status"){
-
-terminalPrint(
-"Checking server..."
-);
-
-checkServer();
-
-}
-
-else if(command === "date"){
-
-terminalPrint(
-new Date()
-.toLocaleDateString(
-"fr-FR"
-)
-);
-
-}
-
-else if(command === "time"){
-
-terminalPrint(
-new Date()
-.toLocaleTimeString(
-"fr-FR"
-)
-);
-
-}
-
-else if(command === "random"){
-
-terminalPrint(
-"RANDOM = " +
-Math.floor(
-Math.random() * 999999
-)
-);
-
-}
-
-else{
-
-terminalPrint(
-commands[command] ??
-"Command not found: " +
-raw
-);
-
-}
-
-}
-
+/* =========================================================
+   TERMINAL ENTER
+========================================================= */
 
 document
-.getElementById(
-"terminalInput"
-)
-.addEventListener(
-"keydown",
-event => {
+    .getElementById(
+        "terminalInput"
+    )
+    .addEventListener(
+        "keydown",
+        event => {
 
-if(event.key === "Enter"){
+            if (
+                event.key ===
+                "Enter"
+            ) {
 
-terminalCommand(
-event.target.value
-);
+                terminalCommand(
+                    event.target.value
+                );
 
-event.target.value =
-"";
+                event.target.value =
+                    "";
 
-}
+            }
 
-}
-);
+        }
+    );
 
 
 /* =========================================================
@@ -3873,97 +4528,101 @@ event.target.value =
 ========================================================= */
 
 document
-.getElementById(
-"chatMessage"
-)
-.addEventListener(
-"keydown",
-event => {
+    .getElementById(
+        "chatMessage"
+    )
+    .addEventListener(
+        "keydown",
+        event => {
 
-if(
-event.key === "Enter" &&
-!event.shiftKey
-){
+            if (
+                event.key ===
+                    "Enter" &&
+                !event.shiftKey
+            ) {
 
-event.preventDefault();
+                event.preventDefault();
 
-sendChat();
+                sendChat();
 
-}
+            }
 
-}
-);
+        }
+    );
 
 
 /* =========================================================
    GUESTBOOK
 ========================================================= */
 
-function addGuest(){
+function addGuest() {
 
-const name =
-document.getElementById(
-"guestName"
-).value.trim();
-
-
-const message =
-document.getElementById(
-"guestMessage"
-).value.trim();
+    const name =
+        document.getElementById(
+            "guestName"
+        ).value.trim();
 
 
-if(!name || !message){
-
-return alert(
-"Remplis les deux champs."
-);
-
-}
+    const message =
+        document.getElementById(
+            "guestMessage"
+        ).value.trim();
 
 
-const element =
-document.createElement(
-"div"
-);
+    if (
+        !name ||
+        !message
+    ) {
+
+        return alert(
+            "Remplis les deux champs."
+        );
+
+    }
 
 
-element.className =
-"chat-message";
+    const element =
+        document.createElement(
+            "div"
+        );
 
 
-element.innerHTML = `
-
-<span class="chat-user">
-${escapeHTML(name)}
-</span>
-
-<br>
-
-${escapeHTML(message)}
-
-`;
+    element.className =
+        "chat-message";
 
 
-document
-.getElementById(
-"guestList"
-)
-.prepend(
-element
-);
+    element.innerHTML = `
+
+        <span class="chat-user">
+            ${escapeHTML(name)}
+        </span>
+
+        <br>
+
+        ${escapeHTML(message)}
+
+    `;
 
 
-document.getElementById(
-"guestName"
-).value =
-"";
+    document
+        .getElementById(
+            "guestList"
+        )
+        .prepend(
+            element
+        );
 
 
-document.getElementById(
-"guestMessage"
-).value =
-"";
+    document.getElementById(
+        "guestName"
+    ).value =
+        "";
+
+
+    document.getElementById(
+        "guestMessage"
+    ).value =
+        "";
 
 }
 
@@ -3972,102 +4631,100 @@ document.getElementById(
    GAME
 ========================================================= */
 
-let score = 0;
+function startGame() {
 
-let gameRunning = false;
+    score = 0;
 
-let gameTimer = 10;
+    gameTimer = 10;
 
-let gameInterval = null;
-
-
-function startGame(){
-
-score = 0;
-
-gameTimer = 10;
-
-gameRunning = true;
+    gameRunning =
+        true;
 
 
-document.getElementById(
-"score"
-).textContent =
-"0";
+    document.getElementById(
+        "score"
+    ).textContent =
+        "0";
 
 
-document.getElementById(
-"gameTime"
-).textContent =
-"10";
+    document.getElementById(
+        "gameTime"
+    ).textContent =
+        "10";
 
 
-clearInterval(
-gameInterval
-);
+    clearInterval(
+        gameInterval
+    );
 
 
-gameInterval =
-setInterval(
-() => {
+    gameInterval =
+        setInterval(
+            () => {
 
-gameTimer--;
-
-document.getElementById(
-"gameTime"
-).textContent =
-gameTimer;
+                gameTimer--;
 
 
-if(gameTimer <= 0){
-
-clearInterval(
-gameInterval
-);
-
-gameRunning =
-false;
+                document.getElementById(
+                    "gameTime"
+                ).textContent =
+                    gameTimer;
 
 
-alert(
-"GAME OVER\n\nScore: " +
-score
-);
+                if (
+                    gameTimer <= 0
+                ) {
 
-}
+                    clearInterval(
+                        gameInterval
+                    );
 
-},
-1000
-);
+
+                    gameRunning =
+                        false;
+
+
+                    alert(
+                        "GAME OVER\n\nScore: " +
+                        score
+                    );
+
+                }
+
+            },
+            1000
+        );
 
 }
 
 
-function gameClick(){
+function gameClick() {
 
-if(!gameRunning){
+    if (
+        !gameRunning
+    ) {
 
-return;
+        return;
 
-}
-
-
-score++;
-
-
-document.getElementById(
-"score"
-).textContent =
-score;
+    }
 
 
-document.getElementById(
-"clickTarget"
-).style.transform =
-`translate(
-${Math.random()*120-60}px,
-${Math.random()*100-50}px
-)`;
+    score++;
+
+
+    document.getElementById(
+        "score"
+    ).textContent =
+        score;
+
+
+    document.getElementById(
+        "clickTarget"
+    ).style.transform =
+        `translate(
+            ${Math.random() * 120 - 60}px,
+            ${Math.random() * 100 - 50}px
+        )`;
 
 }
 
@@ -4076,84 +4733,122 @@ ${Math.random()*100-50}px
    CLOCK
 ========================================================= */
 
-function updateClock(){
+function updateClock() {
 
-document.getElementById(
-"clock"
-).textContent =
-new Date()
-.toLocaleTimeString(
-"fr-FR"
-);
+    document.getElementById(
+        "clock"
+    ).textContent =
+        new Date()
+            .toLocaleTimeString(
+                "fr-FR"
+            );
 
 }
 
 
 setInterval(
-updateClock,
-1000
+    updateClock,
+    1000
 );
+
 
 updateClock();
 
 
 /* =========================================================
-   START
+   STARTUP
 ========================================================= */
 
-restoreAccount();
+async function init() {
 
-updateAccountUI();
+    console.log(
+        "DAVID RANDOM V2"
+    );
 
-checkServer();
+
+    console.log(
+        "API:",
+        API
+    );
 
 
-if(token){
+    console.log(
+        "WSS:",
+        SOCKET_URL
+    );
 
-connectSocket();
+
+    /*
+       1. Restaurer immédiatement
+          token + utilisateur.
+    */
+
+    restoreAccount();
+
+
+    /*
+       2. Afficher immédiatement
+          le compte sauvegardé.
+    */
+
+    updateAccountUI();
+
+
+    /*
+       3. Vérifier le serveur.
+    */
+
+    checkServer();
+
+
+    /*
+       4. Vérifier réellement
+          la session auprès du serveur.
+    */
+
+    const loggedIn =
+        await restoreSession();
+
+
+    if (loggedIn) {
+
+        console.log(
+            "[AUTH] Session active après rechargement."
+        );
+
+
+        /*
+           5. Connecter le WebSocket
+              avec le token restauré.
+        */
+
+        connectSocket();
+
+    } else {
+
+        console.log(
+            "[AUTH] Aucun compte connecté."
+        );
+
+    }
+
+
+    console.log(
+        "Account token:",
+        token
+            ? "PRESENT"
+            : "NONE"
+    );
 
 }
 
 
-console.log(
-"DAVID RANDOM V2",
-"API:",
-API,
-"WSS:",
-SOCKET_URL,
-"Account token:",
-token
-?
-"PRESENT"
-:
-"NONE"
-);
+/*
+   DOM déjà chargé puisque le script
+   est à la fin du <body>.
+*/
 
-window.addEventListener(
-    "DOMContentLoaded",
-    async () => {
-
-        const loggedIn =
-            await restoreSession();
-
-        if (loggedIn) {
-
-            console.log(
-                "[AUTH] Connecté après rechargement"
-            );
-
-            connectWebSocket();
-
-        } else {
-
-            console.log(
-                "[AUTH] Pas de session"
-            );
-
-        }
-
-    }
-);
+init();
 
 </script>
 
