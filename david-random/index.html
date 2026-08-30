@@ -142,22 +142,38 @@ color:#001800
 }
 
 .marquee{
-overflow:hidden;
-white-space:nowrap;
-border-top:1px dashed var(--dark);
-border-bottom:1px dashed var(--dark);
-padding:7px;
-color:var(--soft)
+    overflow:hidden;
+    white-space:nowrap;
+    border-top:1px dashed var(--dark);
+    border-bottom:1px dashed var(--dark);
+    padding:7px;
+    color:var(--soft);
 }
 
 .marquee span{
-display:inline-block;
-animation:scrollText 18s linear infinite
+    display:inline-block;
+    white-space:nowrap;
+    transform:translateX(100%);
+    animation:scrollText 9s linear infinite;
+}
+
+.marquee-random{
+    border-top:0;
+    color:var(--green);
+}
+
+.marquee-random span{
+    animation-duration:9s;
 }
 
 @keyframes scrollText{
-from{transform:translateX(100%)}
-to{transform:translateX(-100%)}
+    0%{
+        transform:translateX(100%);
+    }
+
+    100%{
+        transform:translateX(-100%);
+    }
 }
 
 .layout{
@@ -447,6 +463,8 @@ background:#000
 width:100%
 }
 
+/* ================= CHAT ================= */
+
 .chat-box{
 height:420px;
 overflow-y:auto;
@@ -475,18 +493,335 @@ font-size:11px
 .chat-form{
 display:flex;
 gap:5px;
-margin-top:10px
+margin-top:10px;
+align-items:flex-start
 }
 
-.chat-form input{
+.chat-input-area{
+flex:1;
+display:flex;
+gap:5px;
+position:relative
+}
+
+.chat-input-area input{
 margin:0;
 flex:1
 }
 
-@media(max-width:700px){
-.chat-form{flex-direction:column}
-.chat-form button{width:100%}
+/* ================= EMOTES ================= */
+
+.emote-button{
+min-width:90px;
+height:40px;
+padding:8px 10px;
+border:1px solid var(--green);
+background:#0a160a;
+color:var(--green);
+cursor:pointer;
+font-weight:bold
 }
+
+.emote-button:hover,
+.emote-button.active{
+background:var(--green);
+color:#001500
+}
+
+.emote-picker{
+display:none;
+position:absolute;
+bottom:48px;
+left:0;
+width:min(520px,90vw);
+max-height:300px;
+overflow-y:auto;
+padding:10px;
+border:2px solid var(--dark);
+background:#050905;
+box-shadow:
+0 0 20px rgba(0,255,50,.15),
+inset 0 0 20px rgba(0,255,50,.04);
+z-index:100
+}
+
+.emote-picker.open{
+display:block
+}
+
+.emote-title{
+color:var(--green);
+font-weight:bold;
+padding-bottom:8px;
+margin-bottom:10px;
+border-bottom:1px dashed var(--dark)
+}
+
+.emote-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+gap:8px
+}
+
+.emote-item{
+min-height:85px;
+padding:6px;
+border:1px solid #245b2c;
+background:#080d08;
+color:var(--soft);
+cursor:pointer;
+text-align:center
+}
+
+.emote-item:hover{
+border-color:var(--green);
+background:#102010;
+color:#fff
+}
+
+.emote-item img{
+display:block;
+width:55px;
+height:55px;
+object-fit:contain;
+margin:0 auto 5px;
+background:#000
+}
+
+.emote-name{
+font-size:10px;
+word-break:break-all
+}
+
+/* Emotes affichées dans le chat */
+
+.chat-emote{
+display:inline-block;
+width:70px;
+height:70px;
+object-fit:contain;
+vertical-align:middle;
+margin:3px;
+background:#000;
+border:1px solid #245b2c
+}
+
+.chat-text{
+white-space:pre-wrap
+}
+
+@media(max-width:700px){
+
+.chat-form{
+flex-direction:column
+}
+
+.chat-input-area{
+width:100%
+}
+
+.chat-form button{
+width:100%
+}
+
+.emote-button{
+width:100%
+}
+
+.emote-picker{
+bottom:90px
+}
+
+}
+
+/* =========================================================
+   RANDOM GALLERY
+========================================================= */
+
+.random-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(150px,1fr)
+        );
+
+    gap:10px;
+
+    margin-top:20px;
+
+}
+
+
+.random-card{
+
+    position:relative;
+
+    height:150px;
+
+    overflow:hidden;
+
+    border:2px solid var(--dark);
+
+    background:#020502;
+
+    cursor:pointer;
+
+    transition:
+        transform .15s,
+        border-color .15s,
+        box-shadow .15s;
+
+}
+
+
+.random-card:hover{
+
+    border-color:var(--green);
+
+    transform:scale(1.03);
+
+    box-shadow:
+        0 0 15px
+        rgba(53,255,90,.25);
+
+}
+
+
+.random-card img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
+    display:block;
+
+}
+
+
+.random-card-title{
+
+    position:absolute;
+
+    left:0;
+    right:0;
+    bottom:0;
+
+    padding:7px;
+
+    background:
+        linear-gradient(
+            transparent,
+            rgba(0,0,0,.95)
+        );
+
+    color:var(--green);
+
+    font-size:12px;
+
+    padding-top:25px;
+
+    pointer-events:none;
+
+}
+
+
+.random-card-number{
+
+    position:absolute;
+
+    top:5px;
+    left:5px;
+
+    padding:3px 6px;
+
+    background:#020502;
+
+    border:1px solid var(--dark);
+
+    color:var(--green);
+
+    font-size:10px;
+
+    pointer-events:none;
+
+}
+
+
+@media(max-width:700px){
+
+    .random-grid{
+
+        grid-template-columns:
+            repeat(
+                2,
+                1fr
+            );
+
+    }
+
+    .random-card{
+
+        height:130px;
+
+    }
+
+}
+
+
+@media(max-width:400px){
+
+    .random-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+/* =========================================================
+   GLITCH EFFECT
+========================================================= */
+
+.random-glitch{
+
+    animation:
+        randomGlitch .08s
+        steps(2)
+        infinite;
+
+}
+
+
+@keyframes randomGlitch{
+
+    0%{
+        transform:translate(0,0);
+    }
+
+    25%{
+        transform:translate(-5px,2px);
+    }
+
+    50%{
+        transform:translate(5px,-2px);
+    }
+
+    75%{
+        transform:translate(-2px,-3px);
+    }
+
+    100%{
+        transform:translate(0,0);
+    }
+
+}
+
+/* ================= FIN CHAT ================= */
 
 .terminal{
 min-height:380px;
@@ -590,6 +925,7 @@ ACCOUNT:
 <button data-page="chat">[ CHAT ]</button>
 <button data-page="media">[ MEDIA ]</button>
 <button data-page="terminal">[ TERMINAL ]</button>
+<button data-page="random">[ RANDOM ]</button>
 <button data-page="games">[ GAMES ]</button>
 <button data-page="guestbook">[ GUESTBOOK ]</button>
 <button data-page="account">[ ACCOUNT ]</button>
@@ -598,15 +934,25 @@ ACCOUNT:
 </nav>
 
 <div class="marquee">
-<span>
-*** DAVID RANDOM ***
-*** RENDER SERVER ***
-*** GITHUB STORAGE ***
-*** WSS CHAT ***
-*** ACCOUNT SYSTEM ***
-*** CHAT-LOG ***
-*** RANDOM INTERNET TERMINAL ***
-</span>
+
+    <span>
+        *** DAVID RANDOM ***
+        *** RENDER SERVER ***
+        *** GITHUB STORAGE ***
+        *** WSS CHAT ***
+        *** ACCOUNT SYSTEM ***
+        *** CHAT-LOG ***
+        *** RANDOM INTERNET TERMINAL ***
+    </span>
+
+</div>
+
+<div class="marquee marquee-random">
+
+    <span id="randomMarquee">
+        *** INITIALIZING RANDOM MESSAGE ***
+    </span>
+
 </div>
 
 <div class="layout">
@@ -619,6 +965,7 @@ ACCOUNT:
 <div class="side-link" data-page="chat">▣ Chat</div>
 <div class="side-link" data-page="media">▧ Media</div>
 <div class="side-link" data-page="terminal">$_ Terminal</div>
+<div class="side-link" data-page="random">☠ Random</div>
 <div class="side-link" data-page="games">★ Games</div>
 <div class="side-link" data-page="guestbook">✎ Guestbook</div>
 <div class="side-link" data-page="account">♙ Account</div>
@@ -672,13 +1019,16 @@ GUEST
 /music/<br>
 /video/<br>
 /chat-log/<br>
-/accounts/
+/accounts/<br>
+/gif/
 
 </div>
 
 </aside>
 
 <main>
+
+<!-- HOME -->
 
 <section class="page active" id="home">
 
@@ -759,6 +1109,9 @@ OPEN
 
 </section>
 
+
+<!-- CHAT -->
+
 <section class="page" id="chat">
 
 <div class="panel">
@@ -785,6 +1138,8 @@ Initialisation du chat...
 
 <div class="chat-form">
 
+<div class="chat-input-area">
+
 <input
 class="retro-input"
 id="chatUsername"
@@ -800,7 +1155,39 @@ maxlength="500"
 autocomplete="off"
 >
 
-<button class="retro-btn" onclick="sendChat()">
+<!-- EMOTE PICKER -->
+
+<div
+class="emote-picker"
+id="emotePicker"
+>
+
+<div class="emote-title">
+EMOTES // SELECT EMOTE
+</div>
+
+<div
+class="emote-grid"
+id="emoteGrid"
+>
+</div>
+
+</div>
+
+</div>
+
+<button
+class="emote-button"
+id="emoteButton"
+onclick="toggleEmotePicker()"
+>
+[ EMOTES ]
+</button>
+
+<button
+class="retro-btn"
+onclick="sendChat()"
+>
 SEND
 </button>
 
@@ -810,11 +1197,18 @@ SEND
 Connexion WSS...
 </p>
 
+<p class="muted">
+Clique sur <b>[ EMOTES ]</b> pour insérer une emote.
+</p>
+
 </div>
 
 </div>
 
 </section>
+
+
+<!-- MEDIA -->
 
 <section class="page" id="media">
 
@@ -949,6 +1343,9 @@ Ouvre cette page pour charger les vidéos.
 
 </section>
 
+
+<!-- TERMINAL -->
+
 <section class="page" id="terminal">
 
 <div class="panel">
@@ -969,6 +1366,7 @@ GitHub storage detected.
 WSS system detected.
 ACCOUNT SYSTEM detected.
 CHAT-LOG SYSTEM detected.
+EMOTE SYSTEM detected.
 SYSTEM READY.
 Type "help".
 </div>
@@ -995,6 +1393,9 @@ spellcheck="false"
 </div>
 
 </section>
+
+
+<!-- GAMES -->
 
 <section class="page" id="games">
 
@@ -1042,6 +1443,9 @@ START GAME
 </div>
 
 </section>
+
+
+<!-- GUESTBOOK -->
 
 <section class="page" id="guestbook">
 
@@ -1095,6 +1499,9 @@ Bienvenue !
 </div>
 
 </section>
+
+
+<!-- ACCOUNT -->
 
 <section class="page" id="account">
 
@@ -1322,6 +1729,38 @@ SESSION ACTIVE
 
 </section>
 
+<section class="page" id="random">
+
+    <div class="panel">
+
+        <div class="panel-title">
+            RANDOM // INTERNET GALLERY
+        </div>
+
+        <div class="panel-content">
+
+            <p>
+                <span class="prompt">root@david:~$</span>
+                random --load 100
+            </p>
+
+            <p class="muted">
+                Collection aléatoire // clique sur une case à tes risques et périls.
+            </p>
+
+            <div
+                id="randomGrid"
+                class="random-grid"
+            ></div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ABOUT -->
+
 <section class="page" id="about">
 
 <div class="panel">
@@ -1343,6 +1782,7 @@ ABOUT // README.TXT
 ║ WebSocket : WSS                  ║
 ║ Accounts : GitHub                ║
 ║ Chat logs : GitHub               ║
+║ Emotes : GitHub                  ║
 ║                                  ║
 ║ STATUS : ONLINE                  ║
 ╚══════════════════════════════════╝
@@ -1384,39 +1824,376 @@ END OF TRANSMISSION
 <script>
 "use strict";
 
+
 /* =========================================================
    CONFIG
 ========================================================= */
 
-const API = "https://david-random.onrender.com";
-const SOCKET_URL = "wss://david-random.onrender.com/ws";
+const API =
+"https://david-random.onrender.com";
 
-const TOKEN_KEY = "david_random_token";
-const USER_KEY = "david_random_user";
+const SOCKET_URL =
+"wss://david-random.onrender.com/ws";
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const TOKEN_KEY =
+"david_random_token";
+
+const USER_KEY =
+"david_random_user";
+
+const MAX_FILE_SIZE =
+25 * 1024 * 1024;
 
 
 /* =========================================================
-   AUTH STATE
+   EMOTES
 ========================================================= */
 
-/*
-   IMPORTANT :
-   Il n'y a qu'UNE seule déclaration de token
-   et UNE seule déclaration de currentUser.
-*/
+const EMOTES = {
 
-let token = localStorage.getItem(TOKEN_KEY) || null;
+nyan_cat:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/nyan-cat.gif",
+
+pepe_banger:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-banger.gif",
+
+pepe_chair:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-chair.gif",
+
+pepe_cross:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-cross.png",
+
+pepe_hacker:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-hacker.gif",
+
+pepe_rain:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-rain.gif",
+
+pepe_rich:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-rich.gif",
+
+pepe_uwu:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-uwu.gif",
+
+pepe_welcome:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-welcome.gif",
+
+wojak_cry:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-cry.png",
+
+wojak_dark:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-dark.png",
+
+wojak_devil:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-devil.png",
+
+wojak_pokerface:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-pokerface.png",
+
+wojak_tired:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-tired.png",
+
+wojak:
+"https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak.png"
+
+};
+
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+let token =
+localStorage.getItem(TOKEN_KEY) || null;
+
 let currentUser = null;
 
 let socket = null;
+
 let socketConnected = false;
+
 let socketReconnectTimer = null;
 
 
 /* =========================================================
-   RESTORE SAVED USER
+   EMOTE PICKER
+========================================================= */
+
+function initEmotePicker(){
+
+    const grid =
+        document.getElementById("emoteGrid");
+
+    if(!grid) return;
+
+    grid.innerHTML = "";
+
+    Object.entries(EMOTES).forEach(
+        ([name,url]) => {
+
+            const item =
+                document.createElement("div");
+
+            item.className =
+                "emote-item";
+
+            item.title =
+                ":" + name + ":";
+
+            item.innerHTML = `
+                <img
+                    src="${url}"
+                    alt="${name}"
+                    loading="lazy"
+                >
+
+                <div class="emote-name">
+                    :${name}:
+                </div>
+            `;
+
+            item.addEventListener(
+                "click",
+                () => {
+
+                    insertEmote(name);
+
+                }
+            );
+
+            grid.appendChild(item);
+
+        }
+    );
+
+}
+
+
+function toggleEmotePicker(){
+
+    const picker =
+        document.getElementById(
+            "emotePicker"
+        );
+
+    const button =
+        document.getElementById(
+            "emoteButton"
+        );
+
+    if(!picker) return;
+
+    const open =
+        picker.classList.toggle("open");
+
+    if(button){
+
+        button.classList.toggle(
+            "active",
+            open
+        );
+
+    }
+
+}
+
+
+function closeEmotePicker(){
+
+    const picker =
+        document.getElementById(
+            "emotePicker"
+        );
+
+    const button =
+        document.getElementById(
+            "emoteButton"
+        );
+
+    if(picker){
+
+        picker.classList.remove("open");
+
+    }
+
+    if(button){
+
+        button.classList.remove("active");
+
+    }
+
+}
+
+
+function insertEmote(name){
+
+    const input =
+        document.getElementById(
+            "chatMessage"
+        );
+
+    if(!input) return;
+
+    const code =
+        ":" + name + ":";
+
+
+    const start =
+        input.selectionStart ??
+        input.value.length;
+
+    const end =
+        input.selectionEnd ??
+        input.value.length;
+
+
+    input.value =
+        input.value.slice(
+            0,
+            start
+        ) +
+        code +
+        input.value.slice(
+            end
+        );
+
+
+    const cursor =
+        start +
+        code.length;
+
+
+    input.focus();
+
+    input.setSelectionRange(
+        cursor,
+        cursor
+    );
+
+
+    closeEmotePicker();
+
+}
+
+
+/* =========================================================
+   EMOTE RENDER
+========================================================= */
+
+function renderEmotes(text){
+
+    const fragment =
+        document.createDocumentFragment();
+
+
+    const regex =
+        /:([a-zA-Z0-9_-]+):/g;
+
+
+    let lastIndex = 0;
+
+    let match;
+
+
+    while(
+        (match =
+            regex.exec(text))
+        !== null
+    ){
+
+        const before =
+            text.slice(
+                lastIndex,
+                match.index
+            );
+
+
+        if(before){
+
+            fragment.appendChild(
+                document.createTextNode(
+                    before
+                )
+            );
+
+        }
+
+
+        const name =
+            match[1];
+
+
+        const url =
+            EMOTES[name];
+
+
+        if(url){
+
+            const img =
+                document.createElement(
+                    "img"
+                );
+
+            img.className =
+                "chat-emote";
+
+            img.src =
+                url;
+
+            img.alt =
+                ":" + name + ":";
+
+            img.title =
+                ":" + name + ":";
+
+            img.loading =
+                "lazy";
+
+            fragment.appendChild(
+                img
+            );
+
+        }else{
+
+            fragment.appendChild(
+                document.createTextNode(
+                    match[0]
+                )
+            );
+
+        }
+
+
+        lastIndex =
+            regex.lastIndex;
+
+    }
+
+
+    const remaining =
+        text.slice(
+            lastIndex
+        );
+
+
+    if(remaining){
+
+        fragment.appendChild(
+            document.createTextNode(
+                remaining
+            )
+        );
+
+    }
+
+
+    return fragment;
+
+}
+
+
+/* =========================================================
+   RESTORE USER
 ========================================================= */
 
 function restoreSavedUser(){
@@ -1424,11 +2201,14 @@ function restoreSavedUser(){
     try{
 
         const saved =
-            localStorage.getItem(USER_KEY);
+            localStorage.getItem(
+                USER_KEY
+            );
 
         if(!saved){
 
             currentUser = null;
+
             return;
 
         }
@@ -1439,11 +2219,13 @@ function restoreSavedUser(){
     }catch(error){
 
         console.error(
-            "[AUTH] Saved user corrupted:",
+            "[AUTH]",
             error
         );
 
-        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(
+            USER_KEY
+        );
 
         currentUser = null;
 
@@ -1453,16 +2235,20 @@ function restoreSavedUser(){
 
 
 /* =========================================================
-   SAVE SESSION
+   SAVE ACCOUNT
 ========================================================= */
 
-function saveAccount(newToken,newUser){
+function saveAccount(
+    newToken,
+    newUser
+){
 
     token =
         newToken || null;
 
     currentUser =
         newUser || null;
+
 
     if(token){
 
@@ -1479,11 +2265,14 @@ function saveAccount(newToken,newUser){
 
     }
 
+
     if(currentUser){
 
         localStorage.setItem(
             USER_KEY,
-            JSON.stringify(currentUser)
+            JSON.stringify(
+                currentUser
+            )
         );
 
     }else{
@@ -1504,7 +2293,9 @@ function saveAccount(newToken,newUser){
 function escapeHTML(value){
 
     const div =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     div.textContent =
         String(value ?? "");
@@ -1514,7 +2305,9 @@ function escapeHTML(value){
 }
 
 
-function createDefaultAvatar(username){
+function createDefaultAvatar(
+    username
+){
 
     return (
         "https://ui-avatars.com/api/?" +
@@ -1529,18 +2322,18 @@ function createDefaultAvatar(username){
 
 
 /* =========================================================
-   API REQUEST
+   API
 ========================================================= */
 
-async function apiRequest(endpoint,options={}){
+async function apiRequest(
+    endpoint,
+    options={}
+){
 
     const headers = {
         ...(options.headers || {})
     };
 
-    /*
-       Token ajouté automatiquement.
-    */
 
     if(token){
 
@@ -1548,6 +2341,7 @@ async function apiRequest(endpoint,options={}){
             "Bearer " + token;
 
     }
+
 
     const response =
         await fetch(
@@ -1583,7 +2377,8 @@ async function apiRequest(endpoint,options={}){
         throw new Error(
             data?.error ||
             data?.message ||
-            "HTTP " + response.status
+            "HTTP " +
+            response.status
         );
 
     }
@@ -1631,7 +2426,10 @@ function updateAccountUI(){
         );
 
 
-    if(currentUser && token){
+    if(
+        currentUser &&
+        token
+    ){
 
         out.style.display =
             "none";
@@ -1653,7 +2451,9 @@ function updateAccountUI(){
 
         const avatar =
             profile ||
-            createDefaultAvatar(username);
+            createDefaultAvatar(
+                username
+            );
 
 
         document.getElementById(
@@ -1667,7 +2467,8 @@ function updateAccountUI(){
         ).textContent =
             currentUser.id
             ?
-            "ID: " + currentUser.id
+            "ID: " +
+            currentUser.id
             :
             "ACCOUNT ACTIVE";
 
@@ -1736,7 +2537,6 @@ function updateAccountUI(){
         chatUsername.disabled =
             true;
 
-
     }else{
 
         out.style.display =
@@ -1776,15 +2576,20 @@ function updateAccountUI(){
    AUTH STATUS
 ========================================================= */
 
-function setAuthStatus(text,error=false){
+function setAuthStatus(
+    text,
+    error=false
+){
 
     const status =
         document.getElementById(
             "authStatus"
         );
 
+
     status.textContent =
         "STATUS: " + text;
+
 
     status.className =
         error
@@ -1800,15 +2605,20 @@ function setAuthStatus(text,error=false){
    AVATAR STATUS
 ========================================================= */
 
-function setAvatarStatus(text,error=false){
+function setAvatarStatus(
+    text,
+    error=false
+){
 
     const status =
         document.getElementById(
             "avatarStatus"
         );
 
+
     status.textContent =
         "STATUS: " + text;
+
 
     status.className =
         error
@@ -1892,7 +2702,8 @@ async function registerAccount(){
                     body:JSON.stringify({
                         username,
                         password,
-                        profile_picture:profile
+                        profile_picture:
+                            profile
                     })
                 }
             );
@@ -1936,6 +2747,7 @@ async function registerAccount(){
             error
         );
 
+
         setAuthStatus(
             error.message,
             true
@@ -1964,7 +2776,10 @@ async function loginAccount(){
         ).value;
 
 
-    if(!username || !password){
+    if(
+        !username ||
+        !password
+    ){
 
         return setAuthStatus(
             "USERNAME AND PASSWORD REQUIRED",
@@ -2038,6 +2853,7 @@ async function loginAccount(){
             error
         );
 
+
         setAuthStatus(
             error.message,
             true
@@ -2049,34 +2865,23 @@ async function loginAccount(){
 
 
 /* =========================================================
-   RESTORE SESSION AFTER F5
+   RESTORE SESSION
 ========================================================= */
 
 async function restoreSession(){
 
-    /*
-       On relit TOUJOURS le token depuis localStorage.
-    */
-
     token =
-        localStorage.getItem(TOKEN_KEY) ||
+        localStorage.getItem(
+            TOKEN_KEY
+        ) ||
         null;
 
 
     if(!token){
 
-        console.log(
-            "[AUTH] Aucun token sauvegardé."
-        );
-
         return false;
 
     }
-
-
-    console.log(
-        "[AUTH] Vérification de la session..."
-    );
 
 
     try{
@@ -2108,17 +2913,13 @@ async function restoreSession(){
 
         localStorage.setItem(
             USER_KEY,
-            JSON.stringify(currentUser)
+            JSON.stringify(
+                currentUser
+            )
         );
 
 
         updateAccountUI();
-
-
-        console.log(
-            "[AUTH] Session active après rechargement:",
-            currentUser.username
-        );
 
 
         return true;
@@ -2127,22 +2928,15 @@ async function restoreSession(){
     }catch(error){
 
         console.error(
-            "[AUTH] Session verification failed:",
+            "[AUTH]",
             error
         );
 
 
-        /*
-           IMPORTANT :
-           On NE supprime PAS le token pour une
-           erreur réseau / serveur temporaire.
-
-           On le supprime uniquement si le serveur
-           répond explicitement 401/403.
-        */
-
         const message =
-            String(error.message || "");
+            String(
+                error.message || ""
+            );
 
 
         const invalidToken =
@@ -2155,12 +2949,8 @@ async function restoreSession(){
 
         if(invalidToken){
 
-            console.warn(
-                "[AUTH] Token réellement invalide."
-            );
-
-
             token = null;
+
             currentUser = null;
 
 
@@ -2181,19 +2971,10 @@ async function restoreSession(){
         }
 
 
-        /*
-           Si Render répond mal ou est temporairement
-           indisponible, on garde la session locale.
-        */
-
-        console.warn(
-            "[AUTH] Erreur temporaire API. Token conservé."
-        );
-
-
         restoreSavedUser();
 
         updateAccountUI();
+
 
         return Boolean(
             token &&
@@ -2206,12 +2987,15 @@ async function restoreSession(){
 
 
 /* =========================================================
-   PREVIEW AVATAR
+   AVATAR
 ========================================================= */
 
 function previewAvatar(){
 
-    if(!currentUser || !token){
+    if(
+        !currentUser ||
+        !token
+    ){
 
         return setAvatarStatus(
             "LOGIN REQUIRED",
@@ -2284,13 +3068,12 @@ function previewAvatar(){
 }
 
 
-/* =========================================================
-   CHANGE PROFILE PICTURE
-========================================================= */
-
 async function changeProfilePicture(){
 
-    if(!currentUser || !token){
+    if(
+        !currentUser ||
+        !token
+    ){
 
         return setAvatarStatus(
             "LOGIN REQUIRED",
@@ -2304,16 +3087,6 @@ async function changeProfilePicture(){
         document.getElementById(
             "newProfilePicture"
         );
-
-
-    if(!input){
-
-        return setAvatarStatus(
-            "PROFILE PICTURE INPUT NOT FOUND",
-            true
-        );
-
-    }
 
 
     const url =
@@ -2340,26 +3113,12 @@ async function changeProfilePicture(){
     }
 
 
-    if(url.length > 2000){
-
-        return setAvatarStatus(
-            "PROFILE PICTURE URL TOO LONG",
-            true
-        );
-
-    }
-
-
     setAvatarStatus(
         "UPDATING PROFILE PICTURE..."
     );
 
 
     try{
-
-        /*
-           Endpoint utilisé par le serveur V2.
-        */
 
         const data =
             await apiRequest(
@@ -2379,35 +3138,19 @@ async function changeProfilePicture(){
             );
 
 
-        const updatedUser =
+        currentUser =
             data.user ||
-            data.account ||
-            null;
-
-
-        if(updatedUser){
-
-            currentUser =
-                updatedUser;
-
-        }else{
-
-            /*
-               Si le serveur confirme simplement
-               la modification sans renvoyer user.
-            */
-
-            currentUser = {
+            {
                 ...currentUser,
                 profile_picture:url
             };
 
-        }
-
 
         localStorage.setItem(
             USER_KEY,
-            JSON.stringify(currentUser)
+            JSON.stringify(
+                currentUser
+            )
         );
 
 
@@ -2422,14 +3165,13 @@ async function changeProfilePicture(){
     }catch(error){
 
         console.error(
-            "[PROFILE PICTURE]",
+            "[PROFILE]",
             error
         );
 
 
         setAvatarStatus(
-            error.message ||
-            "PROFILE PICTURE UPDATE FAILED",
+            error.message,
             true
         );
 
@@ -2468,6 +3210,7 @@ async function logoutAccount(){
 
 
     token = null;
+
     currentUser = null;
 
 
@@ -2483,9 +3226,7 @@ async function logoutAccount(){
     if(socket){
 
         try{
-
             socket.close();
-
         }catch{}
 
     }
@@ -2508,6 +3249,7 @@ async function logoutAccount(){
 
 
     updateSocketUI();
+
     updateAccountUI();
 
 
@@ -2524,7 +3266,7 @@ async function logoutAccount(){
 
 
 /* =========================================================
-   SERVER STATUS
+   SERVER
 ========================================================= */
 
 async function checkServer(){
@@ -2533,10 +3275,7 @@ async function checkServer(){
 
         const data =
             await apiRequest(
-                "/api/status",
-                {
-                    method:"GET"
-                }
+                "/api/status"
             );
 
 
@@ -2628,7 +3367,7 @@ async function checkServer(){
 
 
 /* =========================================================
-   WSS UI
+   SOCKET UI
 ========================================================= */
 
 function updateSocketUI(){
@@ -2656,10 +3395,6 @@ function updateSocketUI(){
 
 }
 
-
-/* =========================================================
-   WSS RECONNECT
-========================================================= */
 
 function scheduleSocketReconnect(){
 
@@ -2690,16 +3425,12 @@ function scheduleSocketReconnect(){
 
 
 /* =========================================================
-   WSS CONNECT
+   SOCKET
 ========================================================= */
 
 function connectSocket(){
 
     if(!token){
-
-        console.log(
-            "[WSS] Aucun token."
-        );
 
         return;
 
@@ -2722,11 +3453,6 @@ function connectSocket(){
     }
 
 
-    console.log(
-        "[WSS] Connecting..."
-    );
-
-
     try{
 
         socket =
@@ -2739,7 +3465,7 @@ function connectSocket(){
     }catch(error){
 
         console.error(
-            "[WSS] Creation failed:",
+            "[WSS]",
             error
         );
 
@@ -2763,11 +3489,6 @@ function connectSocket(){
             "WSS connecté ✓"
         );
 
-
-        console.log(
-            "[WSS] Connected."
-        );
-
     };
 
 
@@ -2781,7 +3502,10 @@ function connectSocket(){
                 );
 
 
-            if(data.type === "welcome"){
+            if(
+                data.type ===
+                "welcome"
+            ){
 
                 if(
                     data.authenticated &&
@@ -2820,7 +3544,8 @@ function connectSocket(){
 
 
             else if(
-                data.type === "users"
+                data.type ===
+                "users"
             ){
 
                 document.getElementById(
@@ -2837,7 +3562,8 @@ function connectSocket(){
             ){
 
                 displayChatMessage(
-                    data.data || data
+                    data.data ||
+                    data
                 );
 
             }
@@ -2862,8 +3588,7 @@ function connectSocket(){
 
             console.error(
                 "[WSS JSON]",
-                error,
-                event.data
+                error
             );
 
         }
@@ -2878,13 +3603,6 @@ function connectSocket(){
 
 
         updateSocketUI();
-
-
-        console.warn(
-            "[WSS] Closed:",
-            event.code,
-            event.reason
-        );
 
 
         if(token){
@@ -2905,14 +3623,13 @@ function connectSocket(){
         updateSocketUI();
 
 
-        console.error(
-            "[WSS] Error:",
-            error
-        );
-
-
         updateChatStatus(
             "ERREUR WSS"
+        );
+
+        console.error(
+            "[WSS]",
+            error
         );
 
     };
@@ -2930,6 +3647,7 @@ function updateChatStatus(text){
         document.getElementById(
             "chatStatus"
         );
+
 
     if(element){
 
@@ -2971,6 +3689,10 @@ function showChatLoginRequired(){
 }
 
 
+/* =========================================================
+   DISPLAY CHAT MESSAGE
+========================================================= */
+
 function displayChatMessage(data){
 
     const box =
@@ -2994,8 +3716,7 @@ function displayChatMessage(data){
         data.time;
 
 
-    let formattedTime =
-        "";
+    let formattedTime = "";
 
 
     if(time){
@@ -3004,7 +3725,11 @@ function displayChatMessage(data){
             new Date(time);
 
 
-        if(!isNaN(date.getTime())){
+        if(
+            !isNaN(
+                date.getTime()
+            )
+        ){
 
             formattedTime =
                 date.toLocaleTimeString(
@@ -3035,12 +3760,43 @@ function displayChatMessage(data){
         }
 
         <br>
+    `;
 
-        ${escapeHTML(
+
+    /*
+       IMPORTANT :
+       Le message n'est PAS injecté directement
+       en HTML.
+
+       On utilise renderEmotes() pour convertir
+       uniquement les codes connus.
+    */
+
+    const message =
+        String(
             data.message ||
             ""
-        )}
-    `;
+        );
+
+
+    const content =
+        document.createElement(
+            "span"
+        );
+
+
+    content.className =
+        "chat-text";
+
+
+    content.appendChild(
+        renderEmotes(message)
+    );
+
+
+    element.appendChild(
+        content
+    );
 
 
     box.appendChild(
@@ -3064,7 +3820,9 @@ function clearChat(){
 }
 
 
-function addSystemMessage(message){
+function addSystemMessage(
+    message
+){
 
     const box =
         document.getElementById(
@@ -3088,9 +3846,29 @@ function addSystemMessage(message){
         </span>
 
         <br>
-
-        ${escapeHTML(message)}
     `;
+
+
+    const text =
+        document.createElement(
+            "span"
+        );
+
+
+    text.className =
+        "chat-text";
+
+
+    text.appendChild(
+        renderEmotes(
+            message
+        )
+    );
+
+
+    element.appendChild(
+        text
+    );
 
 
     box.appendChild(
@@ -3108,37 +3886,47 @@ function addSystemMessage(message){
    CHAT HISTORY
 ========================================================= */
 
-async function loadChatHistory() {
+async function loadChatHistory(){
 
-    if (
+    if(
         !currentUser ||
         !token
-    ) {
+    ){
 
         showChatLoginRequired();
 
         return;
+
     }
 
+
     clearChat();
+
 
     addSystemMessage(
         "Chargement de chat-log/..."
     );
 
-    try {
+
+    try{
 
         const list =
             await apiRequest(
                 "/api/chat/logs"
             );
 
-        const logs =
-            Array.isArray(list.logs)
-                ? list.logs
-                : [];
 
-        if (!logs.length) {
+        const logs =
+            Array.isArray(
+                list.logs
+            )
+            ?
+            list.logs
+            :
+            [];
+
+
+        if(!logs.length){
 
             clearChat();
 
@@ -3151,27 +3939,39 @@ async function loadChatHistory() {
             );
 
             return;
+
         }
+
 
         let loadedMessages = 0;
 
-        for (
+
+        for(
             const log of logs
-        ) {
+        ){
 
             const match =
                 String(
-                    log.name || ""
-                ).match(/(\d+)/);
+                    log.name ||
+                    ""
+                ).match(
+                    /(\d+)/
+                );
+
 
             const number =
-                match && match[1];
+                match &&
+                match[1];
 
-            if (!number) {
+
+            if(!number){
+
                 continue;
+
             }
 
-            try {
+
+            try{
 
                 const data =
                     await apiRequest(
@@ -3179,17 +3979,21 @@ async function loadChatHistory() {
                         number
                     );
 
+
                 const messages =
                     Array.isArray(
                         data.messages
                     )
-                        ? data.messages
-                        : [];
+                    ?
+                    data.messages
+                    :
+                    [];
 
-                for (
+
+                for(
                     const message
                     of messages
-                ) {
+                ){
 
                     displayChatMessage(
                         message
@@ -3199,21 +4003,22 @@ async function loadChatHistory() {
 
                 }
 
-            } catch (error) {
+
+            }catch(error){
 
                 console.warn(
-                    "[CHAT LOG] Impossible de lire " +
-                    log.name +
-                    ":",
+                    "[CHAT LOG]",
                     error.message
                 );
 
             }
+
         }
 
-        if (
+
+        if(
             loadedMessages === 0
-        ) {
+        ){
 
             clearChat();
 
@@ -3223,46 +4028,35 @@ async function loadChatHistory() {
 
         }
 
+
         updateChatStatus(
             "Historique chargé ✓"
         );
 
-    } catch (error) {
+
+    }catch(error){
 
         console.error(
             "[CHAT LOG]",
             error
         );
 
-        if (
-            error.message ===
-            "Not Found"
-        ) {
-
-            clearChat();
-
-            addSystemMessage(
-                "Aucun historique dans chat-log."
-            );
-
-            updateChatStatus(
-                "Historique vide ✓"
-            );
-
-            return;
-        }
 
         clearChat();
+
 
         addSystemMessage(
             "Impossible de charger chat-log : " +
             error.message
         );
 
+
         updateChatStatus(
             "Erreur historique"
         );
+
     }
+
 }
 
 
@@ -3450,7 +4244,8 @@ async function uploadFile(type){
 
         const response =
             await fetch(
-                API + "/api/upload",
+                API +
+                "/api/upload",
                 {
                     method:"POST",
 
@@ -3487,7 +4282,9 @@ async function uploadFile(type){
             UPLOAD OK ✓
             <br>
             <a
-                href="${escapeHTML(data.download || "")}"
+                href="${escapeHTML(
+                    data.download || ""
+                )}"
                 target="_blank"
                 rel="noopener"
             >
@@ -3496,8 +4293,7 @@ async function uploadFile(type){
         `;
 
 
-        input.value =
-            "";
+        input.value = "";
 
 
         loadMedia();
@@ -3521,12 +4317,13 @@ async function uploadFile(type){
 
 
 /* =========================================================
-   MEDIA LIST
+   MEDIA
 ========================================================= */
 
 async function loadMedia(){
 
     await Promise.all([
+
         loadFolder(
             "image",
             "imageList",
@@ -3544,6 +4341,7 @@ async function loadMedia(){
             "videoList",
             "video"
         )
+
     ]);
 
 }
@@ -3570,7 +4368,9 @@ async function loadFolder(
         const data =
             await apiRequest(
                 "/api/files/" +
-                encodeURIComponent(folder)
+                encodeURIComponent(
+                    folder
+                )
             );
 
 
@@ -3650,8 +4450,9 @@ async function loadFolder(
 
                 }
 
-
-                else if(type === "music"){
+                else if(
+                    type === "music"
+                ){
 
                     item.innerHTML = `
                         <b>${name}</b>
@@ -3676,7 +4477,6 @@ async function loadFolder(
                     `;
 
                 }
-
 
                 else{
 
@@ -3716,7 +4516,7 @@ async function loadFolder(
     }catch(error){
 
         console.error(
-            "[MEDIA " + folder + "]",
+            "[MEDIA]",
             error
         );
 
@@ -3724,7 +4524,9 @@ async function loadFolder(
         container.innerHTML = `
             <span class="offline">
                 ERREUR :
-                ${escapeHTML(error.message)}
+                ${escapeHTML(
+                    error.message
+                )}
             </span>
         `;
 
@@ -3734,13 +4536,15 @@ async function loadFolder(
 
 
 /* =========================================================
-   PAGE NAVIGATION
+   NAVIGATION
 ========================================================= */
 
 function showPage(name){
 
     document
-        .querySelectorAll(".page")
+        .querySelectorAll(
+            ".page"
+        )
         .forEach(
             page =>
                 page.classList.remove(
@@ -3757,12 +4561,15 @@ function showPage(name){
 
 
     document
-        .querySelectorAll("nav button")
+        .querySelectorAll(
+            "nav button"
+        )
         .forEach(
             button =>
                 button.classList.toggle(
                     "active",
-                    button.dataset.page === name
+                    button.dataset.page ===
+                    name
                 )
         );
 
@@ -3805,6 +4612,11 @@ function showPage(name){
 
     }
 
+if(name === "random"){
+
+    loadRandomGallery();
+
+}
 
     window.scrollTo({
         top:0,
@@ -3881,6 +4693,7 @@ function terminalCommand(raw){
     ){
 
         showPage("account");
+
         return;
 
     }
@@ -3889,6 +4702,7 @@ function terminalCommand(raw){
     if(command === "logout"){
 
         logoutAccount();
+
         return;
 
     }
@@ -3897,6 +4711,7 @@ function terminalCommand(raw){
     if(command === "media"){
 
         showPage("media");
+
         return;
 
     }
@@ -3905,6 +4720,7 @@ function terminalCommand(raw){
     if(command === "chat"){
 
         showPage("chat");
+
         return;
 
     }
@@ -3913,6 +4729,7 @@ function terminalCommand(raw){
     if(command === "games"){
 
         showPage("games");
+
         return;
 
     }
@@ -4001,6 +4818,24 @@ function terminalCommand(raw){
     }
 
 
+    if(command === "emotes"){
+
+        terminalPrint(
+            Object.keys(EMOTES)
+            .map(
+                name =>
+                    ":" +
+                    name +
+                    ":"
+            )
+            .join("\n")
+        );
+
+        return;
+
+    }
+
+
     if(command === "about"){
 
         terminalPrint(
@@ -4019,7 +4854,8 @@ function terminalCommand(raw){
 music/
 video/
 chat-log/
-accounts/`
+accounts/
+gif/`
         );
 
         return;
@@ -4046,7 +4882,8 @@ status
 media
 chat
 games
-wss`
+wss
+emotes`
         );
 
         return;
@@ -4070,7 +4907,9 @@ document
         "keydown",
         event => {
 
-            if(event.key === "Enter"){
+            if(
+                event.key === "Enter"
+            ){
 
                 terminalCommand(
                     event.target.value
@@ -4113,6 +4952,52 @@ document
 
 
 /* =========================================================
+   CLOSE EMOTE PICKER
+========================================================= */
+
+document.addEventListener(
+    "click",
+    event => {
+
+        const picker =
+            document.getElementById(
+                "emotePicker"
+            );
+
+        const button =
+            document.getElementById(
+                "emoteButton"
+            );
+
+
+        if(
+            !picker ||
+            !button
+        ){
+
+            return;
+
+        }
+
+
+        if(
+            !picker.contains(
+                event.target
+            ) &&
+            !button.contains(
+                event.target
+            )
+        ){
+
+            closeEmotePicker();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
    GUESTBOOK
 ========================================================= */
 
@@ -4130,7 +5015,10 @@ function addGuest(){
         ).value.trim();
 
 
-    if(!name || !message){
+    if(
+        !name ||
+        !message
+    ){
 
         alert(
             "Remplis les deux champs."
@@ -4157,9 +5045,25 @@ function addGuest(){
         </span>
 
         <br>
-
-        ${escapeHTML(message)}
     `;
+
+
+    const content =
+        document.createElement(
+            "span"
+        );
+
+
+    content.appendChild(
+        renderEmotes(
+            message
+        )
+    );
+
+
+    element.appendChild(
+        content
+    );
 
 
     document
@@ -4190,15 +5094,20 @@ function addGuest(){
 ========================================================= */
 
 let score = 0;
+
 let gameRunning = false;
+
 let gameTimer = 10;
+
 let gameInterval = null;
 
 
 function startGame(){
 
     score = 0;
+
     gameTimer = 10;
+
     gameRunning = true;
 
 
@@ -4232,7 +5141,9 @@ function startGame(){
                     gameTimer;
 
 
-                if(gameTimer <= 0){
+                if(
+                    gameTimer <= 0
+                ){
 
                     clearInterval(
                         gameInterval
@@ -4285,6 +5196,152 @@ function gameClick(){
 
 }
 
+/* =========================================================
+   SYNCHRONIZED RANDOM MARQUEE
+========================================================= */
+
+const randomMarqueeMessages = [
+
+    "*** WELCOME TO DAVID RANDOM // THE MOST UNNECESSARY WEBSITE ON THE INTERNET ***",
+
+    "*** SYSTEM STATUS: ONLINE // COMMON SENSE: NOT FOUND // RANDOMNESS: 999999 ***",
+
+    "*** DAVID_OS HAS STARTED SUCCESSFULLY // 0% PRODUCTIVITY // 100% RANDOMNESS ***",
+
+    "*** YOU ARE CURRENTLY CONNECTED TO DAVID RANDOM // THERE IS PROBABLY NO REASON FOR THIS ***",
+
+    "*** GITHUB STORAGE ONLINE // RENDER SERVER ONLINE // BRAIN STATUS: OFFLINE ***",
+
+    "*** WARNING: TOO MUCH RANDOMNESS DETECTED // PLEASE REMAIN CALM AND CONTINUE EXPLORING ***",
+
+    "*** THE CHAT IS ALIVE // THE SERVER IS ALIVE // WE ARE NOT SURE ABOUT THE DEVELOPER ***",
+
+    "*** SOMEWHERE BETWEEN 1999 AND 2026 // THIS WEBSITE SHOULD NOT EXIST // BUT HERE WE ARE ***",
+
+    "*** CRT SIGNAL STABLE // GREEN TEXT STABLE // SANITY LEVELS UNKNOWN ***",
+
+    "*** RANDOM EVENT DETECTED // PLEASE DO NOT PANIC // ACTUALLY, PANIC A LITTLE ***",
+
+    "*** NYAN CAT HAS ENTERED THE SERVER // PLEASE DO NOT ASK HOW OR WHY ***",
+
+    "*** PEPE HAS CONNECTED TO THE CHAT // PEPE IS NOW TYPING... ***",
+
+    "*** UNKNOWN USER DETECTED // WELCOME TO THE TERMINAL // PLEASE ENJOY YOUR STAY ***",
+
+    "*** DATABASE CHECK COMPLETE // ACCOUNTS OK // CHAT-LOG OK // RANDOMNESS CRITICAL ***",
+
+    "*** THERE ARE NO RULES HERE // EXCEPT THE ONES WRITTEN BY DAVID // PROBABLY ***",
+
+    "*** YOU HAVE BEEN SCANNED BY DAVID_OS // RESULT: RANDOM HUMAN DETECTED ***",
+
+    "*** SERVER TEMPERATURE: PROBABLY FINE // CPU: PROBABLY FINE // EVERYTHING: PROBABLY FINE ***",
+
+    "*** CONNECTION ESTABLISHED // SIGNAL STRENGTH: 100% // PURPOSE OF CONNECTION: UNKNOWN ***",
+
+    "*** WELCOME BACK USER // THE INTERNET HAS BEEN WAITING FOR YOU // MAYBE ***",
+
+    "*** SECRET TERMINAL PROTOCOL ACTIVATED // JUST KIDDING // THERE IS NO PROTOCOL ***",
+
+    "*** CHAT-LOG UPDATED // ANOTHER PIECE OF INTERNET HISTORY HAS BEEN CREATED ***",
+
+    "*** WARNING: THIS WEBSITE MAY CONTAIN EXCESSIVE AMOUNTS OF PEPE, WOJAK AND RANDOMNESS ***",
+
+    "*** DAVID RANDOM V2 // MORE FEATURES // MORE BUGS // EXACTLY THE SAME AMOUNT OF PLANNING ***",
+
+    "*** INTERNET CONNECTION SUCCESSFUL // REALITY CONNECTION FAILED // PLEASE TRY AGAIN LATER ***",
+
+    "*** THE SERVER KNOWS YOU ARE HERE // THE SERVER DOES NOT KNOW WHY YOU ARE HERE ***",
+
+    "*** LOADING IMPORTANT INFORMATION... // IMPORTANT INFORMATION NOT FOUND ***",
+
+    "*** YOU COULD BE DOING SOMETHING USEFUL RIGHT NOW // BUT YOU ARE HERE // RESPECT ***",
+
+    "*** RANDOMNESS ENGINE OVERCLOCKED // PLEASE EXPECT UNEXPECTED RESULTS ***",
+
+    "*** DAVID RANDOM INTERNET TERMINAL // SERVING ABSOLUTELY NO IMPORTANT SERVICES SINCE 1999 ***",
+
+    "*** SIGNAL FROM THE VOID RECEIVED // MESSAGE CONTENT: BRUH ***",
+
+    "*** CURRENT OBJECTIVE: EXPLORE THE WEBSITE // SECONDARY OBJECTIVE: FIND SOMETHING COMPLETELY USELESS ***",
+
+    "*** SYSTEM LOG: USER ENTERED // SYSTEM LOG: USER STAYED // SYSTEM LOG: USER HAS NO IDEA WHY ***"
+
+];
+
+
+let lastRandomMarquee = -1;
+
+
+/*
+   Choisit le prochain message.
+*/
+
+function getRandomMarqueeMessage(){
+
+    let index;
+
+    do{
+
+        index =
+            Math.floor(
+                Math.random() *
+                randomMarqueeMessages.length
+            );
+
+    }while(
+        index === lastRandomMarquee &&
+        randomMarqueeMessages.length > 1
+    );
+
+    lastRandomMarquee = index;
+
+    return randomMarqueeMessages[index];
+}
+
+
+/*
+   Change le message AVANT que la nouvelle
+   animation commence.
+
+   Aucun changement pendant le défilement.
+*/
+
+function prepareRandomMarquee(){
+
+    const element =
+        document.getElementById(
+            "randomMarquee"
+        );
+
+    if(!element){
+        return;
+    }
+
+    element.textContent =
+        getRandomMarqueeMessage();
+}
+
+
+/*
+   Premier message.
+*/
+
+prepareRandomMarquee();
+
+
+/*
+   Toutes les 9 secondes :
+   le message suivant est préparé.
+
+   Comme l'animation CSS dure exactement
+   9 secondes, les deux cycles restent
+   synchronisés.
+*/
+
+setInterval(
+    prepareRandomMarquee,
+    9000
+);
 
 /* =========================================================
    CLOCK
@@ -4310,9 +5367,687 @@ setInterval(
 
 updateClock();
 
+/* =========================================================
+   RANDOM GALLERY SYSTEM
+========================================================= */
+
+/*
+   TYPES D'EVENTS DISPONIBLES :
+
+   "none"
+   "shake"
+   "invert"
+   "glitch"
+   "spin"
+   "zoom"
+   "matrix"
+   "party"
+   "flash"
+   "random"
+
+   Pour ajouter une nouvelle case,
+   ajoute simplement un objet dans le tableau.
+*/
+
+
+const randomItems = [
+
+    {
+        title: "NYAN CAT",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/nyan-cat.gif",
+        event: "shake"
+    },
+
+    {
+        title: "PEPE BANGER",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-banger.gif",
+        event: "party"
+    },
+
+    {
+        title: "PEPE CHAIR",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-chair.gif",
+        event: "spin"
+    },
+
+    {
+        title: "PEPE CROSS",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-cross.png",
+        event: "invert"
+    },
+
+    {
+        title: "PEPE HACKER",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-hacker.gif",
+        event: "matrix"
+    },
+
+    {
+        title: "PEPE RAIN",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-rain.gif",
+        event: "flash"
+    },
+
+    {
+        title: "PEPE RICH",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-rich.gif",
+        event: "zoom"
+    },
+
+    {
+        title: "PEPE UWU",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-uwu.gif",
+        event: "random"
+    },
+
+    {
+        title: "PEPE WELCOME",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/pepe-welcome.gif",
+        event: "party"
+    },
+
+    {
+        title: "WOJAK CRY",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-cry.png",
+        event: "shake"
+    },
+
+    {
+        title: "WOJAK DARK",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-dark.png",
+        event: "invert"
+    },
+
+    {
+        title: "WOJAK DEVIL",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-devil.png",
+        event: "glitch"
+    },
+
+    {
+        title: "WOJAK POKER",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-pokerface.png",
+        event: "zoom"
+    },
+
+    {
+        title: "WOJAK TIRED",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak-tired.png",
+        event: "spin"
+    },
+
+    {
+        title: "WOJAK",
+        image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif/wojak.png",
+        event: "random"
+    }
+
+];
+
+function loadRandomGallery(){
+
+    const grid =
+        document.getElementById(
+            "randomGrid"
+        );
+
+    if(!grid){
+        return;
+    }
+
+
+    grid.innerHTML = "";
+
+
+    randomItems.forEach(
+        (item,index) => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "random-card";
+
+
+            card.innerHTML = `
+
+                <img
+                    src="${escapeHTML(item.image)}"
+                    alt="${escapeHTML(item.title)}"
+                    loading="lazy"
+                >
+
+                <div class="random-card-number">
+                    #${String(index + 1).padStart(3,"0")}
+                </div>
+
+                <div class="random-card-title">
+                    ${escapeHTML(item.title)}
+                </div>
+
+            `;
+
+
+            card.addEventListener(
+                "click",
+                () => {
+
+                    runRandomEvent(
+                        item.event
+                    );
+
+                }
+            );
+
+
+            grid.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
 
 /* =========================================================
-   INITIALIZATION
+   RANDOM EVENTS
+========================================================= */
+
+function runRandomEvent(event){
+
+    switch(event){
+
+        case "shake":
+            randomShake();
+            break;
+
+
+        case "invert":
+            randomInvert();
+            break;
+
+
+        case "glitch":
+            randomGlitch();
+            break;
+
+
+        case "spin":
+            randomSpin();
+            break;
+
+
+        case "zoom":
+            randomZoom();
+            break;
+
+
+        case "matrix":
+            randomMatrix();
+            break;
+
+
+        case "party":
+            randomParty();
+            break;
+
+
+        case "flash":
+            randomFlash();
+            break;
+
+
+        case "random":
+
+            const events = [
+                "shake",
+                "invert",
+                "glitch",
+                "spin",
+                "zoom",
+                "matrix",
+                "party",
+                "flash"
+            ];
+
+            runRandomEvent(
+                events[
+                    Math.floor(
+                        Math.random() *
+                        events.length
+                    )
+                ]
+            );
+
+            break;
+
+    }
+
+}
+
+
+/* SHAKE */
+
+function randomShake(){
+
+    document.body.animate(
+
+        [
+            {
+                transform:"translate(0,0)"
+            },
+
+            {
+                transform:"translate(-12px,5px)"
+            },
+
+            {
+                transform:"translate(12px,-5px)"
+            },
+
+            {
+                transform:"translate(-8px,-3px)"
+            },
+
+            {
+                transform:"translate(8px,3px)"
+            },
+
+            {
+                transform:"translate(0,0)"
+            }
+        ],
+
+        {
+            duration:500
+        }
+
+    );
+
+}
+
+
+/* INVERT */
+
+function randomInvert(){
+
+    document.body.style.filter =
+        "invert(1)";
+
+
+    setTimeout(
+        () => {
+
+            document.body.style.filter =
+                "";
+
+        },
+        1000
+    );
+
+}
+
+
+/* GLITCH */
+
+function randomGlitch(){
+
+    document.body.classList.add(
+        "random-glitch"
+    );
+
+
+    setTimeout(
+        () => {
+
+            document.body.classList.remove(
+                "random-glitch"
+            );
+
+        },
+        1200
+    );
+
+}
+
+
+/* SPIN */
+
+function randomSpin(){
+
+    document.body.animate(
+
+        [
+            {
+                transform:"rotate(0deg)"
+            },
+
+            {
+                transform:"rotate(2deg)"
+            },
+
+            {
+                transform:"rotate(-2deg)"
+            },
+
+            {
+                transform:"rotate(0deg)"
+            }
+        ],
+
+        {
+            duration:800
+        }
+
+    );
+
+}
+
+
+/* ZOOM */
+
+function randomZoom(){
+
+    document.body.animate(
+
+        [
+            {
+                transform:"scale(1)"
+            },
+
+            {
+                transform:"scale(1.08)"
+            },
+
+            {
+                transform:"scale(1)"
+            }
+        ],
+
+        {
+            duration:900
+        }
+
+    );
+
+}
+
+
+/* FLASH */
+
+function randomFlash(){
+
+    const flash =
+        document.createElement(
+            "div"
+        );
+
+
+    flash.style.position =
+        "fixed";
+
+    flash.style.inset =
+        "0";
+
+    flash.style.zIndex =
+        "9997";
+
+    flash.style.background =
+        "#ffffff";
+
+    flash.style.pointerEvents =
+        "none";
+
+
+    document.body.appendChild(
+        flash
+    );
+
+
+    setTimeout(
+        () => {
+
+            flash.remove();
+
+        },
+        100
+    );
+
+}
+
+
+/* PARTY */
+
+function randomParty(){
+
+    document.body.style.transition =
+        "filter .1s";
+
+
+    let count = 0;
+
+
+    const interval =
+        setInterval(
+            () => {
+
+                document.body.style.filter =
+                    `hue-rotate(${Math.random()*360}deg)`;
+
+
+                count++;
+
+
+                if(count >= 12){
+
+                    clearInterval(
+                        interval
+                    );
+
+
+                    document.body.style.filter =
+                        "";
+
+                }
+
+            },
+            100
+        );
+
+}
+
+
+/* MATRIX */
+
+function randomMatrix(){
+
+    const overlay =
+        document.createElement(
+            "div"
+        );
+
+
+    overlay.style.position =
+        "fixed";
+
+    overlay.style.inset =
+        "0";
+
+    overlay.style.zIndex =
+        "9996";
+
+    overlay.style.pointerEvents =
+        "none";
+
+    overlay.style.color =
+        "#35ff5a";
+
+    overlay.style.font =
+        "16px monospace";
+
+    overlay.style.overflow =
+        "hidden";
+
+    overlay.style.background =
+        "rgba(0,0,0,.15)";
+
+
+    let text = "";
+
+
+    for(
+        let i = 0;
+        i < 3000;
+        i++
+    ){
+
+        text +=
+            Math.random() > .5
+            ? "1"
+            : "0";
+
+        if(i % 100 === 0){
+            text += "\n";
+        }
+
+    }
+
+
+    overlay.textContent =
+        text;
+
+
+    document.body.appendChild(
+        overlay
+    );
+
+
+    setTimeout(
+        () => {
+
+            overlay.remove();
+
+        },
+        1500
+    );
+
+}
+
+/* =========================================================
+   RANDOM AUTO SCROLL
+========================================================= */
+
+let randomAutoScroll = null;
+
+let randomScrollPaused = false;
+
+let randomResumeTimer = null;
+
+
+function startRandomAutoScroll(){
+
+    if(randomAutoScroll){
+        clearInterval(randomAutoScroll);
+    }
+
+
+    randomAutoScroll =
+        setInterval(
+            () => {
+
+                /*
+                   Ne défile pas si l'utilisateur
+                   vient d'utiliser la molette.
+                */
+
+                if(randomScrollPaused){
+                    return;
+                }
+
+
+                /*
+                   Si on arrive en bas,
+                   on recommence doucement
+                   depuis le haut.
+                */
+
+                if(
+                    window.innerHeight +
+                    window.scrollY >=
+                    document.documentElement.scrollHeight - 5
+                ){
+
+                    window.scrollTo({
+                        top:0,
+                        behavior:"smooth"
+                    });
+
+                    return;
+
+                }
+
+
+                window.scrollBy({
+                    top:1,
+                    left:0
+                });
+
+            },
+            35
+        );
+
+}
+
+
+/*
+   L'utilisateur utilise la molette :
+   arrêt immédiat.
+*/
+
+window.addEventListener(
+    "wheel",
+    () => {
+
+        randomScrollPaused =
+            true;
+
+
+        if(randomResumeTimer){
+
+            clearTimeout(
+                randomResumeTimer
+            );
+
+        }
+
+
+        /*
+           Reprise après 5 secondes
+           sans nouvelle molette.
+        */
+
+        randomResumeTimer =
+            setTimeout(
+                () => {
+
+                    randomScrollPaused =
+                        false;
+
+                },
+                5000
+            );
+
+    },
+    {
+        passive:true
+    }
+);
+
+/* =========================================================
+   INIT
 ========================================================= */
 
 async function init(){
@@ -4321,93 +6056,61 @@ async function init(){
         "DAVID RANDOM V2"
     );
 
-    console.log(
-        "API:",
-        API
-    );
 
-    console.log(
-        "WSS:",
-        SOCKET_URL
-    );
+    /*
+       Initialise la liste des emotes.
+    */
+
+    initEmotePicker();
 
 
     /*
-       1. Restaurer immédiatement
-          les données locales.
+       Restore local account.
     */
 
     restoreSavedUser();
 
 
-    /*
-       2. Mettre l'interface à jour
-          sans attendre Render.
-    */
-
     updateAccountUI();
 
+  loadRandomGallery();
+  
+  startRandomAutoScroll();
 
     /*
-       3. Vérifier le serveur.
+       Check Render.
     */
 
     checkServer();
 
 
     /*
-       4. Vérifier le token avec /me.
+       Restore token.
     */
 
     const loggedIn =
         await restoreSession();
 
 
-    /*
-       5. Si la session existe,
-          connecter le WebSocket.
-    */
-
     if(
         loggedIn &&
         token
     ){
 
-        console.log(
-            "[AUTH] Session active après rechargement."
-        );
-
-
         updateAccountUI();
 
-
         connectSocket();
-
-    }else{
-
-        console.log(
-            "[AUTH] Pas de session active."
-        );
 
     }
 
 
     console.log(
-        "Account token:",
-        token
-        ?
-        "PRESENT"
-        :
-        "NONE"
+        "EMOTES:",
+        Object.keys(EMOTES)
     );
 
 }
 
-
-/*
-   UNE SEULE initialisation.
-   Pas de DOMContentLoaded supplémentaire.
-*/
 
 if(
     document.readyState ===
