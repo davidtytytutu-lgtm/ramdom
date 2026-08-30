@@ -8,7 +8,6 @@ const bcrypt = require("bcryptjs");
 const multer = require("multer");
 
 const app = express();
-
 const server = http.createServer(app);
 
 const wss = new WebSocket.Server({
@@ -20,8 +19,7 @@ const wss = new WebSocket.Server({
    CONFIG
 ========================================================= */
 
-const PORT =
-    process.env.PORT || 10000;
+const PORT = process.env.PORT || 10000;
 
 const ALLOWED_ORIGIN =
     "https://david-officiel.neocities.org";
@@ -44,6 +42,9 @@ const GITHUB_BRANCH =
 const ENCRYPTION_KEY =
     process.env.ENCRYPTION_KEY;
 
+const USERS_FILE =
+    "accounts/users.enc";
+
 const CHAT_LOG_LIMIT =
     15 * 1024 * 1024;
 
@@ -54,24 +55,16 @@ const MESSAGE_LIMIT =
     500;
 
 /* =========================================================
-   CONFIG VALIDATION
+   VALIDATION
 ========================================================= */
 
 if (!ENCRYPTION_KEY) {
-
-    console.error(
-        "[FATAL] ENCRYPTION_KEY manquante."
-    );
-
+    console.error("[FATAL] ENCRYPTION_KEY manquante.");
     process.exit(1);
 }
 
 if (!GITHUB_TOKEN) {
-
-    console.error(
-        "[FATAL] GITHUB_TOKEN manquant."
-    );
-
+    console.error("[FATAL] GITHUB_TOKEN manquant.");
     process.exit(1);
 }
 
@@ -79,7 +72,7 @@ if (!GITHUB_TOKEN) {
 AES-256-GCM
 
 La clé Render peut avoir n'importe quelle longueur.
-On la transforme en 32 octets avec SHA-256.
+SHA-256 permet d'obtenir exactement 32 octets.
 */
 
 const CRYPTO_KEY =
@@ -109,52 +102,48 @@ app.use(
    CORS
 ========================================================= */
 
-app.use(
-    (req, res, next) => {
+app.use((req, res, next) => {
 
-        const origin =
-            req.headers.origin;
+    const origin =
+        req.headers.origin;
 
-        if (
-            !origin ||
-            origin === ALLOWED_ORIGIN
-        ) {
+    if (
+        !origin ||
+        origin === ALLOWED_ORIGIN
+    ) {
 
-            res.setHeader(
-                "Access-Control-Allow-Origin",
-                origin ||
-                ALLOWED_ORIGIN
-            );
+        res.setHeader(
+            "Access-Control-Allow-Origin",
+            origin || ALLOWED_ORIGIN
+        );
 
-            res.setHeader(
-                "Vary",
-                "Origin"
-            );
+        res.setHeader(
+            "Vary",
+            "Origin"
+        );
 
-            res.setHeader(
-                "Access-Control-Allow-Credentials",
-                "true"
-            );
+        res.setHeader(
+            "Access-Control-Allow-Credentials",
+            "true"
+        );
 
-            res.setHeader(
-                "Access-Control-Allow-Headers",
-                "Content-Type, Authorization"
-            );
+        res.setHeader(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization"
+        );
 
-            res.setHeader(
-                "Access-Control-Allow-Methods",
-                "GET,POST,PATCH,DELETE,OPTIONS"
-            );
-        }
-
-        if (req.method === "OPTIONS") {
-
-            return res.sendStatus(204);
-        }
-
-        next();
+        res.setHeader(
+            "Access-Control-Allow-Methods",
+            "GET,POST,PATCH,DELETE,OPTIONS"
+        );
     }
-);
+
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(204);
+    }
+
+    next();
+});
 
 /* =========================================================
    UPLOAD
@@ -182,6 +171,14 @@ const sessions =
 
 const clients =
     new Set();
+
+/*
+Empêche plusieurs sauvegardes users.enc
+de se faire simultanément.
+*/
+
+let usersSaveQueue =
+    Promise.resolve();
 
 /* =========================================================
    GITHUB
@@ -249,10 +246,19 @@ async function githubRequest(
 
     if (!response.ok) {
 
-        throw new Error(
-            data.message ||
-            `GitHub HTTP ${response.status}`
-        );
+        const error =
+            new Error(
+                data.message ||
+                `GitHub HTTP ${response.status}`
+            );
+
+        error.status =
+            response.status;
+
+        error.githubData =
+            data;
+
+        throw error;
     }
 
     return data;
@@ -263,20 +269,15 @@ async function githubRequest(
 ========================================================= */
 
 /*
-Nouveau format users.enc :
+Format users.enc :
 
 {
     "version": 2,
-    "algorithm": "aes-256-gcm",
+    "algorithm": "AES-256-GCM",
     "iv": "...",
-    "data": "...",
-    "authTag": "..."
+    "tag": "...",
+    "data": "..."
 }
-
-AES-GCM permet :
-- chiffrement
-- vérification d'intégrité
-- détection d'une mauvaise clé
 */
 
 function encryptJSON(value) {
@@ -305,7 +306,7 @@ function encryptJSON(value) {
             cipher.final()
         ]);
 
-    const authTag =
+    const tag =
         cipher.getAuthTag();
 
     return {
@@ -314,16 +315,16 @@ function encryptJSON(value) {
             2,
 
         algorithm:
-            "aes-256-gcm",
+            "AES-256-GCM",
 
         iv:
             iv.toString("base64"),
 
-        data:
-            encrypted.toString("base64"),
+        tag:
+            tag.toString("base64"),
 
-        authTag:
-            authTag.toString("base64")
+        data:
+            encrypted.toString("base64")
     };
 }
 
@@ -333,10 +334,10 @@ function decryptJSON(payload) {
     if (
         !payload ||
         payload.version !== 2 ||
-        payload.algorithm !== "aes-256-gcm" ||
+        payload.algorithm !== "AES-256-GCM" ||
         !payload.iv ||
-        !payload.data ||
-        !payload.authTag
+        !payload.tag ||
+        !payload.data
     ) {
 
         throw new Error(
@@ -350,29 +351,25 @@ function decryptJSON(payload) {
             "base64"
         );
 
+    const tag =
+        Buffer.from(
+            payload.tag,
+            "base64"
+        );
+
     const encrypted =
         Buffer.from(
             payload.data,
             "base64"
         );
 
-    const authTag =
-        Buffer.from(
-            payload.authTag,
-            "base64"
-        );
-
-    if (iv.length !== 12) {
+    if (
+        iv.length !== 12 ||
+        tag.length !== 16
+    ) {
 
         throw new Error(
-            "IV AES-256-GCM INVALIDE"
-        );
-    }
-
-    if (authTag.length !== 16) {
-
-        throw new Error(
-            "AUTH TAG AES-256-GCM INVALIDE"
+            "PARAMETRES AES-256-GCM INVALIDES"
         );
     }
 
@@ -383,9 +380,7 @@ function decryptJSON(payload) {
             iv
         );
 
-    decipher.setAuthTag(
-        authTag
-    );
+    decipher.setAuthTag(tag);
 
     const decrypted =
         Buffer.concat([
@@ -404,13 +399,21 @@ function decryptJSON(payload) {
    USERS DATABASE
 ========================================================= */
 
-const USERS_FILE =
-    "accounts/users.enc";
-
 let users = [];
 
-let usersLoaded =
-    false;
+let usersLoaded = false;
+
+/* =========================================================
+   READ USERS FROM GITHUB
+========================================================= */
+
+async function getUsersFile() {
+
+    return await githubRequest(
+        USERS_FILE
+    );
+}
+
 
 /* =========================================================
    LOAD USERS
@@ -420,40 +423,135 @@ async function loadUsers() {
 
     try {
 
-        const data =
-            await githubRequest(USERS_FILE);
+        let data;
 
-        if (!data.content) {
-            throw new Error("USERS DATABASE VIDE");
+        /*
+        Vérifie si users.enc existe.
+        */
+
+        try {
+
+            data =
+                await getUsersFile();
+
+        } catch (error) {
+
+            if (
+                error.status === 404
+            ) {
+
+                console.log(
+                    "[USERS] users.enc absent."
+                );
+
+                console.log(
+                    "[USERS] Création d'une nouvelle base vide."
+                );
+
+                users = [];
+
+                /*
+                Crée immédiatement le fichier.
+                */
+
+                await writeUsersToGitHub(
+                    users,
+                    null
+                );
+
+                usersLoaded =
+                    true;
+
+                console.log(
+                    "[USERS] users.enc créé avec succès."
+                );
+
+                return true;
+            }
+
+            throw error;
         }
 
-        // lecture / déchiffrement normal...
+        if (!data.content) {
+
+            throw new Error(
+                "USERS DATABASE VIDE"
+            );
+        }
+
+        const fileText =
+            Buffer
+                .from(
+                    data.content,
+                    "base64"
+                )
+                .toString("utf8")
+                .trim();
+
+        if (!fileText) {
+
+            throw new Error(
+                "USERS DATABASE VIDE"
+            );
+        }
+
+        console.log(
+            "[USERS] Format détecté :",
+            fileText.substring(
+                0,
+                80
+            )
+        );
+
+        let parsed;
+
+        try {
+
+            parsed =
+                JSON.parse(
+                    fileText
+                );
+
+        } catch {
+
+            throw new Error(
+                "FORMAT USERS.ENC INVALIDE"
+            );
+        }
+
+        const loadedUsers =
+            decryptJSON(
+                parsed
+            );
+
+        if (
+            !Array.isArray(
+                loadedUsers
+            )
+        ) {
+
+            throw new Error(
+                "USERS DATABASE NON VALIDE"
+            );
+        }
+
+        users =
+            loadedUsers;
+
+        usersLoaded =
+            true;
+
+        console.log(
+            `[USERS] ${users.length} comptes chargés`
+        );
+
+        return true;
 
     } catch (error) {
 
-        const message =
-            String(error.message || "").toLowerCase();
+        usersLoaded =
+            false;
 
-        if (
-            message.includes("not found") ||
-            message.includes("404")
-        ) {
-
-            console.log(
-                "[USERS] users.enc absent."
-            );
-
-            console.log(
-                "[USERS] Nouvelle base de comptes vide."
-            );
-
-            users = [];
-            usersLoaded = true;
-
-            return true;
-        }
-
-        usersLoaded = false;
         users = [];
 
         console.error(
@@ -461,65 +559,84 @@ async function loadUsers() {
             error.message
         );
 
+        console.error(
+            "[USERS] Les comptes restent protégés."
+        );
+
         return false;
     }
 }
 
 /* =========================================================
-   SAVE USERS
+   CREATE ENCRYPTED USERS CONTENT
 ========================================================= */
 
-async function saveUsers() {
-
-    if (!usersLoaded) {
-
-        throw new Error(
-            "DATABASE USERS NON CHARGEE - SAUVEGARDE REFUSEE"
-        );
-    }
+function createUsersContent(userList) {
 
     const payload =
-        encryptJSON(users);
+        encryptJSON(
+            userList
+        );
+
+    return Buffer
+        .from(
+            JSON.stringify(
+                payload
+            ),
+            "utf8"
+        )
+        .toString("base64");
+}
+
+/* =========================================================
+   WRITE USERS TO GITHUB
+========================================================= */
+
+async function writeUsersToGitHub(
+    userList,
+    knownSha = null
+) {
 
     const content =
-        Buffer
-            .from(
-                JSON.stringify(
-                    payload,
-                    null,
-                    2
-                ),
-                "utf8"
-            )
-            .toString("base64");
+        createUsersContent(
+            userList
+        );
 
-    let sha;
+    /*
+    Si on connaît déjà le SHA,
+    on l'utilise.
 
-    try {
+    Sinon on relit le fichier.
+    */
 
-        const old =
-            await githubRequest(
-                USERS_FILE
-            );
+    let sha =
+        knownSha;
 
-        sha =
-            old.sha;
+    if (!sha) {
 
-    } catch (error) {
+        try {
 
-        /*
-        Si le fichier n'existe pas,
-        sha reste undefined.
-        */
+            const current =
+                await getUsersFile();
 
-        sha =
-            undefined;
+            sha =
+                current.sha;
+
+        } catch (error) {
+
+            if (
+                error.status !== 404
+            ) {
+
+                throw error;
+            }
+        }
     }
 
     const body = {
 
         message:
-            "Update encrypted accounts database",
+            "Update accounts database",
 
         content,
 
@@ -528,31 +645,180 @@ async function saveUsers() {
     };
 
     if (sha) {
-
-        body.sha =
-            sha;
+        body.sha = sha;
     }
 
-    await githubRequest(
-        USERS_FILE,
-        {
+    try {
 
-            method:
-                "PUT",
+        await githubRequest(
+            USERS_FILE,
+            {
 
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
+                method:
+                    "PUT",
 
-            body:
-                JSON.stringify(body)
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(body)
+            }
+        );
+
+        return true;
+
+    } catch (error) {
+
+        /*
+        Conflit SHA :
+        on relit le SHA actuel puis
+        on réessaie une fois.
+        */
+
+        const conflict =
+            error.status === 409 ||
+            /expected/i.test(
+                error.message
+            ) ||
+            /is at/i.test(
+                error.message
+            );
+
+        if (!conflict) {
+            throw error;
         }
-    );
 
-    console.log(
-        "[USERS] Base AES-256-GCM sauvegardée sur GitHub"
-    );
+        console.warn(
+            "[USERS] Conflit SHA GitHub. Nouvelle tentative..."
+        );
+
+        let fresh;
+
+        try {
+
+            fresh =
+                await getUsersFile();
+
+        } catch (retryReadError) {
+
+            if (
+                retryReadError.status === 404
+            ) {
+
+                fresh = {
+                    sha: null
+                };
+
+            } else {
+
+                throw retryReadError;
+            }
+        }
+
+        const retryBody = {
+
+            message:
+                "Update accounts database",
+
+            content,
+
+            branch:
+                GITHUB_BRANCH
+        };
+
+        if (fresh.sha) {
+
+            retryBody.sha =
+                fresh.sha;
+        }
+
+        await githubRequest(
+            USERS_FILE,
+            {
+
+                method:
+                    "PUT",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(
+                        retryBody
+                    )
+            }
+        );
+
+        console.log(
+            "[USERS] Sauvegarde réussie après retry."
+        );
+
+        return true;
+    }
+}
+
+/* =========================================================
+   SAVE USERS
+========================================================= */
+
+function saveUsers() {
+
+    /*
+    Les sauvegardes sont placées dans une
+    file d'attente.
+
+    Cela empêche deux inscriptions simultanées
+    de modifier users.enc avec le même SHA.
+    */
+
+    const operation =
+        usersSaveQueue.then(
+            async () => {
+
+                if (!usersLoaded) {
+
+                    throw new Error(
+                        "DATABASE USERS NON CHARGEE - SAUVEGARDE REFUSEE"
+                    );
+                }
+
+                /*
+                Copie de la base au moment
+                précis de la sauvegarde.
+                */
+
+                const snapshot =
+                    JSON.parse(
+                        JSON.stringify(
+                            users
+                        )
+                    );
+
+                await writeUsersToGitHub(
+                    snapshot
+                );
+
+                console.log(
+                    "[USERS] Base sauvegardée."
+                );
+            }
+        );
+
+    /*
+    La prochaine opération attend celle-ci,
+    même si celle-ci échoue.
+    */
+
+    usersSaveQueue =
+        operation.catch(
+            () => {}
+        );
+
+    return operation;
 }
 
 /* =========================================================
@@ -570,7 +836,6 @@ function createToken() {
 function publicUser(user) {
 
     if (!user) {
-
         return null;
     }
 
@@ -623,7 +888,6 @@ function getTokenFromRequest(req) {
 function getUserFromToken(token) {
 
     if (!token) {
-
         return null;
     }
 
@@ -631,7 +895,6 @@ function getUserFromToken(token) {
         sessions.get(token);
 
     if (!session) {
-
         return null;
     }
 
@@ -644,7 +907,9 @@ function getUserFromToken(token) {
 
     if (!user) {
 
-        sessions.delete(token);
+        sessions.delete(
+            token
+        );
 
         return null;
     }
@@ -674,7 +939,9 @@ function requireAuth(
     }
 
     const token =
-        getTokenFromRequest(req);
+        getTokenFromRequest(
+            req
+        );
 
     const user =
         getUserFromToken(
@@ -723,6 +990,9 @@ app.get(
             version:
                 "2.2",
 
+            encryption:
+                "AES-256-GCM",
+
             chat_log_format:
                 "TXT"
         });
@@ -752,6 +1022,9 @@ app.get(
                 Boolean(
                     GITHUB_TOKEN
                 ),
+
+            encryption:
+                "AES-256-GCM",
 
             chat_log_format:
                 "TXT"
@@ -874,7 +1147,15 @@ app.post(
                         .toISOString()
             };
 
-            users.push(user);
+            users.push(
+                user
+            );
+
+            /*
+            IMPORTANT :
+            on sauvegarde réellement
+            avant de répondre success.
+            */
 
             await saveUsers();
 
@@ -893,6 +1174,11 @@ app.post(
                 }
             );
 
+            console.log(
+                "[REGISTER] Compte créé :",
+                username
+            );
+
             res.json({
 
                 success:
@@ -901,7 +1187,9 @@ app.post(
                 token,
 
                 user:
-                    publicUser(user)
+                    publicUser(
+                        user
+                    )
             });
 
         } catch (error) {
@@ -1009,6 +1297,11 @@ app.post(
                 }
             );
 
+            console.log(
+                "[LOGIN] Connexion :",
+                user.username
+            );
+
             res.json({
 
                 success:
@@ -1017,7 +1310,9 @@ app.post(
                 token,
 
                 user:
-                    publicUser(user)
+                    publicUser(
+                        user
+                    )
             });
 
         } catch (error) {
@@ -1564,7 +1859,6 @@ async function readChatLog(
         );
 
     if (!data.content) {
-
         return [];
     }
 
@@ -1701,8 +1995,15 @@ app.get(
                     req.params.number
                 );
 
+            /*
+            Accepte :
+            1
+            2
+            2026-08-30
+            */
+
             if (
-                !/^\d+$/.test(
+                !/^(?:\d+|\d{4}-\d{2}-\d{2})$/.test(
                     number
                 )
             ) {
@@ -1748,7 +2049,7 @@ app.get(
 );
 
 /* =========================================================
-   SAVE CHAT MESSAGE TO TXT
+   SAVE CHAT MESSAGE
 ========================================================= */
 
 async function saveChatMessage(
@@ -1934,7 +2235,9 @@ async function saveChatMessage(
             },
 
             body:
-                JSON.stringify(body)
+                JSON.stringify(
+                    body
+                )
         }
     );
 
@@ -2119,7 +2422,6 @@ wss.on(
                         ).trim();
 
                     if (!message) {
-
                         return;
                     }
 
@@ -2402,7 +2704,7 @@ async function start() {
         );
 
         console.error(
-            "Les fonctions de compte sont temporairement désactivées."
+            "Les fonctions de compte seront temporairement désactivées."
         );
 
         console.error(
