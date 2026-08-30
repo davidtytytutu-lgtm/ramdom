@@ -1,15 +1,18 @@
 {
   "name": "david-random",
   "version": "2.0.0",
-  "description": "DAVID RANDOM API",
+  "description": "DAVID RANDOM V2 server with accounts, GitHub storage, uploads and WebSocket chat",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
-    "express": "^5.1.0",
     "cors": "^2.8.5",
-    "ws": "^8.18.3",
-    "multer": "^2.0.2"
+    "express": "^4.21.2",
+    "multer": "^2.0.2",
+    "ws": "^8.18.3"
   }
 }
