@@ -7,6 +7,10 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 
+/* =========================================================
+   APP
+========================================================= */
+
 const app = express();
 
 const server = http.createServer(app);
@@ -20,7 +24,8 @@ const wss = new WebSocket.Server({
    CONFIG
 ========================================================= */
 
-const PORT = process.env.PORT || 10000;
+const PORT =
+    Number(process.env.PORT) || 10000;
 
 const ALLOWED_ORIGIN =
     "https://david-officiel.neocities.org";
@@ -52,43 +57,46 @@ const MAX_FILE_SIZE =
 const MESSAGE_LIMIT =
     500;
 
+const USERS_FILE =
+    "accounts/users.enc";
+
+/*
+Les logs sont des TXT.
+*/
+
+const CHAT_LOG_FOLDER =
+    "chat-log";
+
 /* =========================================================
-   VALIDATION
+   CONFIG CHECK
 ========================================================= */
 
 if (!ENCRYPTION_KEY) {
 
     console.error(
-        "[FATAL] ENCRYPTION_KEY est manquante."
+        "ERREUR : ENCRYPTION_KEY est manquante."
     );
 
     process.exit(1);
 }
 
-if (!GITHUB_TOKEN) {
-
-    console.error(
-        "[WARNING] GITHUB_TOKEN est manquante."
-    );
-
-    console.error(
-        "[WARNING] Les fonctions GitHub ne fonctionneront pas."
-    );
-}
-
 /*
-AES-256
+Clé principale.
+
+32 octets pour AES-256.
 */
 
 const CRYPTO_KEY =
     crypto
         .createHash("sha256")
-        .update(ENCRYPTION_KEY)
+        .update(String(ENCRYPTION_KEY))
         .digest();
 
 /* =========================================================
    EXPRESS
 ========================================================= */
+
+app.disable("x-powered-by");
 
 app.use(
     express.json({
@@ -182,15 +190,20 @@ const sessions =
 const clients =
     new Set();
 
+/*
+Si la base utilisateurs ne peut pas être chargée,
+on interdit register/login pour éviter
+d'écraser les comptes.
+*/
+
+let usersDatabaseReady =
+    false;
+
 /* =========================================================
    GITHUB
 ========================================================= */
 
 function githubApiUrl(path = "") {
-
-    const cleanPath =
-        String(path)
-            .replace(/^\/+/, "");
 
     return (
         "https://api.github.com/repos/" +
@@ -198,9 +211,10 @@ function githubApiUrl(path = "") {
         "/" +
         encodeURIComponent(GITHUB_REPO) +
         "/contents/" +
-        cleanPath
+        path
     );
 }
+
 
 async function githubRequest(
     path,
@@ -241,19 +255,18 @@ async function githubRequest(
 
     let data = {};
 
-    if (text) {
+    try {
 
-        try {
+        data =
+            text
+                ? JSON.parse(text)
+                : {};
 
-            data =
-                JSON.parse(text);
+    } catch {
 
-        } catch {
-
-            throw new Error(
-                "Réponse GitHub invalide"
-            );
-        }
+        throw new Error(
+            "Réponse GitHub invalide"
+        );
     }
 
     if (!response.ok) {
@@ -268,17 +281,53 @@ async function githubRequest(
 }
 
 /* =========================================================
-   ENCRYPTION
+   BASE64 HELPERS
+========================================================= */
+
+function base64UrlToBuffer(value) {
+
+    let text =
+        String(value)
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+
+    while (
+        text.length % 4 !== 0
+    ) {
+
+        text += "=";
+    }
+
+    return Buffer.from(
+        text,
+        "base64"
+    );
+}
+
+
+function bufferToBase64Url(buffer) {
+
+    return buffer
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+}
+
+/* =========================================================
+   AES JSON
 ========================================================= */
 
 /*
-Nouveau format :
+Format moderne :
 
 {
     version: 1,
     iv: "...",
     data: "..."
 }
+
+AES-256-CBC
 */
 
 function encryptJSON(value) {
@@ -294,31 +343,30 @@ function encryptJSON(value) {
         );
 
     const input =
-        JSON.stringify(value);
+        Buffer.from(
+            JSON.stringify(value),
+            "utf8"
+        );
 
     const encrypted =
         Buffer.concat([
-            cipher.update(
-                Buffer.from(
-                    input,
-                    "utf8"
-                )
-            ),
+            cipher.update(input),
             cipher.final()
         ]);
 
     return {
 
-        version:
-            1,
+        version: 1,
 
         iv:
             iv.toString("base64"),
 
         data:
             encrypted.toString("base64")
+
     };
 }
+
 
 function decryptJSON(payload) {
 
@@ -330,7 +378,7 @@ function decryptJSON(payload) {
     ) {
 
         throw new Error(
-            "FORMAT AES INVALIDE"
+            "FORMAT JSON CHIFFRÉ INVALIDE"
         );
     }
 
@@ -355,6 +403,149 @@ function decryptJSON(payload) {
 
     const decrypted =
         Buffer.concat([
+            decipher.update(encrypted),
+            decipher.final()
+        ]);
+
+    return JSON.parse(
+        decrypted.toString("utf8")
+    );
+}
+
+/* =========================================================
+   DR1
+========================================================= */
+
+/*
+Le fichier existant commence par :
+
+DR1:...
+
+On tente plusieurs représentations
+afin de pouvoir récupérer une ancienne
+base DR1 sans la remplacer.
+
+Formats supportés :
+
+DR1:<JSON AES>
+
+DR1:<base64>
+
+DR1:<base64url>
+
+DR1:<iv>:<data>
+
+DR1:<iv>:<tag>:<data>
+
+AES-256-GCM
+AES-256-CBC
+*/
+
+/*
+DR1 JSON :
+
+DR1:{
+    ...
+}
+*/
+
+function tryDR1JSON(raw) {
+
+    const content =
+        raw.slice(4).trim();
+
+    if (!content) {
+
+        throw new Error(
+            "DR1 VIDE"
+        );
+    }
+
+    const payload =
+        JSON.parse(content);
+
+    /*
+    Cas payload classique :
+    {
+       version,
+       iv,
+       data
+    }
+    */
+
+    if (
+        payload &&
+        payload.version === 1 &&
+        payload.iv &&
+        payload.data
+    ) {
+
+        return decryptJSON(
+            payload
+        );
+    }
+
+    /*
+    Formats GCM possibles.
+    */
+
+    if (
+        payload &&
+        payload.iv &&
+        payload.tag &&
+        payload.data
+    ) {
+
+        return decryptGCM(
+            payload.iv,
+            payload.tag,
+            payload.data
+        );
+    }
+
+    throw new Error(
+        "FORMAT DR1 JSON INVALIDE"
+    );
+}
+
+
+function decryptGCM(
+    ivValue,
+    tagValue,
+    dataValue
+) {
+
+    const iv =
+        Buffer.from(
+            ivValue,
+            "base64"
+        );
+
+    const tag =
+        Buffer.from(
+            tagValue,
+            "base64"
+        );
+
+    const encrypted =
+        Buffer.from(
+            dataValue,
+            "base64"
+        );
+
+    const decipher =
+        crypto.createDecipheriv(
+            "aes-256-gcm",
+            CRYPTO_KEY,
+            iv
+        );
+
+    decipher.setAuthTag(
+        tag
+    );
+
+    const decrypted =
+        Buffer.concat([
             decipher.update(
                 encrypted
             ),
@@ -366,326 +557,183 @@ function decryptJSON(payload) {
     );
 }
 
-/* =========================================================
-   ANCIEN FORMAT DR1
-========================================================= */
 
-/*
-Ton fichier users.enc actuel commence par :
-
-DR1:w43QZZ...
-
-Le serveur essaye maintenant plusieurs formats.
-
-IMPORTANT :
-
-Le format DR1 doit être déchiffrable avec ENCRYPTION_KEY.
-
-Si la clé Render n'est pas la même que celle utilisée
-pour créer users.enc, aucun serveur ne pourra récupérer
-les anciens comptes.
-*/
-
-function decryptDR1(content) {
-
-    content =
-        String(content)
-            .trim();
-
-    if (
-        !content.startsWith("DR1:")
-    ) {
-
-        throw new Error(
-            "Ce fichier n'est pas au format DR1"
-        );
-    }
-
-    /*
-    Format supposé :
-
-    DR1:<iv>:<data>
-
-    */
-
-    const parts =
-        content.split(":");
-
-    if (
-        parts.length !== 3
-    ) {
-
-        throw new Error(
-            "FORMAT DR1 INVALIDE"
-        );
-    }
-
-    const ivText =
-        parts[1];
-
-    const dataText =
-        parts[2];
-
-    /*
-    Essaie base64.
-    */
-
-    let iv;
-
-    let encrypted;
-
-    try {
-
-        iv =
-            Buffer.from(
-                ivText,
-                "base64"
-            );
-
-        encrypted =
-            Buffer.from(
-                dataText,
-                "base64"
-            );
-
-    } catch {
-
-        throw new Error(
-            "DR1 BASE64 INVALIDE"
-        );
-    }
-
-    if (
-        iv.length !== 16
-    ) {
-
-        throw new Error(
-            "IV DR1 INVALIDE"
-        );
-    }
-
-    if (
-        encrypted.length === 0
-    ) {
-
-        throw new Error(
-            "DATA DR1 VIDE"
-        );
-    }
-
-    /*
-    AES-256-CBC
-    */
-
-    try {
-
-        const decipher =
-            crypto.createDecipheriv(
-                "aes-256-cbc",
-                CRYPTO_KEY,
-                iv
-            );
-
-        const decrypted =
-            Buffer.concat([
-                decipher.update(
-                    encrypted
-                ),
-                decipher.final()
-            ]);
-
-        return JSON.parse(
-            decrypted.toString(
-                "utf8"
-            )
-        );
-
-    } catch (error) {
-
-        throw new Error(
-            "Impossible de déchiffrer DR1 avec ENCRYPTION_KEY"
-        );
-    }
-}
-
-/* =========================================================
-   UNIVERSAL USERS DECODER
-========================================================= */
-
-function decodeUsersFile(
+function decryptDR1Binary(
     raw
 ) {
 
-    let content =
-        String(raw)
-            .trim();
+    const encoded =
+        raw.slice(4).trim();
 
-    if (!content) {
+    if (!encoded) {
 
         throw new Error(
-            "USERS.ENC VIDE"
+            "DR1 VIDE"
         );
     }
 
     /*
-    ---------------------------------------------------------
-    FORMAT 1 : DR1
-    ---------------------------------------------------------
+    Essai base64url.
+    */
+
+    const decoded =
+        base64UrlToBuffer(
+            encoded
+        );
+
+    if (
+        decoded.length < 20
+    ) {
+
+        throw new Error(
+            "DR1 TROP COURT"
+        );
+    }
+
+    /*
+    GCM :
+    IV 12 octets
+    TAG 16 octets
+    reste = données
     */
 
     if (
-        content.startsWith("DR1:")
+        decoded.length > 28
     ) {
 
-        const decoded =
-            decryptDR1(
-                content
-            );
+        try {
 
-        if (
-            !Array.isArray(decoded)
-        ) {
-
-            throw new Error(
-                "DR1 USERS DATABASE INVALIDE"
-            );
-        }
-
-        return decoded;
-    }
-
-    /*
-    ---------------------------------------------------------
-    FORMAT 2 : JSON AES
-    ---------------------------------------------------------
-    */
-
-    try {
-
-        const payload =
-            JSON.parse(
-                content
-            );
-
-        if (
-            payload &&
-            payload.version === 1 &&
-            payload.iv &&
-            payload.data
-        ) {
-
-            const decoded =
-                decryptJSON(
-                    payload
+            const iv =
+                decoded.subarray(
+                    0,
+                    12
                 );
 
-            if (
-                !Array.isArray(decoded)
-            ) {
-
-                throw new Error(
-                    "DATABASE USERS INVALIDE"
-                );
-            }
-
-            return decoded;
-        }
-
-        /*
-        JSON non chiffré.
-        Utile pour récupérer une ancienne base.
-        */
-
-        if (
-            Array.isArray(payload)
-        ) {
-
-            console.warn(
-                "[USERS] Base JSON non chiffrée détectée."
-            );
-
-            return payload;
-        }
-
-    } catch (error) {
-
-        /*
-        On continue vers les autres formats.
-        */
-    }
-
-    /*
-    ---------------------------------------------------------
-    FORMAT 3 : base64 contenant du JSON
-    ---------------------------------------------------------
-    */
-
-    try {
-
-        const decoded =
-            Buffer
-                .from(
-                    content,
-                    "base64"
-                )
-                .toString(
-                    "utf8"
+            const tag =
+                decoded.subarray(
+                    12,
+                    28
                 );
 
-        const parsed =
-            JSON.parse(
-                decoded
+            const encrypted =
+                decoded.subarray(
+                    28
+                );
+
+            const decipher =
+                crypto.createDecipheriv(
+                    "aes-256-gcm",
+                    CRYPTO_KEY,
+                    iv
+                );
+
+            decipher.setAuthTag(
+                tag
             );
-
-        if (
-            Array.isArray(parsed)
-        ) {
-
-            return parsed;
-        }
-
-        if (
-            parsed &&
-            parsed.version === 1
-        ) {
 
             const decrypted =
-                decryptJSON(
-                    parsed
+                Buffer.concat([
+                    decipher.update(
+                        encrypted
+                    ),
+                    decipher.final()
+                ]);
+
+            return JSON.parse(
+                decrypted.toString("utf8")
+            );
+
+        } catch {}
+    }
+
+    /*
+    CBC :
+    IV 16 octets
+    reste = données
+    */
+
+    if (
+        decoded.length > 32
+    ) {
+
+        try {
+
+            const iv =
+                decoded.subarray(
+                    0,
+                    16
                 );
 
-            if (
-                Array.isArray(
-                    decrypted
-                )
-            ) {
+            const encrypted =
+                decoded.subarray(
+                    16
+                );
 
-                return decrypted;
-            }
-        }
+            const decipher =
+                crypto.createDecipheriv(
+                    "aes-256-cbc",
+                    CRYPTO_KEY,
+                    iv
+                );
+
+            const decrypted =
+                Buffer.concat([
+                    decipher.update(
+                        encrypted
+                    ),
+                    decipher.final()
+                ]);
+
+            return JSON.parse(
+                decrypted.toString("utf8")
+            );
+
+        } catch {}
+    }
+
+    throw new Error(
+        "IMPOSSIBLE DE DÉCHIFFRER DR1"
+    );
+}
+
+
+function decryptDR1(raw) {
+
+    /*
+    1. DR1 + JSON
+    */
+
+    try {
+
+        return tryDR1JSON(
+            raw
+        );
+
+    } catch {}
+
+    /*
+    2. DR1 + données binaires
+    */
+
+    try {
+
+        return decryptDR1Binary(
+            raw
+        );
 
     } catch {}
 
     throw new Error(
-        "FORMAT USERS.ENC INCONNU OU CORROMPU"
+        "FORMAT DR1 INVALIDE OU ENCRYPTION_KEY INCORRECTE"
     );
 }
 
 /* =========================================================
-   USERS DATABASE
+   USERS LOAD
 ========================================================= */
-
-const USERS_FILE =
-    "accounts/users.enc";
 
 let users = [];
 
-let usersLoaded =
-    false;
-
-/* =========================================================
-   LOAD USERS
-========================================================= */
 
 async function loadUsers() {
 
@@ -696,12 +744,10 @@ async function loadUsers() {
                 USERS_FILE
             );
 
-        if (
-            !data.content
-        ) {
+        if (!data.content) {
 
             throw new Error(
-                "USERS DATABASE VIDE"
+                "USERS.ENC VIDE"
             );
         }
 
@@ -711,33 +757,95 @@ async function loadUsers() {
                     data.content,
                     "base64"
                 )
-                .toString(
-                    "utf8"
-                );
+                .toString("utf8")
+                .trim();
 
         console.log(
             "[USERS] Format détecté :",
-            raw.substring(
-                0,
-                20
-            )
+            raw.slice(0, 20)
         );
 
-        users =
-            decodeUsersFile(
-                raw
-            );
+        let result;
+
+        /*
+        DR1
+        */
 
         if (
-            !Array.isArray(users)
+            raw.startsWith("DR1:")
         ) {
 
-            throw new Error(
-                "USERS DATABASE INVALID"
-            );
+            result =
+                decryptDR1(
+                    raw
+                );
+
         }
 
-        usersLoaded =
+        /*
+        Ancien JSON AES
+        */
+
+        else {
+
+            try {
+
+                const payload =
+                    JSON.parse(raw);
+
+                result =
+                    decryptJSON(
+                        payload
+                    );
+
+            } catch {
+
+                /*
+                Dernier essai :
+                contenu base64url.
+                */
+
+                throw new Error(
+                    "FORMAT USERS.ENC INCONNU"
+                );
+            }
+        }
+
+        if (
+            !Array.isArray(result)
+        ) {
+
+            /*
+            Certaines anciennes bases
+            peuvent être :
+
+            {
+                users: [...]
+            }
+            */
+
+            if (
+                result &&
+                Array.isArray(
+                    result.users
+                )
+            ) {
+
+                result =
+                    result.users;
+
+            } else {
+
+                throw new Error(
+                    "USERS DATABASE CORRUPTED"
+                );
+            }
+        }
+
+        users =
+            result;
+
+        usersDatabaseReady =
             true;
 
         console.log(
@@ -748,14 +856,16 @@ async function loadUsers() {
 
     } catch (error) {
 
-        usersLoaded =
+        usersDatabaseReady =
             false;
-
-        users = [];
 
         console.error(
             "[USERS] DATABASE ERROR:",
             error.message
+        );
+
+        console.error(
+            "[USERS] Les comptes existants ne seront PAS écrasés."
         );
 
         return false;
@@ -763,36 +873,46 @@ async function loadUsers() {
 }
 
 /* =========================================================
-   SAVE USERS
+   USERS SAVE
 ========================================================= */
 
 async function saveUsers() {
 
-    if (
-        !usersLoaded
-    ) {
+    if (!usersDatabaseReady) {
 
         throw new Error(
-            "Impossible de sauvegarder : database users non chargée"
+            "BASE UTILISATEURS NON CHARGÉE - SAUVEGARDE REFUSÉE"
         );
     }
 
-    const payload =
+    /*
+    Nouveau format sauvegardé :
+    DR1:<base64url>
+    */
+
+    const encrypted =
         encryptJSON(
             users
+        );
+
+    const raw =
+        JSON.stringify(
+            encrypted
         );
 
     const content =
         Buffer
             .from(
-                JSON.stringify(
-                    payload
+                "DR1:" +
+                bufferToBase64Url(
+                    Buffer.from(
+                        raw,
+                        "utf8"
+                    )
                 ),
                 "utf8"
             )
-            .toString(
-                "base64"
-            );
+            .toString("base64");
 
     let sha;
 
@@ -817,11 +937,10 @@ async function saveUsers() {
 
         branch:
             GITHUB_BRANCH
+
     };
 
-    if (
-        sha
-    ) {
+    if (sha) {
 
         body.sha =
             sha;
@@ -830,8 +949,7 @@ async function saveUsers() {
     await githubRequest(
         USERS_FILE,
         {
-            method:
-                "PUT",
+            method: "PUT",
 
             headers: {
                 "Content-Type":
@@ -839,14 +957,8 @@ async function saveUsers() {
             },
 
             body:
-                JSON.stringify(
-                    body
-                )
+                JSON.stringify(body)
         }
-    );
-
-    console.log(
-        "[USERS] Database sauvegardée"
     );
 }
 
@@ -861,9 +973,8 @@ function createToken() {
         .toString("hex");
 }
 
-function publicUser(
-    user
-) {
+
+function publicUser(user) {
 
     if (!user) {
 
@@ -884,12 +995,12 @@ function publicUser(
 
         created_at:
             user.created_at
+
     };
 }
 
-function getTokenFromRequest(
-    req
-) {
+
+function getTokenFromRequest(req) {
 
     const header =
         req.headers.authorization;
@@ -905,9 +1016,7 @@ function getTokenFromRequest(
     if (
         !header
             .toLowerCase()
-            .startsWith(
-                "bearer "
-            )
+            .startsWith("bearer ")
     ) {
 
         return null;
@@ -918,9 +1027,8 @@ function getTokenFromRequest(
         .trim() || null;
 }
 
-function getUserFromToken(
-    token
-) {
+
+function getUserFromToken(token) {
 
     if (!token) {
 
@@ -956,26 +1064,12 @@ function getUserFromToken(
     return user;
 }
 
+
 function requireAuth(
     req,
     res,
     next
 ) {
-
-    if (
-        !usersLoaded
-    ) {
-
-        return res
-            .status(503)
-            .json({
-                success:
-                    false,
-
-                error:
-                    "USER DATABASE NOT AVAILABLE"
-            });
-    }
 
     const token =
         getTokenFromRequest(
@@ -992,10 +1086,7 @@ function requireAuth(
         return res
             .status(401)
             .json({
-
-                success:
-                    false,
-
+                success: false,
                 error:
                     "LOGIN REQUIRED"
             });
@@ -1029,18 +1120,17 @@ app.get(
             version:
                 "2.1",
 
-            users_loaded:
-                usersLoaded,
-
-            users:
-                users.length,
+            users_database:
+                usersDatabaseReady,
 
             websocket:
                 clients.size
 
         });
+
     }
 );
+
 
 app.get(
     "/api/status",
@@ -1054,18 +1144,22 @@ app.get(
             users:
                 users.length,
 
-            users_loaded:
-                usersLoaded,
-
             websocket:
                 clients.size,
 
             github:
                 Boolean(
                     GITHUB_TOKEN
-                )
+                ),
+
+            users_database:
+                usersDatabaseReady,
+
+            chat_log_format:
+                "txt"
 
         });
+
     }
 );
 
@@ -1081,14 +1175,14 @@ app.post(
         try {
 
             if (
-                !usersLoaded
+                !usersDatabaseReady
             ) {
 
                 return res
                     .status(503)
                     .json({
                         error:
-                            "USER DATABASE NOT AVAILABLE"
+                            "USER DATABASE UNAVAILABLE"
                     });
             }
 
@@ -1141,16 +1235,13 @@ app.post(
                 users.some(
                     user =>
                         String(
-                            user.username ||
-                            ""
+                            user.username || ""
                         )
                             .toLowerCase() ===
                         username.toLowerCase()
                 );
 
-            if (
-                exists
-            ) {
+            if (exists) {
 
                 return res
                     .status(409)
@@ -1180,8 +1271,8 @@ app.post(
                     profile || null,
 
                 created_at:
-                    new Date()
-                        .toISOString()
+                    new Date().toISOString()
+
             };
 
             users.push(
@@ -1196,11 +1287,13 @@ app.post(
             sessions.set(
                 token,
                 {
+
                     userId:
                         user.id,
 
                     createdAt:
                         Date.now()
+
                 }
             );
 
@@ -1215,6 +1308,7 @@ app.post(
                     publicUser(
                         user
                     )
+
             });
 
         } catch (error) {
@@ -1246,14 +1340,14 @@ app.post(
         try {
 
             if (
-                !usersLoaded
+                !usersDatabaseReady
             ) {
 
                 return res
                     .status(503)
                     .json({
                         error:
-                            "USER DATABASE NOT AVAILABLE"
+                            "USER DATABASE UNAVAILABLE"
                     });
             }
 
@@ -1273,8 +1367,7 @@ app.post(
                 users.find(
                     u =>
                         String(
-                            u.username ||
-                            ""
+                            u.username || ""
                         )
                             .toLowerCase() ===
                         username.toLowerCase()
@@ -1295,10 +1388,10 @@ app.post(
             ) {
 
                 return res
-                    .status(401)
+                    .status(500)
                     .json({
                         error:
-                            "ACCOUNT PASSWORD INVALID"
+                            "ACCOUNT FORMAT INVALID"
                     });
             }
 
@@ -1345,6 +1438,7 @@ app.post(
                     publicUser(
                         user
                     )
+
             });
 
         } catch (error) {
@@ -1384,7 +1478,9 @@ app.get(
                 publicUser(
                     req.user
                 )
+
         });
+
     }
 );
 
@@ -1407,6 +1503,7 @@ app.post(
             success:
                 true
         });
+
     }
 );
 
@@ -1469,6 +1566,7 @@ app.post(
                     publicUser(
                         req.user
                     )
+
             });
 
         } catch (error) {
@@ -1521,6 +1619,18 @@ app.patch(
                     });
             }
 
+            if (
+                url.length > 2000
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "PROFILE PICTURE URL TOO LONG"
+                    });
+            }
+
             req.user.profile_picture =
                 url;
 
@@ -1535,6 +1645,7 @@ app.patch(
                     publicUser(
                         req.user
                     )
+
             });
 
         } catch (error) {
@@ -1654,9 +1765,7 @@ app.post(
 
         try {
 
-            if (
-                !req.file
-            ) {
+            if (!req.file) {
 
                 return res
                     .status(400)
@@ -1690,8 +1799,14 @@ app.post(
                     });
             }
 
+            const original =
+                String(
+                    req.file.originalname ||
+                    "file"
+                );
+
             const safeName =
-                req.file.originalname
+                original
                     .replace(
                         /[^a-zA-Z0-9._-]/g,
                         "_"
@@ -1704,9 +1819,10 @@ app.post(
                 `${folder}/${filename}`;
 
             const content =
-                req.file.buffer.toString(
-                    "base64"
-                );
+                req.file.buffer
+                    .toString(
+                        "base64"
+                    );
 
             await githubRequest(
                 path,
@@ -1732,6 +1848,7 @@ app.post(
                                 GITHUB_BRANCH
 
                         })
+
                 }
             );
 
@@ -1770,19 +1887,20 @@ app.post(
 );
 
 /* =========================================================
-   CHAT LOG HELPERS
+   CHAT TXT HELPERS
 ========================================================= */
 
-function chatLogPath(
-    number
-) {
+function chatLogPath(number) {
 
     return (
-        "chat-log/" +
-        number +
-        ".json"
+        `${CHAT_LOG_FOLDER}/${number}.txt`
     );
 }
+
+
+/*
+Liste les TXT du dossier chat-log.
+*/
 
 async function getChatLogsList() {
 
@@ -1790,7 +1908,7 @@ async function getChatLogsList() {
 
         const data =
             await githubRequest(
-                "chat-log"
+                CHAT_LOG_FOLDER
             );
 
         return Array.isArray(data)
@@ -1803,9 +1921,63 @@ async function getChatLogsList() {
     }
 }
 
-async function readChatLog(
-    number
-) {
+
+/*
+Transforme une ligne TXT en message.
+
+Format utilisé :
+
+[2026-08-30T15:00:00.000Z] username | message
+*/
+
+function parseChatLine(line) {
+
+    const match =
+        line.match(
+            /^\[([^\]]+)\]\s*(.*?)\s*\|\s*(.*)$/
+        );
+
+    if (!match) {
+
+        return null;
+    }
+
+    const timestamp =
+        match[1];
+
+    const username =
+        match[2];
+
+    const message =
+        match[3];
+
+    return {
+
+        username,
+
+        user_id:
+            null,
+
+        profile_picture:
+            null,
+
+        message,
+
+        timestamp
+
+    };
+}
+
+
+/*
+Lecture d'un TXT.
+
+Le serveur renvoie toujours
+des objets JSON à l'API afin que
+le HTML n'ait pas besoin de changer.
+*/
+
+async function readChatLog(number) {
 
     const path =
         chatLogPath(
@@ -1817,9 +1989,7 @@ async function readChatLog(
             path
         );
 
-    if (
-        !data.content
-    ) {
+    if (!data.content) {
 
         return [];
     }
@@ -1830,36 +2000,72 @@ async function readChatLog(
                 data.content,
                 "base64"
             )
-            .toString(
-                "utf8"
-            );
+            .toString("utf8");
 
-    const json =
-        JSON.parse(
-            decoded
+    const lines =
+        decoded.split(
+            /\r?\n/
         );
 
-    if (
-        Array.isArray(json)
+    const messages = [];
+
+    for (
+        const line
+        of lines
     ) {
 
-        return json;
+        if (
+            !line.trim()
+        ) {
+
+            continue;
+        }
+
+        const message =
+            parseChatLine(
+                line
+            );
+
+        if (message) {
+
+            /*
+            On essaie de récupérer
+            les infos utilisateur
+            depuis la base actuelle.
+            */
+
+            const user =
+                users.find(
+                    u =>
+                        String(
+                            u.username || ""
+                        ).toLowerCase() ===
+                        String(
+                            message.username
+                        ).toLowerCase()
+                );
+
+            if (user) {
+
+                message.user_id =
+                    user.id;
+
+                message.profile_picture =
+                    user.profile_picture ||
+                    null;
+            }
+
+            messages.push(
+                message
+            );
+        }
     }
 
-    if (
-        Array.isArray(
-            json.messages
-        )
-    ) {
-
-        return json.messages;
-    }
-
-    return [];
+    return messages;
 }
 
 /* =========================================================
-   CHAT LOG LIST
+   CHAT LOG LIST API
 ========================================================= */
 
 app.get(
@@ -1879,7 +2085,7 @@ app.get(
                     .filter(
                         file =>
                             file.name &&
-                            /\.json$/i.test(
+                            /\.txt$/i.test(
                                 file.name
                             )
                     )
@@ -2010,26 +2216,25 @@ async function saveChatMessage(
     const files =
         await getChatLogsList();
 
-    const jsonFiles =
+    const txtFiles =
         files
             .filter(
                 file =>
-                    /^\d+\.json$/i.test(
-                        file.name ||
-                        ""
+                    /^\d+\.txt$/i.test(
+                        file.name || ""
                     )
             )
             .sort(
                 (a, b) =>
                     Number(
                         a.name.replace(
-                            ".json",
+                            /\.txt$/i,
                             ""
                         )
                     ) -
                     Number(
                         b.name.replace(
-                            ".json",
+                            /\.txt$/i,
                             ""
                         )
                     )
@@ -2038,35 +2243,34 @@ async function saveChatMessage(
     let number =
         1;
 
-    let messages =
-        [];
+    let currentText =
+        "";
 
     let currentSha =
         null;
 
+    /*
+    Récupération du dernier fichier.
+    */
+
     if (
-        jsonFiles.length
+        txtFiles.length
     ) {
 
         const last =
-            jsonFiles[
-                jsonFiles.length - 1
+            txtFiles[
+                txtFiles.length - 1
             ];
 
         number =
             Number(
                 last.name.replace(
-                    ".json",
+                    /\.txt$/i,
                     ""
                 )
             );
 
         try {
-
-            messages =
-                await readChatLog(
-                    number
-                );
 
             const githubFile =
                 await githubRequest(
@@ -2076,56 +2280,90 @@ async function saveChatMessage(
             currentSha =
                 githubFile.sha;
 
-        } catch {
+            if (
+                githubFile.content
+            ) {
 
-            messages =
-                [];
+                currentText =
+                    Buffer
+                        .from(
+                            githubFile.content,
+                            "base64"
+                        )
+                        .toString(
+                            "utf8"
+                        );
+            }
+
+        } catch (error) {
+
+            console.error(
+                "[CHAT LOG READ BEFORE SAVE]",
+                error.message
+            );
+
+            currentText =
+                "";
         }
     }
 
-    messages.push(
-        message
-    );
+    /*
+    Ligne du nouveau message.
+    */
 
-    let content =
-        JSON.stringify(
-            {
-                messages
-            },
-            null,
-            2
-        );
+    const safeUsername =
+        String(
+            message.username || "Unknown"
+        )
+            .replace(
+                /[\r\n|]/g,
+                " "
+            );
+
+    const safeMessage =
+        String(
+            message.message || ""
+        )
+            .replace(
+                /\r/g,
+                ""
+            )
+            .replace(
+                /\n/g,
+                "\\n"
+            );
+
+    const line =
+        `[${message.timestamp}] ${safeUsername} | ${safeMessage}\n`;
+
+    const newText =
+        currentText +
+        line;
 
     /*
-    15 MB maximum.
+    Si le TXT dépasse 15 MB,
+    nouveau fichier.
     */
 
     if (
         Buffer.byteLength(
-            content,
+            newText,
             "utf8"
-        ) >
-        CHAT_LOG_LIMIT
+        ) > CHAT_LOG_LIMIT
     ) {
 
         number++;
 
-        messages = [
-            message
-        ];
-
-        content =
-            JSON.stringify(
-                {
-                    messages
-                },
-                null,
-                2
-            );
+        currentText =
+            "";
 
         currentSha =
             null;
     }
+
+    const finalText =
+        currentText +
+        line;
 
     const path =
         chatLogPath(
@@ -2133,7 +2371,8 @@ async function saveChatMessage(
         );
 
     /*
-    Vérification supplémentaire.
+    Si le nouveau fichier existe déjà,
+    récupérer son SHA.
     */
 
     if (
@@ -2161,7 +2400,7 @@ async function saveChatMessage(
         content:
             Buffer
                 .from(
-                    content,
+                    finalText,
                     "utf8"
                 )
                 .toString(
@@ -2170,6 +2409,7 @@ async function saveChatMessage(
 
         branch:
             GITHUB_BRANCH
+
     };
 
     if (
@@ -2196,6 +2436,7 @@ async function saveChatMessage(
                 JSON.stringify(
                     body
                 )
+
         }
     );
 }
@@ -2208,19 +2449,25 @@ function getTokenFromWebSocket(
     request
 ) {
 
-    const url =
-        new URL(
-            request.url,
-            `http://${request.headers.host}`
+    try {
+
+        const url =
+            new URL(
+                request.url,
+                `http://${request.headers.host}`
+            );
+
+        return (
+            url.searchParams.get(
+                "token"
+            ) ||
+            null
         );
 
-    const token =
-        url.searchParams.get(
-            "token"
-        );
+    } catch {
 
-    return token ||
-        null;
+        return null;
+    }
 }
 
 /* =========================================================
@@ -2241,21 +2488,23 @@ wss.on(
                 token
             );
 
-        if (
-            !user
-        ) {
+        if (!user) {
 
-            ws.send(
-                JSON.stringify({
+            try {
 
-                    type:
-                        "error",
+                ws.send(
+                    JSON.stringify({
 
-                    message:
-                        "LOGIN REQUIRED"
+                        type:
+                            "error",
 
-                })
-            );
+                        message:
+                            "LOGIN REQUIRED"
+
+                    })
+                );
+
+            } catch {}
 
             ws.close(
                 1008,
@@ -2315,9 +2564,7 @@ wss.on(
                             ws.authToken
                         );
 
-                    if (
-                        !current
-                    ) {
+                    if (!current) {
 
                         ws.send(
                             JSON.stringify({
@@ -2358,9 +2605,7 @@ wss.on(
                             ""
                         ).trim();
 
-                    if (
-                        !message
-                    ) {
+                    if (!message) {
 
                         return;
                     }
@@ -2402,10 +2647,11 @@ wss.on(
                         timestamp:
                             new Date()
                                 .toISOString()
+
                     };
 
                     /*
-                    Sauvegarde GitHub.
+                    Sauvegarde TXT GitHub.
                     */
 
                     try {
@@ -2418,7 +2664,7 @@ wss.on(
 
                         console.error(
                             "[CHAT LOG SAVE]",
-                            error.message
+                            error
                         );
                     }
 
@@ -2496,9 +2742,7 @@ wss.on(
    BROADCAST
 ========================================================= */
 
-function broadcast(
-    data
-) {
+function broadcast(data) {
 
     const message =
         JSON.stringify(
@@ -2525,6 +2769,7 @@ function broadcast(
         }
     }
 }
+
 
 function broadcastUsers() {
 
@@ -2572,11 +2817,9 @@ app.use(
         res
             .status(500)
             .json({
-
                 error:
                     err.message ||
                     "SERVER ERROR"
-
             });
     }
 );
@@ -2620,18 +2863,19 @@ async function start() {
     );
 
     console.log(
-        "CHAT LOG LIMIT:",
-        "15 MB"
+        "CHAT LOG FORMAT: TXT"
     );
 
     console.log(
-        "UPLOAD LIMIT:",
-        "25 MB"
+        "CHAT LOG LIMIT: 15 MB"
     );
 
     console.log(
-        "MESSAGE LIMIT:",
-        MESSAGE_LIMIT
+        "UPLOAD LIMIT: 25 MB"
+    );
+
+    console.log(
+        "MESSAGE LIMIT: 500"
     );
 
     console.log(
@@ -2641,9 +2885,7 @@ async function start() {
     const loaded =
         await loadUsers();
 
-    if (
-        !loaded
-    ) {
+    if (!loaded) {
 
         console.error(
             "================================"
@@ -2680,10 +2922,6 @@ async function start() {
         );
 
         console.log(
-            `${users.length} comptes disponibles`
-        );
-
-        console.log(
             "================================"
         );
     }
@@ -2705,6 +2943,13 @@ async function start() {
                 "WSS READY"
             );
 
+            console.log(
+                "CHAT LOG TXT READY"
+            );
+
+            console.log(
+                "================================"
+            );
         }
     );
 }
