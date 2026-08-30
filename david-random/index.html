@@ -3108,109 +3108,161 @@ function addSystemMessage(message){
    CHAT HISTORY
 ========================================================= */
 
-async function loadChatHistory(){
+async function loadChatHistory() {
 
-    if(
+    if (
         !currentUser ||
         !token
-    ){
+    ) {
 
         showChatLoginRequired();
 
         return;
-
     }
 
-
     clearChat();
-
 
     addSystemMessage(
         "Chargement de chat-log/..."
     );
 
-
-    try{
+    try {
 
         const list =
             await apiRequest(
                 "/api/chat/logs"
             );
 
-
         const logs =
-            list.logs || [];
+            Array.isArray(list.logs)
+                ? list.logs
+                : [];
 
+        if (!logs.length) {
 
-        for(const log of logs){
-
-            const match =
-                String(log.name || "")
-                .match(/(\d+)/);
-
-
-            const number =
-                match &&
-                match[1];
-
-
-            if(!number){
-
-                continue;
-
-            }
-
-
-            const data =
-                await apiRequest(
-                    "/api/chat/log/" +
-                    number
-                );
-
-
-            for(
-                const message of
-                data.messages || []
-            ){
-
-                displayChatMessage(
-                    message
-                );
-
-            }
-
-        }
-
-
-        if(!logs.length){
+            clearChat();
 
             addSystemMessage(
                 "Aucun historique dans chat-log."
             );
 
+            updateChatStatus(
+                "Historique vide ✓"
+            );
+
+            return;
         }
 
+        let loadedMessages = 0;
+
+        for (
+            const log of logs
+        ) {
+
+            const match =
+                String(
+                    log.name || ""
+                ).match(/(\d+)/);
+
+            const number =
+                match && match[1];
+
+            if (!number) {
+                continue;
+            }
+
+            try {
+
+                const data =
+                    await apiRequest(
+                        "/api/chat/log/" +
+                        number
+                    );
+
+                const messages =
+                    Array.isArray(
+                        data.messages
+                    )
+                        ? data.messages
+                        : [];
+
+                for (
+                    const message
+                    of messages
+                ) {
+
+                    displayChatMessage(
+                        message
+                    );
+
+                    loadedMessages++;
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "[CHAT LOG] Impossible de lire " +
+                    log.name +
+                    ":",
+                    error.message
+                );
+
+            }
+        }
+
+        if (
+            loadedMessages === 0
+        ) {
+
+            clearChat();
+
+            addSystemMessage(
+                "Aucun message dans chat-log."
+            );
+
+        }
 
         updateChatStatus(
             "Historique chargé ✓"
         );
 
-
-    }catch(error){
+    } catch (error) {
 
         console.error(
             "[CHAT LOG]",
             error
         );
 
+        if (
+            error.message ===
+            "Not Found"
+        ) {
+
+            clearChat();
+
+            addSystemMessage(
+                "Aucun historique dans chat-log."
+            );
+
+            updateChatStatus(
+                "Historique vide ✓"
+            );
+
+            return;
+        }
+
+        clearChat();
 
         addSystemMessage(
             "Impossible de charger chat-log : " +
             error.message
         );
 
+        updateChatStatus(
+            "Erreur historique"
+        );
     }
-
 }
 
 
