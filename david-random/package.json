@@ -1,15 +1,15 @@
 {
-  "name": "david-random-server",
+  "name": "david-random",
   "version": "2.0.0",
-  "description": "David Random server - Render + GitHub + WebSocket + accounts",
+  "description": "DAVID RANDOM API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
     "express": "^5.1.0",
-    "ws": "^8.18.0"
+    "cors": "^2.8.5",
+    "ws": "^8.18.3",
+    "multer": "^2.0.2"
   }
 }
