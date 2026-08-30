@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "users": [
+    {
+      "id": "75a9cf6b-e91c-4e97-a214-acb3fd6e9447",
+      "username": "david_officiel",
+      "password_hash": "0e571ece823cf1518c7021b9fa13f8d4889a9547c2a398f024b744c44970109810bddea1f389313bcb567c498e6c153aee569f23fc04f3154efbaa4d2495c735",
+      "password_salt": "edb65696d12f4f02a805ccaba8f51af61ab8e21b619c50537ae7367b5b49bec4",
+      "profile_picture": "https://i.pinimg.com/736x/1b/59/26/1b592683de7657eee1f6887f21859727.jpg",
+      "created_at": "2026-08-30T12:21:05.636Z"
+    }
+  ]
+}
