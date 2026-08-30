@@ -76,10 +76,10 @@ if (!GITHUB_TOKEN) {
 }
 
 /*
-AES-256 :
-la clé fournie dans Render peut avoir
-n'importe quelle longueur.
-On la transforme en 32 octets.
+AES-256-GCM
+
+La clé Render peut avoir n'importe quelle longueur.
+On la transforme en 32 octets avec SHA-256.
 */
 
 const CRYPTO_KEY =
@@ -259,27 +259,34 @@ async function githubRequest(
 }
 
 /* =========================================================
-   CRYPTO
+   CRYPTO AES-256-GCM
 ========================================================= */
 
 /*
-Format AES interne :
+Nouveau format users.enc :
 
 {
-    version: 1,
-    iv: "...",
-    data: "..."
+    "version": 2,
+    "algorithm": "aes-256-gcm",
+    "iv": "...",
+    "data": "...",
+    "authTag": "..."
 }
+
+AES-GCM permet :
+- chiffrement
+- vérification d'intégrité
+- détection d'une mauvaise clé
 */
 
 function encryptJSON(value) {
 
     const iv =
-        crypto.randomBytes(16);
+        crypto.randomBytes(12);
 
     const cipher =
         crypto.createCipheriv(
-            "aes-256-cbc",
+            "aes-256-gcm",
             CRYPTO_KEY,
             iv
         );
@@ -298,16 +305,25 @@ function encryptJSON(value) {
             cipher.final()
         ]);
 
+    const authTag =
+        cipher.getAuthTag();
+
     return {
 
         version:
-            1,
+            2,
+
+        algorithm:
+            "aes-256-gcm",
 
         iv:
             iv.toString("base64"),
 
         data:
-            encrypted.toString("base64")
+            encrypted.toString("base64"),
+
+        authTag:
+            authTag.toString("base64")
     };
 }
 
@@ -316,13 +332,15 @@ function decryptJSON(payload) {
 
     if (
         !payload ||
-        payload.version !== 1 ||
+        payload.version !== 2 ||
+        payload.algorithm !== "aes-256-gcm" ||
         !payload.iv ||
-        !payload.data
+        !payload.data ||
+        !payload.authTag
     ) {
 
         throw new Error(
-            "FORMAT AES INVALIDE"
+            "FORMAT AES-256-GCM INVALIDE"
         );
     }
 
@@ -338,12 +356,36 @@ function decryptJSON(payload) {
             "base64"
         );
 
+    const authTag =
+        Buffer.from(
+            payload.authTag,
+            "base64"
+        );
+
+    if (iv.length !== 12) {
+
+        throw new Error(
+            "IV AES-256-GCM INVALIDE"
+        );
+    }
+
+    if (authTag.length !== 16) {
+
+        throw new Error(
+            "AUTH TAG AES-256-GCM INVALIDE"
+        );
+    }
+
     const decipher =
         crypto.createDecipheriv(
-            "aes-256-cbc",
+            "aes-256-gcm",
             CRYPTO_KEY,
             iv
         );
+
+    decipher.setAuthTag(
+        authTag
+    );
 
     const decrypted =
         Buffer.concat([
@@ -359,258 +401,6 @@ function decryptJSON(payload) {
 }
 
 /* =========================================================
-   DR1 COMPATIBILITY
-========================================================= */
-
-/*
-Certaines anciennes versions du serveur
-utilisaient :
-
-DR1:...
-
-On essaye plusieurs représentations
-sans jamais remplacer users.enc si
-le déchiffrement échoue.
-*/
-
-function decodeBase64Url(value) {
-
-    let str =
-        String(value)
-            .replace(/-/g, "+")
-            .replace(/_/g, "/");
-
-    while (
-        str.length % 4 !== 0
-    ) {
-
-        str += "=";
-    }
-
-    return Buffer.from(
-        str,
-        "base64"
-    );
-}
-
-
-function tryParseJSONBuffer(buffer) {
-
-    const text =
-        buffer
-            .toString("utf8")
-            .trim();
-
-    if (!text) {
-
-        throw new Error(
-            "DONNEES VIDES"
-        );
-    }
-
-    return JSON.parse(text);
-}
-
-
-function decryptDR1(value) {
-
-    /*
-    Retire DR1:
-    */
-
-    const raw =
-        String(value)
-            .trim()
-            .slice(4);
-
-    if (!raw) {
-
-        throw new Error(
-            "DR1 VIDE"
-        );
-    }
-
-    /*
-    CAS 1 :
-
-    DR1:{JSON}
-    */
-
-    if (
-        raw.startsWith("{")
-    ) {
-
-        try {
-
-            const payload =
-                JSON.parse(raw);
-
-            return decryptJSON(
-                payload
-            );
-
-        } catch {}
-    }
-
-    /*
-    CAS 2 :
-
-    DR1:<base64>
-    */
-
-    try {
-
-        const decoded =
-            decodeBase64Url(raw);
-
-        const text =
-            decoded
-                .toString("utf8")
-                .trim();
-
-        if (
-            text.startsWith("{")
-        ) {
-
-            const payload =
-                JSON.parse(text);
-
-            if (
-                payload.version === 1
-            ) {
-
-                return decryptJSON(
-                    payload
-                );
-            }
-
-            if (
-                Array.isArray(payload)
-            ) {
-
-                return payload;
-            }
-        }
-
-    } catch {}
-
-    /*
-    CAS 3 :
-
-    DR1:iv:data
-    */
-
-    const parts =
-        raw.split(":");
-
-    if (
-        parts.length >= 2
-    ) {
-
-        /*
-        On essaie :
-
-        DR1:iv:data
-        */
-
-        try {
-
-            const iv =
-                decodeBase64Url(
-                    parts[0]
-                );
-
-            const encrypted =
-                decodeBase64Url(
-                    parts.slice(1).join(":")
-                );
-
-            if (
-                iv.length === 16 &&
-                encrypted.length > 0
-            ) {
-
-                const decipher =
-                    crypto.createDecipheriv(
-                        "aes-256-cbc",
-                        CRYPTO_KEY,
-                        iv
-                    );
-
-                const decrypted =
-                    Buffer.concat([
-                        decipher.update(
-                            encrypted
-                        ),
-                        decipher.final()
-                    ]);
-
-                return JSON.parse(
-                    decrypted.toString("utf8")
-                );
-            }
-
-        } catch {}
-    }
-
-    /*
-    CAS 4 :
-
-    DR1:<iv hex>:<data hex>
-    */
-
-    if (
-        parts.length >= 2
-    ) {
-
-        try {
-
-            const iv =
-                Buffer.from(
-                    parts[0],
-                    "hex"
-                );
-
-            const encrypted =
-                Buffer.from(
-                    parts.slice(1).join(":"),
-                    "hex"
-                );
-
-            if (
-                iv.length === 16 &&
-                encrypted.length > 0
-            ) {
-
-                const decipher =
-                    crypto.createDecipheriv(
-                        "aes-256-cbc",
-                        CRYPTO_KEY,
-                        iv
-                    );
-
-                const decrypted =
-                    Buffer.concat([
-                        decipher.update(
-                            encrypted
-                        ),
-                        decipher.final()
-                    ]);
-
-                return JSON.parse(
-                    decrypted.toString("utf8")
-                );
-            }
-
-        } catch {}
-    }
-
-    throw new Error(
-        "FORMAT DR1 INVALIDE OU ENCRYPTION_KEY INCORRECTE"
-    );
-}
-
-/* =========================================================
    USERS DATABASE
 ========================================================= */
 
@@ -622,7 +412,6 @@ let users = [];
 let usersLoaded =
     false;
 
-
 /* =========================================================
    LOAD USERS
 ========================================================= */
@@ -631,10 +420,51 @@ async function loadUsers() {
 
     try {
 
-        const data =
-            await githubRequest(
-                USERS_FILE
-            );
+        let data;
+
+        try {
+
+            data =
+                await githubRequest(
+                    USERS_FILE
+                );
+
+        } catch (error) {
+
+            /*
+            404 = users.enc n'existe pas encore.
+            C'est normal pour une nouvelle installation.
+            */
+
+            if (
+                String(
+                    error.message
+                ).includes("404")
+            ) {
+
+                console.log(
+                    "[USERS] users.enc absent."
+                );
+
+                console.log(
+                    "[USERS] Création d'une nouvelle base vide."
+                );
+
+                users = [];
+
+                usersLoaded =
+                    true;
+
+                /*
+                On ne crée pas encore le fichier.
+                Il sera créé au premier register.
+                */
+
+                return true;
+            }
+
+            throw error;
+        }
 
         if (!data.content) {
 
@@ -652,60 +482,37 @@ async function loadUsers() {
                 .toString("utf8")
                 .trim();
 
+        if (!fileText) {
+
+            throw new Error(
+                "USERS DATABASE VIDE"
+            );
+        }
+
         console.log(
-            "[USERS] Format détecté :",
-            fileText.substring(
-                0,
-                40
-            )
+            "[USERS] Lecture du fichier users.enc..."
         );
 
-        let loadedUsers;
+        let parsed;
 
-        /*
-        =====================================================
-        DR1
-        =====================================================
-        */
+        try {
 
-        if (
-            fileText.startsWith("DR1:")
-        ) {
-
-            loadedUsers =
-                decryptDR1(
+            parsed =
+                JSON.parse(
                     fileText
                 );
 
-        } else {
+        } catch {
 
-            /*
-            =================================================
-            AES JSON
-            =================================================
-            */
-
-            let parsed;
-
-            try {
-
-                parsed =
-                    JSON.parse(
-                        fileText
-                    );
-
-            } catch {
-
-                throw new Error(
-                    "FORMAT USERS.ENC INCONNU"
-                );
-            }
-
-            loadedUsers =
-                decryptJSON(
-                    parsed
-                );
+            throw new Error(
+                "FORMAT USERS.ENC INCONNU"
+            );
         }
+
+        const loadedUsers =
+            decryptJSON(
+                parsed
+            );
 
         if (
             !Array.isArray(
@@ -742,10 +549,6 @@ async function loadUsers() {
             error.message
         );
 
-        console.error(
-            "[USERS] Les comptes existants ne seront PAS écrasés."
-        );
-
         return false;
     }
 }
@@ -755,12 +558,6 @@ async function loadUsers() {
 ========================================================= */
 
 async function saveUsers() {
-
-    /*
-    Sécurité importante :
-    on interdit une sauvegarde si la base
-    n'a pas été correctement chargée.
-    */
 
     if (!usersLoaded) {
 
@@ -776,7 +573,9 @@ async function saveUsers() {
         Buffer
             .from(
                 JSON.stringify(
-                    payload
+                    payload,
+                    null,
+                    2
                 ),
                 "utf8"
             )
@@ -794,7 +593,12 @@ async function saveUsers() {
         sha =
             old.sha;
 
-    } catch {
+    } catch (error) {
+
+        /*
+        Si le fichier n'existe pas,
+        sha reste undefined.
+        */
 
         sha =
             undefined;
@@ -803,7 +607,7 @@ async function saveUsers() {
     const body = {
 
         message:
-            "Update accounts database",
+            "Update encrypted accounts database",
 
         content,
 
@@ -835,7 +639,7 @@ async function saveUsers() {
     );
 
     console.log(
-        "[USERS] Base sauvegardée"
+        "[USERS] Base AES-256-GCM sauvegardée sur GitHub"
     );
 }
 
@@ -1005,7 +809,7 @@ app.get(
                 "DAVID RANDOM V2 API",
 
             version:
-                "2.1",
+                "2.2",
 
             chat_log_format:
                 "TXT"
@@ -1748,12 +1552,6 @@ function chatLogPath(number) {
 }
 
 
-/*
-Format d'une ligne :
-
-[2026-08-30T15:55:00.000Z] David (user-id) : Bonjour
-*/
-
 function formatChatMessage(message) {
 
     const timestamp =
@@ -1790,10 +1588,6 @@ function formatChatMessage(message) {
     );
 }
 
-
-/*
-Convertit une ligne TXT en message.
-*/
 
 function parseChatLine(line) {
 
@@ -1843,10 +1637,6 @@ function parseChatLine(line) {
 }
 
 
-/*
-Lit un fichier TXT.
-*/
-
 async function readChatLog(
     number
 ) {
@@ -1888,10 +1678,6 @@ async function readChatLog(
 }
 
 
-/*
-Liste les TXT.
-*/
-
 async function getChatLogsList() {
 
     try {
@@ -1910,7 +1696,6 @@ async function getChatLogsList() {
         return [];
     }
 }
-
 
 /* =========================================================
    CHAT LOG API
@@ -2095,10 +1880,6 @@ async function saveChatMessage(
     let currentSha =
         null;
 
-    /*
-    Récupère le dernier fichier.
-    */
-
     if (
         txtFiles.length > 0
     ) {
@@ -2157,11 +1938,6 @@ async function saveChatMessage(
         content +
         line;
 
-    /*
-    Si > 15 MB :
-    nouveau fichier.
-    */
-
     if (
         Buffer.byteLength(
             newContent,
@@ -2187,10 +1963,6 @@ async function saveChatMessage(
         chatLogPath(
             number
         );
-
-    /*
-    Vérifie le SHA si nécessaire.
-    */
 
     if (!currentSha) {
 
@@ -2477,10 +2249,6 @@ wss.on(
                                 .toISOString()
                     };
 
-                    /*
-                    Sauvegarde TXT.
-                    */
-
                     try {
 
                         await saveChatMessage(
@@ -2494,10 +2262,6 @@ wss.on(
                             error
                         );
                     }
-
-                    /*
-                    Diffusion.
-                    */
 
                     broadcast({
 
@@ -2705,6 +2469,10 @@ async function start() {
     );
 
     console.log(
+        "ENCRYPTION: AES-256-GCM"
+    );
+
+    console.log(
         "================================"
     );
 
@@ -2719,10 +2487,6 @@ async function start() {
 
         console.error(
             "ATTENTION : users.enc n'a pas pu être chargé."
-        );
-
-        console.error(
-            "Les comptes existants ne seront PAS écrasés."
         );
 
         console.error(
