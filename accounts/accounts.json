@@ -1,3 +1,11 @@
 {
-  "users": []
+  "users": [
+    {
+      "id": "83465ad9318ccaccd5abf548",
+      "username": "david_officiel",
+      "username_normalized": "david_officiel",
+      "profile_picture": "https://i.pinimg.com/736x/1b/59/26/1b592683de7657eee1f6887f21859727.jpg",
+      "created_at": "2026-08-30T12:44:20.381Z"
+    }
+  ]
 }
