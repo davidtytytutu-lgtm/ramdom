@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "algorithm": "aes-256-gcm",
+  "iv": "RpBBL+WIi3yk+n6G",
+  "data": "5IP4wlNWhiw5V0Ow74jOqGkqDtzFxL9VE2ldX56YpjXFgMxs3KZUbhEQhbaKw6+5aGUlvJaBHhsYOBcGRmwy+vx9hz42mcCgxAFn2e7zzX4ZnlEpbzOQxzXd/Tfn2NXa7oDqXPYvcD9SMWHOO0tpHyMKCJb6N9j0MZejAQSiVFtXycHVKPy8OsZXweFvcsp/+U5X0BgA6V1L8DfquLl9YsD4WOIxzRzzdm6c1IZXgQDkQITkJFsmO+MWoHKFPmmrF5AsasLLovjRkf6nxZoKFqhSQVUkN2WTyV3x1C4nLe+KsMLBrvaphivXve2SCjaFRBM+c9dmtzcE+GKNju4L40pJkCsVYcC3RgK3nPD4QO7PTlyy95I+5tI9BdVOHw==",
+  "authTag": "j9/mUyTEGrGUkI8x/Z7HuQ=="
+}
