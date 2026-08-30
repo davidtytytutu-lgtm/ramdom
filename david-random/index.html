@@ -1,73 +1,1019 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DAVID RANDOM // INTERNET TERMINAL</title>
+
 <style>
-:root{--bg:#050805;--panel:#0b100b;--green:#35ff5a;--dark:#16852b;--soft:#8cff9d;--text:#d5ffd9;--red:#ff4444;--yellow:#ffff55}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:radial-gradient(circle,#101810 0,#030503 80%);color:var(--text);font-family:"Courier New",monospace;overflow-x:hidden}
-body:before{content:"";pointer-events:none;position:fixed;inset:0;z-index:9999;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.025) 0,rgba(255,255,255,.025) 1px,transparent 2px,transparent 4px)}
-body:after{content:"";pointer-events:none;position:fixed;inset:0;z-index:9998;box-shadow:inset 0 0 100px #000,inset 0 0 20px rgba(0,255,50,.08)}
-button,input,textarea{font-family:inherit}a{color:var(--green);text-decoration:none}a:hover{color:#fff;text-shadow:0 0 8px var(--green)}
-.wrapper{width:min(1200px,calc(100% - 20px));margin:15px auto}header,nav,.sidebar,.panel,footer{border:2px solid var(--dark);background:var(--panel);box-shadow:inset 0 0 25px rgba(0,255,50,.025)}
-header{padding:18px}.logo{color:var(--green);font-size:clamp(25px,5vw,55px);font-weight:bold;letter-spacing:5px;text-shadow:0 0 4px var(--green),0 0 15px rgba(50,255,80,.5)}.logo-small{color:var(--soft);font-size:14px;margin-top:5px}.blink{animation:blink 1s steps(2,start) infinite}@keyframes blink{50%{opacity:0}}
-.status{margin-top:15px;padding-top:10px;border-top:1px dashed var(--dark);display:flex;flex-wrap:wrap;gap:20px;font-size:13px}.online{color:var(--green)}.offline{color:var(--red)}.warning{color:var(--yellow)}nav{margin-top:10px;display:flex;flex-wrap:wrap}nav button{padding:12px 15px;border:0;border-right:1px solid var(--dark);background:transparent;color:var(--green);cursor:pointer;font-weight:bold}nav button:hover,nav button.active{background:var(--green);color:#001800}
-.marquee{overflow:hidden;white-space:nowrap;border-top:1px dashed var(--dark);border-bottom:1px dashed var(--dark);padding:7px;color:var(--soft)}.marquee span{display:inline-block;animation:scrollText 18s linear infinite}@keyframes scrollText{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
-.layout{display:grid;grid-template-columns:220px 1fr;gap:10px;margin-top:10px}@media(max-width:750px){.layout{grid-template-columns:1fr}}
-.sidebar{height:max-content;padding:10px}.sidebar h3{margin-top:0;padding-bottom:8px;border-bottom:1px dashed var(--dark);color:var(--green)}.side-link{padding:8px;border-bottom:1px dotted #245b2c;cursor:pointer}.side-link:hover{background:#142014}.side-box{margin-top:15px;padding:10px;border:1px solid var(--dark);font-size:12px}.account-mini{text-align:center}.account-mini img{width:80px;height:80px;object-fit:cover;border:2px solid var(--green);background:#000;margin-bottom:8px}.account-mini-name{color:var(--green);font-weight:bold;word-break:break-word}
-.page{display:none}.page.active{display:block}.panel{margin-bottom:10px}.panel-title{padding:9px 12px;border-bottom:1px solid var(--dark);background:#101b10;color:var(--green);font-weight:bold}.panel-content{padding:15px}.hero{min-height:270px;display:flex;align-items:center}.hero h1{color:var(--green);font-size:clamp(25px,5vw,45px)}.prompt{color:var(--green)}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media(max-width:700px){.cards{grid-template-columns:1fr}}.card{padding:15px;border:1px solid var(--dark);background:#091009}.card:hover{border-color:var(--green)}
-.retro-btn{padding:8px 12px;border:1px solid var(--green);background:#0a160a;color:var(--green);cursor:pointer}.retro-btn:hover{background:var(--green);color:#001500}.retro-btn.danger{border-color:var(--red);color:var(--red)}.retro-input,.retro-textarea{width:100%;margin-bottom:10px;padding:10px;outline:0;border:1px solid var(--dark);background:#020602;color:var(--soft)}.retro-input:focus,.retro-textarea:focus{border-color:var(--green);box-shadow:0 0 8px rgba(53,255,90,.15)}.retro-textarea{min-height:120px;resize:vertical}
-.auth-box{max-width:600px;margin:auto}.auth-section{padding:15px;border:1px solid var(--dark);background:#080d08;margin-bottom:10px}.auth-section h3{margin-top:0;color:var(--green)}.auth-label{display:block;color:var(--soft);margin-bottom:5px}.auth-status{min-height:22px;margin-top:12px;padding:8px;border:1px dashed var(--dark);background:#020502}.auth-status.success{color:var(--green)}.auth-status.error{color:var(--red)}
-.account-card{text-align:center;max-width:500px;margin:auto}.account-avatar{width:150px;height:150px;object-fit:cover;border:3px solid var(--green);background:#000}.account-username{margin:15px 0 5px;color:var(--green);font-size:28px;font-weight:bold}.account-id{color:#58745c;font-size:12px}.account-status{margin:15px 0;color:var(--green)}.account-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
-.upload-box{margin-bottom:15px;padding:20px;border:1px dashed var(--dark)}.upload-status{margin-top:10px;color:var(--soft)}.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.media-item{padding:10px;border:1px solid var(--dark);background:#080d08;overflow:hidden}.media-item img,.media-item video{width:100%;max-height:200px;object-fit:contain;background:#000}.media-item audio{width:100%}
-.chat-box{height:420px;overflow-y:auto;padding:10px;border:1px solid var(--dark);background:#020502}.chat-message{margin-bottom:10px;padding-left:10px;border-left:3px solid var(--dark);word-break:break-word}.chat-user{color:var(--green);font-weight:bold}.chat-time{color:#58745c;font-size:11px}.chat-form{display:flex;gap:5px;margin-top:10px}.chat-form input{margin:0;flex:1}@media(max-width:700px){.chat-form{flex-direction:column}.chat-form button{width:100%}}
-.terminal{min-height:380px;padding:12px;overflow-y:auto;border:1px solid var(--dark);background:#020502}.terminal-output{min-height:320px;white-space:pre-wrap;line-height:1.5}.terminal-input-line{display:flex}.terminal-input{flex:1;border:0;outline:0;background:transparent;color:var(--green)}
-.game{padding:20px;text-align:center}.click-target{width:120px;height:120px;margin:30px auto;display:flex;justify-content:center;align-items:center;border:3px solid var(--green);cursor:pointer;user-select:none}
-.log-list{max-height:420px;overflow:auto}.log-entry{padding:10px;border:1px solid var(--dark);margin-bottom:8px;background:#080d08}.muted{color:#58745c;font-size:12px}footer{margin-top:10px;padding:20px;text-align:center;font-size:12px}
+:root{
+--bg:#050805;
+--panel:#0b100b;
+--green:#35ff5a;
+--dark:#16852b;
+--soft:#8cff9d;
+--text:#d5ffd9;
+--red:#ff4444;
+--yellow:#ffff55
+}
+
+*{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
+
+body{
+margin:0;
+min-height:100vh;
+background:radial-gradient(circle,#101810 0,#030503 80%);
+color:var(--text);
+font-family:"Courier New",monospace;
+overflow-x:hidden
+}
+
+body:before{
+content:"";
+pointer-events:none;
+position:fixed;
+inset:0;
+z-index:9999;
+background:repeating-linear-gradient(
+to bottom,
+rgba(255,255,255,.025) 0,
+rgba(255,255,255,.025) 1px,
+transparent 2px,
+transparent 4px
+)
+}
+
+body:after{
+content:"";
+pointer-events:none;
+position:fixed;
+inset:0;
+z-index:9998;
+box-shadow:
+inset 0 0 100px #000,
+inset 0 0 20px rgba(0,255,50,.08)
+}
+
+button,input,textarea{font-family:inherit}
+
+a{
+color:var(--green);
+text-decoration:none
+}
+
+a:hover{
+color:#fff;
+text-shadow:0 0 8px var(--green)
+}
+
+.wrapper{
+width:min(1200px,calc(100% - 20px));
+margin:15px auto
+}
+
+header,nav,.sidebar,.panel,footer{
+border:2px solid var(--dark);
+background:var(--panel);
+box-shadow:inset 0 0 25px rgba(0,255,50,.025)
+}
+
+header{padding:18px}
+
+.logo{
+color:var(--green);
+font-size:clamp(25px,5vw,55px);
+font-weight:bold;
+letter-spacing:5px;
+text-shadow:
+0 0 4px var(--green),
+0 0 15px rgba(50,255,80,.5)
+}
+
+.logo-small{
+color:var(--soft);
+font-size:14px;
+margin-top:5px
+}
+
+.blink{
+animation:blink 1s steps(2,start) infinite
+}
+
+@keyframes blink{
+50%{opacity:0}
+}
+
+.status{
+margin-top:15px;
+padding-top:10px;
+border-top:1px dashed var(--dark);
+display:flex;
+flex-wrap:wrap;
+gap:20px;
+font-size:13px
+}
+
+.online{color:var(--green)}
+.offline{color:var(--red)}
+.warning{color:var(--yellow)}
+
+nav{
+margin-top:10px;
+display:flex;
+flex-wrap:wrap
+}
+
+nav button{
+padding:12px 15px;
+border:0;
+border-right:1px solid var(--dark);
+background:transparent;
+color:var(--green);
+cursor:pointer;
+font-weight:bold
+}
+
+nav button:hover,
+nav button.active{
+background:var(--green);
+color:#001800
+}
+
+.marquee{
+overflow:hidden;
+white-space:nowrap;
+border-top:1px dashed var(--dark);
+border-bottom:1px dashed var(--dark);
+padding:7px;
+color:var(--soft)
+}
+
+.marquee span{
+display:inline-block;
+animation:scrollText 18s linear infinite
+}
+
+@keyframes scrollText{
+from{transform:translateX(100%)}
+to{transform:translateX(-100%)}
+}
+
+.layout{
+display:grid;
+grid-template-columns:220px 1fr;
+gap:10px;
+margin-top:10px
+}
+
+@media(max-width:750px){
+.layout{grid-template-columns:1fr}
+}
+
+.sidebar{
+height:max-content;
+padding:10px
+}
+
+.sidebar h3{
+margin-top:0;
+padding-bottom:8px;
+border-bottom:1px dashed var(--dark);
+color:var(--green)
+}
+
+.side-link{
+padding:8px;
+border-bottom:1px dotted #245b2c;
+cursor:pointer
+}
+
+.side-link:hover{
+background:#142014
+}
+
+.side-box{
+margin-top:15px;
+padding:10px;
+border:1px solid var(--dark);
+font-size:12px
+}
+
+.account-mini{
+text-align:center
+}
+
+.account-mini img{
+width:80px;
+height:80px;
+object-fit:cover;
+border:2px solid var(--green);
+background:#000;
+margin-bottom:8px
+}
+
+.account-mini-name{
+color:var(--green);
+font-weight:bold;
+word-break:break-word
+}
+
+.page{display:none}
+.page.active{display:block}
+
+.panel{
+margin-bottom:10px
+}
+
+.panel-title{
+padding:9px 12px;
+border-bottom:1px solid var(--dark);
+background:#101b10;
+color:var(--green);
+font-weight:bold
+}
+
+.panel-content{
+padding:15px
+}
+
+.hero{
+min-height:270px;
+display:flex;
+align-items:center
+}
+
+.hero h1{
+color:var(--green);
+font-size:clamp(25px,5vw,45px)
+}
+
+.prompt{color:var(--green)}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px
+}
+
+@media(max-width:700px){
+.cards{grid-template-columns:1fr}
+}
+
+.card{
+padding:15px;
+border:1px solid var(--dark);
+background:#091009
+}
+
+.card:hover{
+border-color:var(--green)
+}
+
+.retro-btn{
+padding:8px 12px;
+border:1px solid var(--green);
+background:#0a160a;
+color:var(--green);
+cursor:pointer
+}
+
+.retro-btn:hover{
+background:var(--green);
+color:#001500
+}
+
+.retro-btn.danger{
+border-color:var(--red);
+color:var(--red)
+}
+
+.retro-btn.danger:hover{
+background:var(--red);
+color:#160000
+}
+
+.retro-input,
+.retro-textarea{
+width:100%;
+margin-bottom:10px;
+padding:10px;
+outline:0;
+border:1px solid var(--dark);
+background:#020602;
+color:var(--soft)
+}
+
+.retro-input:focus,
+.retro-textarea:focus{
+border-color:var(--green);
+box-shadow:0 0 8px rgba(53,255,90,.15)
+}
+
+.retro-textarea{
+min-height:120px;
+resize:vertical
+}
+
+.auth-box{
+max-width:600px;
+margin:auto
+}
+
+.auth-section{
+padding:15px;
+border:1px solid var(--dark);
+background:#080d08;
+margin-bottom:10px
+}
+
+.auth-section h3{
+margin-top:0;
+color:var(--green)
+}
+
+.auth-label{
+display:block;
+color:var(--soft);
+margin-bottom:5px
+}
+
+.auth-status{
+min-height:22px;
+margin-top:12px;
+padding:8px;
+border:1px dashed var(--dark);
+background:#020502
+}
+
+.auth-status.success{color:var(--green)}
+.auth-status.error{color:var(--red)}
+
+.account-card{
+text-align:center;
+max-width:600px;
+margin:auto
+}
+
+.account-avatar{
+width:150px;
+height:150px;
+object-fit:cover;
+border:3px solid var(--green);
+background:#000
+}
+
+.account-username{
+margin:15px 0 5px;
+color:var(--green);
+font-size:28px;
+font-weight:bold
+}
+
+.account-id{
+color:#58745c;
+font-size:12px
+}
+
+.account-status{
+margin:15px 0;
+color:var(--green)
+}
+
+.account-actions{
+display:flex;
+justify-content:center;
+gap:10px;
+flex-wrap:wrap
+}
+
+.avatar-editor{
+margin-top:20px;
+padding:15px;
+border:1px dashed var(--dark);
+text-align:left;
+background:#050905
+}
+
+.avatar-preview{
+display:flex;
+align-items:center;
+gap:15px;
+margin-bottom:15px
+}
+
+.avatar-preview img{
+width:90px;
+height:90px;
+object-fit:cover;
+border:2px solid var(--green);
+background:#000
+}
+
+.upload-box{
+margin-bottom:15px;
+padding:20px;
+border:1px dashed var(--dark)
+}
+
+.upload-status{
+margin-top:10px;
+color:var(--soft)
+}
+
+.media-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+gap:10px
+}
+
+.media-item{
+padding:10px;
+border:1px solid var(--dark);
+background:#080d08;
+overflow:hidden
+}
+
+.media-item img,
+.media-item video{
+width:100%;
+max-height:200px;
+object-fit:contain;
+background:#000
+}
+
+.media-item audio{
+width:100%
+}
+
+.chat-box{
+height:420px;
+overflow-y:auto;
+padding:10px;
+border:1px solid var(--dark);
+background:#020502
+}
+
+.chat-message{
+margin-bottom:10px;
+padding-left:10px;
+border-left:3px solid var(--dark);
+word-break:break-word
+}
+
+.chat-user{
+color:var(--green);
+font-weight:bold
+}
+
+.chat-time{
+color:#58745c;
+font-size:11px
+}
+
+.chat-form{
+display:flex;
+gap:5px;
+margin-top:10px
+}
+
+.chat-form input{
+margin:0;
+flex:1
+}
+
+@media(max-width:700px){
+.chat-form{flex-direction:column}
+.chat-form button{width:100%}
+}
+
+.terminal{
+min-height:380px;
+padding:12px;
+overflow-y:auto;
+border:1px solid var(--dark);
+background:#020502
+}
+
+.terminal-output{
+min-height:320px;
+white-space:pre-wrap;
+line-height:1.5
+}
+
+.terminal-input-line{
+display:flex
+}
+
+.terminal-input{
+flex:1;
+border:0;
+outline:0;
+background:transparent;
+color:var(--green)
+}
+
+.game{
+padding:20px;
+text-align:center
+}
+
+.click-target{
+width:120px;
+height:120px;
+margin:30px auto;
+display:flex;
+justify-content:center;
+align-items:center;
+border:3px solid var(--green);
+cursor:pointer;
+user-select:none
+}
+
+.log-list{
+max-height:420px;
+overflow:auto
+}
+
+.log-entry{
+padding:10px;
+border:1px solid var(--dark);
+margin-bottom:8px;
+background:#080d08
+}
+
+.muted{
+color:#58745c;
+font-size:12px
+}
+
+footer{
+margin-top:10px;
+padding:20px;
+text-align:center;
+font-size:12px
+}
 </style>
+
 </head>
+
 <body>
+
 <div class="wrapper">
+
 <header>
-<div class="logo">DAVID RANDOM<span class="blink">_</span></div>
-<div class="logo-small">[ RANDOM INTERNET TERMINAL // V2 ]</div>
-<div class="status">
-<span id="serverStatus" class="offline">CHECKING SERVER...</span>
-<span>TIME: <span id="clock">--:--:--</span></span>
-<span>VISITORS: <span id="visitors">0</span></span>
-<span>ACCOUNT: <span id="headerAccountStatus" class="offline">GUEST</span></span>
+
+<div class="logo">
+DAVID RANDOM<span class="blink">_</span>
 </div>
+
+<div class="logo-small">
+[ RANDOM INTERNET TERMINAL // V2 ]
+</div>
+
+<div class="status">
+
+<span id="serverStatus" class="offline">
+CHECKING SERVER...
+</span>
+
+<span>
+TIME:
+<span id="clock">--:--:--</span>
+</span>
+
+<span>
+VISITORS:
+<span id="visitors">0</span>
+</span>
+
+<span>
+ACCOUNT:
+<span id="headerAccountStatus" class="offline">GUEST</span>
+</span>
+
+</div>
+
 </header>
+
 <nav>
-<button class="active" data-page="home">[ HOME ]</button><button data-page="chat">[ CHAT ]</button><button data-page="media">[ MEDIA ]</button><button data-page="terminal">[ TERMINAL ]</button><button data-page="games">[ GAMES ]</button><button data-page="guestbook">[ GUESTBOOK ]</button><button data-page="account">[ ACCOUNT ]</button><button data-page="about">[ ABOUT ]</button>
+
+<button class="active" data-page="home">[ HOME ]</button> <button data-page="chat">[ CHAT ]</button> <button data-page="media">[ MEDIA ]</button> <button data-page="terminal">[ TERMINAL ]</button> <button data-page="games">[ GAMES ]</button> <button data-page="guestbook">[ GUESTBOOK ]</button> <button data-page="account">[ ACCOUNT ]</button> <button data-page="about">[ ABOUT ]</button>
+
 </nav>
-<div class="marquee"><span>*** DAVID RANDOM *** *** RENDER SERVER *** *** GITHUB STORAGE *** *** WSS CHAT *** *** ACCOUNT SYSTEM *** *** RANDOM INTERNET TERMINAL ***</span></div>
+
+<div class="marquee">
+<span>
+*** DAVID RANDOM ***
+*** RENDER SERVER ***
+*** GITHUB STORAGE ***
+*** WSS CHAT ***
+*** ACCOUNT SYSTEM ***
+*** CHAT-LOG ***
+*** RANDOM INTERNET TERMINAL ***
+</span>
+</div>
+
 <div class="layout">
+
 <aside class="sidebar">
+
 <h3>DIRECTORY</h3>
-<div class="side-link" data-page="home">⌂ Home</div><div class="side-link" data-page="chat">▣ Chat</div><div class="side-link" data-page="media">▧ Media</div><div class="side-link" data-page="terminal">$_ Terminal</div><div class="side-link" data-page="games">★ Games</div><div class="side-link" data-page="guestbook">✎ Guestbook</div><div class="side-link" data-page="account">♙ Account</div><div class="side-link" data-page="about">ⓘ About</div>
-<div class="side-box"><b>SERVER</b><br><br>RENDER: <span id="renderSide" class="offline">CHECKING</span><br>GITHUB: <span class="online">ONLINE</span><br>API: <span id="apiSide" class="offline">CHECKING</span><br>WSS: <span id="sidebarSocket" class="offline">CONNECTING</span></div>
-<div class="side-box"><b>ACCOUNT</b><br><br><div id="sidebarAccount">GUEST</div></div>
-<div class="side-box"><b>STORAGE</b><br><br>/image/<br>/music/<br>/video/<br>/chat-log/</div>
+
+<div class="side-link" data-page="home">⌂ Home</div>
+<div class="side-link" data-page="chat">▣ Chat</div>
+<div class="side-link" data-page="media">▧ Media</div>
+<div class="side-link" data-page="terminal">$_ Terminal</div>
+<div class="side-link" data-page="games">★ Games</div>
+<div class="side-link" data-page="guestbook">✎ Guestbook</div>
+<div class="side-link" data-page="account">♙ Account</div>
+<div class="side-link" data-page="about">ⓘ About</div>
+
+<div class="side-box">
+
+<b>SERVER</b>
+
+<br><br>
+
+RENDER: <span id="renderSide" class="offline">CHECKING</span>
+
+<br>
+
+GITHUB: <span class="online">ONLINE</span>
+
+<br>
+
+API: <span id="apiSide" class="offline">CHECKING</span>
+
+<br>
+
+WSS: <span id="sidebarSocket" class="offline">CONNECTING</span>
+
+</div>
+
+<div class="side-box">
+
+<b>ACCOUNT</b>
+
+<br><br>
+
+<div id="sidebarAccount">
+GUEST
+</div>
+
+</div>
+
+<div class="side-box">
+
+<b>STORAGE</b>
+
+<br><br>
+
+/image/ <br>
+/music/ <br>
+/video/ <br>
+/chat-log/ <br>
+/accounts/
+
+</div>
+
 </aside>
+
 <main>
-<section class="page active" id="home"><div class="panel hero"><div class="panel-content"><h1>WELCOME TO DAVID RANDOM</h1><p><span class="prompt">root@david:~$</span> whoami</p><p id="homeWhoami">visitor</p><p><span class="prompt">root@david:~$</span> cat welcome.txt</p><p>Bienvenue dans le coin le plus random de l'Internet.</p><p>Images, musique, vidéos, chat, terminal et trucs inutiles.</p><p><span class="blink">█</span> Explore.</p></div></div>
-<div class="cards"><div class="card"><h3>▣ CHAT</h3><p>Discute avec les visiteurs.</p><button class="retro-btn" onclick="showPage('chat')">OPEN</button></div><div class="card"><h3>▧ MEDIA</h3><p>Images, musique et vidéos.</p><button class="retro-btn" onclick="showPage('media')">OPEN</button></div><div class="card"><h3>♙ ACCOUNT</h3><p>Crée ton compte ou connecte-toi.</p><button class="retro-btn" onclick="showPage('account')">OPEN</button></div></div></section>
 
-<section class="page" id="chat"><div class="panel"><div class="panel-title">CHAT // GLOBAL // WSS</div><div class="panel-content"><div class="chat-box" id="chatBox"><div class="chat-message"><span class="chat-user">SYSTEM</span><br>Initialisation du chat...</div></div><div class="chat-form"><input class="retro-input" id="chatUsername" placeholder="Pseudo" disabled><input class="retro-input" id="chatMessage" placeholder="Message..." maxlength="500" autocomplete="off"><button class="retro-btn" onclick="sendChat()">SEND</button></div><p id="chatStatus">Connexion WSS...</p></div></div></section>
+<!-- HOME -->
 
-<section class="page" id="media"><div class="panel"><div class="panel-title">UPLOAD // GITHUB STORAGE</div><div class="panel-content">
-<div class="upload-box"><h3>🖼 IMAGE</h3><input type="file" id="imageFile" accept="image/*"><br><br><button class="retro-btn" onclick="uploadFile('image')">UPLOAD IMAGE</button><div id="imageUploadStatus" class="upload-status"></div></div>
-<div class="upload-box"><h3>🎵 MUSIC</h3><input type="file" id="musicFile" accept="audio/*"><br><br><button class="retro-btn" onclick="uploadFile('music')">UPLOAD MUSIC</button><div id="musicUploadStatus" class="upload-status"></div></div>
-<div class="upload-box"><h3>🎥 VIDEO</h3><input type="file" id="videoFile" accept="video/*"><br><br><button class="retro-btn" onclick="uploadFile('video')">UPLOAD VIDEO</button><div id="videoUploadStatus" class="upload-status"></div></div>
-</div></div>
-<div class="panel"><div class="panel-title">IMAGES // /image/</div><div class="panel-content"><div class="media-grid" id="imageList">Ouvre cette page pour charger les images.</div></div></div>
-<div class="panel"><div class="panel-title">MUSIC // /music/</div><div class="panel-content"><div class="media-grid" id="musicList">Ouvre cette page pour charger les musiques.</div></div></div>
-<div class="panel"><div class="panel-title">VIDEOS // /video/</div><div class="panel-content"><div class="media-grid" id="videoList">Ouvre cette page pour charger les vidéos.</div></div></div></section>
+<section class="page active" id="home">
 
-<section class="page" id="terminal"><div class="panel"><div class="panel-title">TERMINAL // DAVID_OS</div><div class="panel-content"><div class="terminal"><div class="terminal-output" id="terminalOutput">DAVID_OS v2.0
+<div class="panel hero">
+
+<div class="panel-content">
+
+<h1>
+WELCOME TO DAVID RANDOM
+</h1>
+
+<p>
+<span class="prompt">root@david:~$</span>
+whoami
+</p>
+
+<p id="homeWhoami">
+visitor
+</p>
+
+<p>
+<span class="prompt">root@david:~$</span>
+cat welcome.txt
+</p>
+
+<p>
+Bienvenue dans le coin le plus random de l'Internet.
+</p>
+
+<p>
+Images, musique, vidéos, chat, terminal et trucs inutiles.
+</p>
+
+<p>
+<span class="blink">█</span>
+Explore.
+</p>
+
+</div>
+
+</div>
+
+<div class="cards">
+
+<div class="card">
+
+<h3>▣ CHAT</h3>
+
+<p>
+Discute avec les visiteurs.
+</p>
+
+<button class="retro-btn" onclick="showPage('chat')">
+OPEN
+</button>
+
+</div>
+
+<div class="card">
+
+<h3>▧ MEDIA</h3>
+
+<p>
+Images, musique et vidéos.
+</p>
+
+<button class="retro-btn" onclick="showPage('media')">
+OPEN
+</button>
+
+</div>
+
+<div class="card">
+
+<h3>♙ ACCOUNT</h3>
+
+<p>
+Crée ton compte ou connecte-toi.
+</p>
+
+<button class="retro-btn" onclick="showPage('account')">
+OPEN
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- CHAT -->
+
+<section class="page" id="chat">
+
+<div class="panel">
+
+<div class="panel-title">
+CHAT // GLOBAL // WSS
+</div>
+
+<div class="panel-content">
+
+<div class="chat-box" id="chatBox">
+
+<div class="chat-message">
+
+<span class="chat-user">
+SYSTEM
+</span>
+
+<br>
+
+Initialisation du chat...
+
+</div>
+
+</div>
+
+<div class="chat-form">
+
+<input
+class="retro-input"
+id="chatUsername"
+placeholder="Pseudo"
+disabled
+
+>
+
+<input
+class="retro-input"
+id="chatMessage"
+placeholder="Message..."
+maxlength="500"
+autocomplete="off"
+
+>
+
+<button class="retro-btn" onclick="sendChat()">
+SEND
+</button>
+
+</div>
+
+<p id="chatStatus">
+Connexion WSS...
+</p>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- MEDIA -->
+
+<section class="page" id="media">
+
+<div class="panel">
+
+<div class="panel-title">
+UPLOAD // GITHUB STORAGE
+</div>
+
+<div class="panel-content">
+
+<div class="upload-box">
+
+<h3>🖼 IMAGE</h3>
+
+<input
+type="file"
+id="imageFile"
+accept="image/*"
+
+>
+
+<br><br>
+
+<button
+class="retro-btn"
+onclick="uploadFile('image')"
+
+>
+
+UPLOAD IMAGE </button>
+
+<div
+id="imageUploadStatus"
+class="upload-status"
+></div>
+
+</div>
+
+<div class="upload-box">
+
+<h3>🎵 MUSIC</h3>
+
+<input
+type="file"
+id="musicFile"
+accept="audio/*"
+
+>
+
+<br><br>
+
+<button
+class="retro-btn"
+onclick="uploadFile('music')"
+
+>
+
+UPLOAD MUSIC </button>
+
+<div
+id="musicUploadStatus"
+class="upload-status"
+></div>
+
+</div>
+
+<div class="upload-box">
+
+<h3>🎥 VIDEO</h3>
+
+<input
+type="file"
+id="videoFile"
+accept="video/*"
+
+>
+
+<br><br>
+
+<button
+class="retro-btn"
+onclick="uploadFile('video')"
+
+>
+
+UPLOAD VIDEO </button>
+
+<div
+id="videoUploadStatus"
+class="upload-status"
+></div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="panel">
+
+<div class="panel-title">
+IMAGES // /image/
+</div>
+
+<div class="panel-content">
+
+<div
+class="media-grid"
+id="imageList"
+>
+Ouvre cette page pour charger les images.
+</div>
+
+</div>
+
+</div>
+
+<div class="panel">
+
+<div class="panel-title">
+MUSIC // /music/
+</div>
+
+<div class="panel-content">
+
+<div
+class="media-grid"
+id="musicList"
+>
+Ouvre cette page pour charger les musiques.
+</div>
+
+</div>
+
+</div>
+
+<div class="panel">
+
+<div class="panel-title">
+VIDEOS // /video/
+</div>
+
+<div class="panel-content">
+
+<div
+class="media-grid"
+id="videoList"
+>
+Ouvre cette page pour charger les vidéos.
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- TERMINAL -->
+
+<section class="page" id="terminal">
+
+<div class="panel">
+
+<div class="panel-title">
+TERMINAL // DAVID_OS
+</div>
+
+<div class="panel-content">
+
+<div class="terminal">
+
+<div
+class="terminal-output"
+id="terminalOutput"
+>DAVID_OS v2.0
 Booting...
 Render server detected.
 GitHub storage detected.
@@ -75,19 +1021,411 @@ WSS system detected.
 ACCOUNT SYSTEM detected.
 CHAT-LOG SYSTEM detected.
 SYSTEM READY.
-Type "help".</div><div class="terminal-input-line"><span class="prompt">guest@david:~$&nbsp;</span><input class="terminal-input" id="terminalInput" autocomplete="off" spellcheck="false"></div></div></div></div></section>
+Type "help".</div>
 
-<section class="page" id="games"><div class="panel"><div class="panel-title">GAMES // MINI ARCADE</div><div class="panel-content"><div class="game"><h2>CLICK THE RANDOM BOX</h2><p>SCORE: <span id="score">0</span></p><p>TIME: <span id="gameTime">10</span></p><div class="click-target" id="clickTarget" onclick="gameClick()">CLICK</div><button class="retro-btn" onclick="startGame()">START GAME</button></div></div></div></section>
+<div class="terminal-input-line">
 
-<section class="page" id="guestbook"><div class="panel"><div class="panel-title">GUESTBOOK</div><div class="panel-content"><input class="retro-input" id="guestName" placeholder="Pseudo" maxlength="24"><textarea class="retro-textarea" id="guestMessage" placeholder="Message..." maxlength="500"></textarea><button class="retro-btn" onclick="addGuest()">SIGN</button><div id="guestList"><div class="chat-message"><span class="chat-user">admin</span><br>Bienvenue !</div></div></div></div></section>
+<span class="prompt">
+guest@david:~$&nbsp;
+</span>
 
-<section class="page" id="account"><div class="panel"><div class="panel-title">ACCOUNT // AUTHENTICATION</div><div class="panel-content">
-<div id="loggedOutAccount" class="auth-box"><div class="auth-section"><h3>LOGIN</h3><label class="auth-label">USERNAME</label><input class="retro-input" id="loginUsername" placeholder="Username" maxlength="24" autocomplete="username"><label class="auth-label">PASSWORD</label><input class="retro-input" id="loginPassword" type="password" placeholder="Password" autocomplete="current-password"><button class="retro-btn" onclick="loginAccount()">[ LOGIN ]</button></div>
-<div class="auth-section"><h3>CREATE ACCOUNT</h3><label class="auth-label">USERNAME</label><input class="retro-input" id="registerUsername" placeholder="Username" maxlength="24" autocomplete="username"><label class="auth-label">PASSWORD</label><input class="retro-input" id="registerPassword" type="password" placeholder="Password" autocomplete="new-password"><label class="auth-label">PROFILE PICTURE URL</label><input class="retro-input" id="profilePicture" type="url" placeholder="https://site.com/avatar.png"><small>PNG / JPG / JPEG via URL.</small><br><br><button class="retro-btn" onclick="registerAccount()">[ REGISTER ]</button></div><div id="authStatus" class="auth-status">STATUS: NOT CONNECTED</div></div>
-<div id="loggedInAccount" class="account-card" style="display:none"><img id="accountAvatar" class="account-avatar" alt="Profile picture"><div id="accountUsername" class="account-username">USER</div><div id="accountId" class="account-id">ACCOUNT</div><div class="account-status">● CONNECTED</div><div class="account-actions"><button class="retro-btn danger" onclick="logoutAccount()">[ LOGOUT ]</button></div><div id="loggedInStatus" class="auth-status success">SESSION ACTIVE</div></div>
-</div></div></section>
+<input
+class="terminal-input"
+id="terminalInput"
+autocomplete="off"
+spellcheck="false"
 
-<section class="page" id="about"><div class="panel"><div class="panel-title">ABOUT // README.TXT</div><div class="panel-content"><pre>╔══════════════════════════════════╗
+>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- GAMES -->
+
+<section class="page" id="games">
+
+<div class="panel">
+
+<div class="panel-title">
+GAMES // MINI ARCADE
+</div>
+
+<div class="panel-content">
+
+<div class="game">
+
+<h2>
+CLICK THE RANDOM BOX
+</h2>
+
+<p>
+SCORE:
+<span id="score">0</span>
+</p>
+
+<p>
+TIME:
+<span id="gameTime">10</span>
+</p>
+
+<div
+class="click-target"
+id="clickTarget"
+onclick="gameClick()"
+>
+CLICK
+</div>
+
+<button
+class="retro-btn"
+onclick="startGame()"
+
+>
+
+START GAME </button>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- GUESTBOOK -->
+
+<section class="page" id="guestbook">
+
+<div class="panel">
+
+<div class="panel-title">
+GUESTBOOK
+</div>
+
+<div class="panel-content">
+
+<input
+class="retro-input"
+id="guestName"
+placeholder="Pseudo"
+maxlength="24"
+
+>
+
+<textarea
+class="retro-textarea"
+id="guestMessage"
+placeholder="Message..."
+maxlength="500"
+></textarea>
+
+<button
+class="retro-btn"
+onclick="addGuest()"
+
+>
+
+SIGN </button>
+
+<div id="guestList">
+
+<div class="chat-message">
+
+<span class="chat-user">
+admin
+</span>
+
+<br>
+
+Bienvenue !
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- ACCOUNT -->
+
+<section class="page" id="account">
+
+<div class="panel">
+
+<div class="panel-title">
+ACCOUNT // AUTHENTICATION
+</div>
+
+<div class="panel-content">
+
+<!-- LOGGED OUT -->
+
+<div
+id="loggedOutAccount"
+class="auth-box"
+>
+
+<div class="auth-section">
+
+<h3>LOGIN</h3>
+
+<label class="auth-label">
+USERNAME
+</label>
+
+<input
+class="retro-input"
+id="loginUsername"
+placeholder="Username"
+maxlength="24"
+autocomplete="username"
+
+>
+
+<label class="auth-label">
+PASSWORD
+</label>
+
+<input
+class="retro-input"
+id="loginPassword"
+type="password"
+placeholder="Password"
+autocomplete="current-password"
+
+>
+
+<button
+class="retro-btn"
+onclick="loginAccount()"
+
+>
+
+[ LOGIN ] </button>
+
+</div>
+
+<div class="auth-section">
+
+<h3>
+CREATE ACCOUNT
+</h3>
+
+<label class="auth-label">
+USERNAME
+</label>
+
+<input
+class="retro-input"
+id="registerUsername"
+placeholder="Username"
+maxlength="24"
+autocomplete="username"
+
+>
+
+<label class="auth-label">
+PASSWORD
+</label>
+
+<input
+class="retro-input"
+id="registerPassword"
+type="password"
+placeholder="Password"
+autocomplete="new-password"
+
+>
+
+<label class="auth-label">
+PROFILE PICTURE URL
+</label>
+
+<input
+class="retro-input"
+id="profilePicture"
+type="url"
+placeholder="https://site.com/avatar.png"
+
+>
+
+<small>
+PNG / JPG / JPEG via URL.
+</small>
+
+<br><br>
+
+<button
+class="retro-btn"
+onclick="registerAccount()"
+
+>
+
+[ REGISTER ] </button>
+
+</div>
+
+<div
+id="authStatus"
+class="auth-status"
+>
+STATUS: NOT CONNECTED
+</div>
+
+</div>
+
+<!-- LOGGED IN -->
+
+<div
+id="loggedInAccount"
+class="account-card"
+style="display:none"
+>
+
+<img
+id="accountAvatar"
+class="account-avatar"
+alt="Profile picture"
+
+>
+
+<div
+id="accountUsername"
+class="account-username"
+>
+USER
+</div>
+
+<div
+id="accountId"
+class="account-id"
+>
+ACCOUNT
+</div>
+
+<div class="account-status">
+● CONNECTED
+</div>
+
+<!-- AVATAR EDITOR -->
+
+<div class="avatar-editor">
+
+<h3>
+PROFILE PICTURE
+</h3>
+
+<div class="avatar-preview">
+
+<img
+id="avatarPreview"
+alt="Avatar preview"
+
+>
+
+<div>
+
+<div class="muted">
+CURRENT PROFILE PICTURE
+</div>
+
+<br>
+
+<span id="avatarPreviewText">
+Aucune image
+</span>
+
+</div>
+
+</div>
+
+<label class="auth-label">
+NEW PROFILE PICTURE URL
+</label>
+
+<input
+class="retro-input"
+id="newProfilePicture"
+type="url"
+placeholder="https://site.com/avatar.png"
+
+>
+
+<button
+class="retro-btn"
+onclick="previewAvatar()"
+
+>
+
+[ PREVIEW ] </button>
+
+<button
+class="retro-btn"
+onclick="changeProfilePicture()"
+
+>
+
+[ SAVE PROFILE PICTURE ] </button>
+
+<div
+id="avatarStatus"
+class="auth-status"
+>
+STATUS: READY
+</div>
+
+</div>
+
+<div class="account-actions">
+
+<button
+class="retro-btn danger"
+onclick="logoutAccount()"
+
+>
+
+[ LOGOUT ] </button>
+
+</div>
+
+<div
+id="loggedInStatus"
+class="auth-status success"
+>
+SESSION ACTIVE
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- ABOUT -->
+
+<section class="page" id="about">
+
+<div class="panel">
+
+<div class="panel-title">
+ABOUT // README.TXT
+</div>
+
+<div class="panel-content">
+
+<pre>╔══════════════════════════════════╗
 ║          DAVID RANDOM            ║
 ║                                  ║
 ║ Version : 2.0                    ║
@@ -95,158 +1433,2540 @@ Type "help".</div><div class="terminal-input-line"><span class="prompt">guest@da
 ║ Storage : GitHub                 ║
 ║ Engine  : HTML/CSS/JS            ║
 ║ WebSocket : WSS                  ║
-║ Accounts : Supabase API          ║
+║ Accounts : GitHub                ║
 ║ Chat logs : GitHub               ║
 ║                                  ║
 ║ STATUS : ONLINE                  ║
-╚══════════════════════════════════╝</pre><p>David Random est un site expérimental inspiré des vieux sites Internet, terminaux et forums.</p></div></div></section>
-</main></div>
-<footer>DAVID RANDOM // © 1999-2026<br><br>Best viewed at 800x600<br><br><span class="blink">█</span> END OF TRANSMISSION <span class="blink">█</span></footer>
+╚══════════════════════════════════╝</pre>
+
+<p>
+David Random est un site expérimental inspiré
+des vieux sites Internet, terminaux et forums.
+</p>
+
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+</div>
+
+<footer>
+
+DAVID RANDOM // © 1999-2026
+
+<br><br>
+
+Best viewed at 800x600
+
+<br><br>
+
+<span class="blink">█</span>
+END OF TRANSMISSION <span class="blink">█</span>
+
+</footer>
+
 </div>
 
 <script>
 "use strict";
 
-const API="https://david-random.onrender.com";
-const SOCKET_URL="wss://david-random.onrender.com/ws";
-const TOKEN_KEY="david_random_token",USER_KEY="david_random_user";
-const MAX_FILE_SIZE=25*1024*1024;
-let token=localStorage.getItem(TOKEN_KEY)||null,currentUser=null,socket=null,socketConnected=false,socketReconnectTimer=null;
 
-function escapeHTML(v){const d=document.createElement("div");d.textContent=String(v??"");return d.innerHTML}
-function createDefaultAvatar(u){return "https://ui-avatars.com/api/?name="+encodeURIComponent(u)+"&background=020502&color=35ff5a&bold=true"}
+/* =========================================================
+   CONFIG
+========================================================= */
 
-async function apiRequest(endpoint,options={}){
- const headers={...(options.headers||{})};
- if(token)headers.Authorization="Bearer "+token;
- const response=await fetch(API+endpoint,{...options,headers,cache:"no-store"});
- let data={};try{data=await response.json()}catch{}
- if(!response.ok)throw new Error(data.error||data.message||`HTTP ${response.status}`);
- return data;
+const API = "https://david-random.onrender.com";
+
+const SOCKET_URL =
+"wss://david-random.onrender.com/ws";
+
+const TOKEN_KEY =
+"david_random_token";
+
+const USER_KEY =
+"david_random_user";
+
+const MAX_FILE_SIZE =
+25 * 1024 * 1024;
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let token =
+localStorage.getItem(TOKEN_KEY) || null;
+
+let currentUser = null;
+
+let socket = null;
+
+let socketConnected = false;
+
+let socketReconnectTimer = null;
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function escapeHTML(value){
+
+const div =
+document.createElement("div");
+
+div.textContent =
+String(value ?? "");
+
+return div.innerHTML;
+
 }
 
-function saveAccount(t,u){token=t||null;currentUser=u||null;if(token)localStorage.setItem(TOKEN_KEY,token);else localStorage.removeItem(TOKEN_KEY);if(currentUser)localStorage.setItem(USER_KEY,JSON.stringify(currentUser));else localStorage.removeItem(USER_KEY)}
-function restoreAccount(){try{currentUser=JSON.parse(localStorage.getItem(USER_KEY)||"null")}catch{currentUser=null}token=localStorage.getItem(TOKEN_KEY)||null}
+
+function createDefaultAvatar(username){
+
+return (
+"https://ui-avatars.com/api/?" +
+"name=" +
+encodeURIComponent(username) +
+"&background=020502" +
+"&color=35ff5a" +
+"&bold=true"
+);
+
+}
+
+
+/* =========================================================
+   API REQUEST
+========================================================= */
+
+async function apiRequest(endpoint, options = {}){
+
+const headers = {
+...(options.headers || {})
+};
+
+if(token){
+
+headers.Authorization =
+"Bearer " + token;
+
+}
+
+const response =
+await fetch(
+API + endpoint,
+{
+...options,
+headers,
+cache:"no-store"
+}
+);
+
+
+let data = {};
+
+try{
+
+data =
+await response.json();
+
+}catch{
+
+data = {};
+
+}
+
+
+if(!response.ok){
+
+throw new Error(
+data.error ||
+data.message ||
+`HTTP ${response.status}`
+);
+
+}
+
+
+return data;
+
+}
+
+
+/* =========================================================
+   ACCOUNT STORAGE
+========================================================= */
+
+function saveAccount(t,u){
+
+token = t || null;
+
+currentUser = u || null;
+
+
+if(token){
+
+localStorage.setItem(
+TOKEN_KEY,
+token
+);
+
+}else{
+
+localStorage.removeItem(
+TOKEN_KEY
+);
+
+}
+
+
+if(currentUser){
+
+localStorage.setItem(
+USER_KEY,
+JSON.stringify(currentUser)
+);
+
+}else{
+
+localStorage.removeItem(
+USER_KEY
+);
+
+}
+
+}
+
+
+function restoreAccount(){
+
+try{
+
+currentUser =
+JSON.parse(
+localStorage.getItem(USER_KEY) ||
+"null"
+);
+
+}catch{
+
+currentUser = null;
+
+}
+
+token =
+localStorage.getItem(TOKEN_KEY) ||
+null;
+
+}
+
+
+/* =========================================================
+   ACCOUNT UI
+========================================================= */
 
 function updateAccountUI(){
- const out=document.getElementById("loggedOutAccount"),inn=document.getElementById("loggedInAccount"),head=document.getElementById("headerAccountStatus"),side=document.getElementById("sidebarAccount"),who=document.getElementById("homeWhoami"),cu=document.getElementById("chatUsername");
- if(currentUser&&token){
-  out.style.display="none";inn.style.display="block";const u=currentUser.username||"USER",p=currentUser.profile_picture||currentUser.profilePicture||"";
-  document.getElementById("accountUsername").textContent=u;document.getElementById("accountId").textContent=currentUser.id?"ID: "+currentUser.id:"ACCOUNT ACTIVE";document.getElementById("accountAvatar").src=p||createDefaultAvatar(u);
-  head.textContent=u;head.className="online";who.textContent=u;
-  side.innerHTML=`<div class="account-mini"><img src="${escapeHTML(p||createDefaultAvatar(u))}" alt="Avatar"><div class="account-mini-name">${escapeHTML(u)}</div><br><span class="online">CONNECTED</span></div>`;
-  cu.value=u;cu.disabled=true;
- }else{
-  out.style.display="block";inn.style.display="none";head.textContent="GUEST";head.className="offline";side.textContent="GUEST";who.textContent="visitor";cu.value="";cu.disabled=true;
- }
+
+const out =
+document.getElementById(
+"loggedOutAccount"
+);
+
+const inn =
+document.getElementById(
+"loggedInAccount"
+);
+
+const head =
+document.getElementById(
+"headerAccountStatus"
+);
+
+const side =
+document.getElementById(
+"sidebarAccount"
+);
+
+const who =
+document.getElementById(
+"homeWhoami"
+);
+
+const cu =
+document.getElementById(
+"chatUsername"
+);
+
+
+if(currentUser && token){
+
+out.style.display =
+"none";
+
+inn.style.display =
+"block";
+
+
+const username =
+currentUser.username ||
+"USER";
+
+
+const profile =
+currentUser.profile_picture ||
+currentUser.profilePicture ||
+"";
+
+
+const avatar =
+profile ||
+createDefaultAvatar(username);
+
+
+document.getElementById(
+"accountUsername"
+).textContent =
+username;
+
+
+document.getElementById(
+"accountId"
+).textContent =
+currentUser.id
+?
+"ID: " + currentUser.id
+:
+"ACCOUNT ACTIVE";
+
+
+document.getElementById(
+"accountAvatar"
+).src =
+avatar;
+
+
+document.getElementById(
+"avatarPreview"
+).src =
+avatar;
+
+
+document.getElementById(
+"avatarPreviewText"
+).textContent =
+profile ||
+"Avatar automatique";
+
+
+document.getElementById(
+"newProfilePicture"
+).value =
+profile;
+
+
+head.textContent =
+username;
+
+head.className =
+"online";
+
+
+who.textContent =
+username;
+
+
+side.innerHTML = `
+<div class="account-mini">
+<img
+src="${escapeHTML(avatar)}"
+alt="Avatar"
+>
+<div class="account-mini-name">
+${escapeHTML(username)}
+</div>
+<br>
+<span class="online">
+CONNECTED
+</span>
+</div>
+`;
+
+
+cu.value =
+username;
+
+cu.disabled =
+true;
+
+}else{
+
+out.style.display =
+"block";
+
+inn.style.display =
+"none";
+
+
+head.textContent =
+"GUEST";
+
+head.className =
+"offline";
+
+
+side.textContent =
+"GUEST";
+
+
+who.textContent =
+"visitor";
+
+
+cu.value =
+"";
+
+cu.disabled =
+true;
+
 }
 
-function setAuthStatus(t,e=false){const s=document.getElementById("authStatus");s.textContent="STATUS: "+t;s.className=e?"auth-status error":"auth-status success"}
+}
+
+
+/* =========================================================
+   AUTH STATUS
+========================================================= */
+
+function setAuthStatus(text,error=false){
+
+const status =
+document.getElementById(
+"authStatus"
+);
+
+status.textContent =
+"STATUS: " + text;
+
+status.className =
+error
+?
+"auth-status error"
+:
+"auth-status success";
+
+}
+
+
+/* =========================================================
+   REGISTER
+========================================================= */
 
 async function registerAccount(){
- const username=document.getElementById("registerUsername").value.trim(),password=document.getElementById("registerPassword").value,profile=document.getElementById("profilePicture").value.trim()||null;
- if(username.length<3||username.length>24)return setAuthStatus("USERNAME MUST BE 3-24 CHARACTERS",true);
- if(password.length<8||password.length>128)return setAuthStatus("PASSWORD MUST BE 8-128 CHARACTERS",true);
- setAuthStatus("CREATING ACCOUNT...");
- try{const d=await apiRequest("/api/account/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password,profile_picture:profile})});saveAccount(d.token,d.user);document.getElementById("registerPassword").value="";updateAccountUI();setAuthStatus("ACCOUNT CREATED ✓");connectSocket()}catch(e){console.error(e);setAuthStatus(e.message,true)}
+
+const username =
+document.getElementById(
+"registerUsername"
+).value.trim();
+
+
+const password =
+document.getElementById(
+"registerPassword"
+).value;
+
+
+const profile =
+document.getElementById(
+"profilePicture"
+).value.trim() ||
+null;
+
+
+if(
+username.length < 3 ||
+username.length > 24
+){
+
+return setAuthStatus(
+"USERNAME MUST BE 3-24 CHARACTERS",
+true
+);
+
 }
+
+
+if(
+password.length < 8 ||
+password.length > 128
+){
+
+return setAuthStatus(
+"PASSWORD MUST BE 8-128 CHARACTERS",
+true
+);
+
+}
+
+
+setAuthStatus(
+"CREATING ACCOUNT..."
+);
+
+
+try{
+
+const data =
+await apiRequest(
+"/api/account/register",
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:JSON.stringify({
+username,
+password,
+profile_picture:profile
+})
+
+}
+);
+
+
+saveAccount(
+data.token,
+data.user
+);
+
+
+document.getElementById(
+"registerPassword"
+).value =
+"";
+
+
+updateAccountUI();
+
+
+setAuthStatus(
+"ACCOUNT CREATED ✓"
+);
+
+
+connectSocket();
+
+
+}catch(error){
+
+console.error(error);
+
+setAuthStatus(
+error.message,
+true
+);
+
+}
+
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
 
 async function loginAccount(){
- const username=document.getElementById("loginUsername").value.trim(),password=document.getElementById("loginPassword").value;
- if(!username||!password)return setAuthStatus("USERNAME AND PASSWORD REQUIRED",true);
- setAuthStatus("AUTHENTICATING...");
- try{const d=await apiRequest("/api/account/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});saveAccount(d.token,d.user);document.getElementById("loginPassword").value="";updateAccountUI();setAuthStatus("LOGIN SUCCESSFUL ✓");connectSocket()}catch(e){console.error(e);setAuthStatus(e.message,true)}
+
+const username =
+document.getElementById(
+"loginUsername"
+).value.trim();
+
+
+const password =
+document.getElementById(
+"loginPassword"
+).value;
+
+
+if(!username || !password){
+
+return setAuthStatus(
+"USERNAME AND PASSWORD REQUIRED",
+true
+);
+
 }
 
-async function logoutAccount(){try{if(token)await apiRequest("/api/account/logout",{method:"POST"})}catch{}token=null;currentUser=null;localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY);if(socket){try{socket.close()}catch{}socket=null}socketConnected=false;updateSocketUI();updateAccountUI();setAuthStatus("LOGGED OUT ✓");updateChatStatus("WSS déconnecté.")}
+
+setAuthStatus(
+"AUTHENTICATING..."
+);
+
+
+try{
+
+const data =
+await apiRequest(
+"/api/account/login",
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:JSON.stringify({
+username,
+password
+})
+
+}
+);
+
+
+saveAccount(
+data.token,
+data.user
+);
+
+
+document.getElementById(
+"loginPassword"
+).value =
+"";
+
+
+updateAccountUI();
+
+
+setAuthStatus(
+"LOGIN SUCCESSFUL ✓"
+);
+
+
+connectSocket();
+
+
+}catch(error){
+
+console.error(error);
+
+setAuthStatus(
+error.message,
+true
+);
+
+}
+
+}
+
+
+/* =========================================================
+   CHANGE PROFILE PICTURE
+========================================================= */
+
+function previewAvatar(){
+
+if(!currentUser || !token){
+
+return;
+
+}
+
+
+const url =
+document.getElementById(
+"newProfilePicture"
+).value.trim();
+
+
+if(!url){
+
+return setAvatarStatus(
+"ENTER A PROFILE PICTURE URL",
+true
+);
+
+}
+
+
+const preview =
+document.getElementById(
+"avatarPreview"
+);
+
+
+preview.src =
+url;
+
+
+document.getElementById(
+"avatarPreviewText"
+).textContent =
+url;
+
+
+preview.onerror = () => {
+
+setAvatarStatus(
+"IMAGE URL INVALID OR IMAGE CANNOT BE LOADED",
+true
+);
+
+};
+
+}
+
+
+function setAvatarStatus(text,error=false){
+
+const status =
+document.getElementById(
+"avatarStatus"
+);
+
+status.textContent =
+"STATUS: " + text;
+
+status.className =
+error
+?
+"auth-status error"
+:
+"auth-status success";
+
+}
+
+
+/*
+   IMPORTANT:
+
+   Le serveur doit fournir :
+
+   PATCH /api/account/profile
+
+   Body:
+
+   {
+      "profile_picture":"https://..."
+   }
+
+   Le serveur doit répondre avec :
+
+   {
+      "user": {
+         ...
+      }
+   }
+
+   ou directement l'utilisateur.
+*/
+
+async function changeProfilePicture(){
+
+if(!currentUser || !token){
+
+return setAvatarStatus(
+"LOGIN REQUIRED",
+true
+);
+
+}
+
+
+const url =
+document.getElementById(
+"newProfilePicture"
+).value.trim();
+
+
+if(!url){
+
+return setAvatarStatus(
+"ENTER A PROFILE PICTURE URL",
+true
+);
+
+}
+
+
+if(
+!/^https?:\/\/.+/i.test(url)
+){
+
+return setAvatarStatus(
+"INVALID IMAGE URL",
+true
+);
+
+}
+
+
+setAvatarStatus(
+"UPDATING PROFILE PICTURE..."
+);
+
+
+try{
+
+const data =
+await apiRequest(
+"/api/account/profile",
+{
+method:"PATCH",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:JSON.stringify({
+profile_picture:url
+})
+
+}
+);
+
+
+const updatedUser =
+data.user ||
+data.account ||
+data;
+
+
+if(updatedUser.username){
+
+currentUser =
+updatedUser;
+
+}else{
+
+currentUser = {
+...currentUser,
+profile_picture:url
+};
+
+}
+
+
+localStorage.setItem(
+USER_KEY,
+JSON.stringify(currentUser)
+);
+
+
+updateAccountUI();
+
+
+setAvatarStatus(
+"PROFILE PICTURE UPDATED ✓"
+);
+
+
+}catch(error){
+
+console.error(
+"[PROFILE PICTURE]",
+error
+);
+
+
+setAvatarStatus(
+error.message,
+true
+);
+
+}
+
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+async function logoutAccount(){
+
+try{
+
+if(token){
+
+await apiRequest(
+"/api/account/logout",
+{
+method:"POST"
+}
+);
+
+}
+
+}catch{}
+
+
+token = null;
+
+currentUser = null;
+
+
+localStorage.removeItem(
+TOKEN_KEY
+);
+
+localStorage.removeItem(
+USER_KEY
+);
+
+
+if(socket){
+
+try{
+socket.close();
+}catch{}
+
+socket = null;
+
+}
+
+
+socketConnected =
+false;
+
+
+updateSocketUI();
+
+updateAccountUI();
+
+setAuthStatus(
+"LOGGED OUT ✓"
+);
+
+updateChatStatus(
+"WSS déconnecté."
+);
+
+}
+
+
+/* =========================================================
+   SERVER STATUS
+========================================================= */
 
 async function checkServer(){
- try{const d=await apiRequest("/api/status");if(!d.online)throw new Error("OFFLINE");document.getElementById("serverStatus").textContent="SYSTEM ONLINE";document.getElementById("serverStatus").className="online";document.getElementById("renderSide").textContent="ONLINE";document.getElementById("renderSide").className="online";document.getElementById("apiSide").textContent="ONLINE";document.getElementById("apiSide").className="online";document.getElementById("visitors").textContent=d.users??0}catch(e){document.getElementById("serverStatus").textContent="API OFFLINE";document.getElementById("serverStatus").className="offline";document.getElementById("renderSide").textContent="ERROR";document.getElementById("apiSide").textContent="ERROR"}
+
+try{
+
+const data =
+await apiRequest(
+"/api/status"
+);
+
+
+if(!data.online){
+
+throw new Error(
+"OFFLINE"
+);
+
 }
 
-function updateSocketUI(){const s=document.getElementById("sidebarSocket");s.textContent=socketConnected?"ONLINE":"OFFLINE";s.className=socketConnected?"online":"offline"}
-function scheduleSocketReconnect(){if(socketReconnectTimer||!token)return;socketReconnectTimer=setTimeout(()=>{socketReconnectTimer=null;connectSocket()},3000)}
+
+document.getElementById(
+"serverStatus"
+).textContent =
+"SYSTEM ONLINE";
+
+
+document.getElementById(
+"serverStatus"
+).className =
+"online";
+
+
+document.getElementById(
+"renderSide"
+).textContent =
+"ONLINE";
+
+
+document.getElementById(
+"renderSide"
+).className =
+"online";
+
+
+document.getElementById(
+"apiSide"
+).textContent =
+"ONLINE";
+
+
+document.getElementById(
+"apiSide"
+).className =
+"online";
+
+
+document.getElementById(
+"visitors"
+).textContent =
+data.users ?? 0;
+
+
+}catch(error){
+
+console.error(
+"[SERVER]",
+error
+);
+
+
+document.getElementById(
+"serverStatus"
+).textContent =
+"API OFFLINE";
+
+
+document.getElementById(
+"serverStatus"
+).className =
+"offline";
+
+
+document.getElementById(
+"renderSide"
+).textContent =
+"ERROR";
+
+
+document.getElementById(
+"apiSide"
+).textContent =
+"ERROR";
+
+}
+
+}
+
+
+/* =========================================================
+   WSS
+========================================================= */
+
+function updateSocketUI(){
+
+const status =
+document.getElementById(
+"sidebarSocket"
+);
+
+
+status.textContent =
+socketConnected
+?
+"ONLINE"
+:
+"OFFLINE";
+
+
+status.className =
+socketConnected
+?
+"online"
+:
+"offline";
+
+}
+
+
+function scheduleSocketReconnect(){
+
+if(
+socketReconnectTimer ||
+!token
+){
+
+return;
+
+}
+
+
+socketReconnectTimer =
+setTimeout(
+()=>{
+socketReconnectTimer = null;
+connectSocket();
+},
+3000
+);
+
+}
+
 
 function connectSocket(){
- if(!token)return;
- if(socket&&(socket.readyState===WebSocket.OPEN||socket.readyState===WebSocket.CONNECTING))return;
- try{socket=new WebSocket(SOCKET_URL+"?token="+encodeURIComponent(token))}catch(e){scheduleSocketReconnect();return}
- socket.onopen=()=>{socketConnected=true;updateSocketUI();updateChatStatus("WSS connecté ✓")};
- socket.onmessage=e=>{try{const d=JSON.parse(e.data);
-  if(d.type==="welcome"){if(d.authenticated&&d.username){currentUser={username:d.username,id:d.user_id,profile_picture:d.profile_picture};localStorage.setItem(USER_KEY,JSON.stringify(currentUser));updateAccountUI()}}
-  else if(d.type==="users"){document.getElementById("visitors").textContent=d.count??0}
-  else if(d.type==="message"||d.type==="chat"){displayChatMessage(d.data||d)}
-  else if(d.type==="error")updateChatStatus("ERREUR : "+(d.message||"Erreur serveur"));
- }catch(err){console.error("[WSS JSON]",err)}};
- socket.onclose=()=>{socketConnected=false;updateSocketUI();if(token)scheduleSocketReconnect()};
- socket.onerror=()=>{socketConnected=false;updateSocketUI();updateChatStatus("ERREUR WSS")};
+
+if(!token){
+
+return;
+
 }
 
-function updateChatStatus(t){document.getElementById("chatStatus").textContent=t}
-function showChatLoginRequired(){document.getElementById("chatBox").innerHTML=`<div class="chat-message"><span class="chat-user">SYSTEM</span><br><br>⚠ ACCÈS REFUSÉ<br><br>Tu dois être connecté pour utiliser le chat.</div>`;updateChatStatus("Connexion requise.")}
-function displayChatMessage(d){
- const box=document.getElementById("chatBox"),el=document.createElement("div");el.className="chat-message";
- const time=d.timestamp||d.time;let t="";if(time){try{t=new Date(time).toLocaleTimeString("fr-FR")}catch{}}
- el.innerHTML=`<span class="chat-user">${escapeHTML(d.username||"USER")}</span> ${t?`<span class="chat-time">[${t}]</span>`:""}<br>${escapeHTML(d.message||"")}`;box.appendChild(el);box.scrollTop=box.scrollHeight;
+
+if(
+socket &&
+(
+socket.readyState === WebSocket.OPEN ||
+socket.readyState === WebSocket.CONNECTING
+)
+){
+
+return;
+
 }
-function clearChat(){document.getElementById("chatBox").innerHTML=""}
+
+
+try{
+
+socket =
+new WebSocket(
+SOCKET_URL +
+"?token=" +
+encodeURIComponent(token)
+);
+
+}catch(error){
+
+scheduleSocketReconnect();
+
+return;
+
+}
+
+
+socket.onopen = () => {
+
+socketConnected =
+true;
+
+updateSocketUI();
+
+updateChatStatus(
+"WSS connecté ✓"
+);
+
+};
+
+
+socket.onmessage = event => {
+
+try{
+
+const data =
+JSON.parse(event.data);
+
+
+if(data.type === "welcome"){
+
+if(
+data.authenticated &&
+data.username
+){
+
+currentUser = {
+
+username:
+data.username,
+
+id:
+data.user_id,
+
+profile_picture:
+data.profile_picture
+
+};
+
+
+localStorage.setItem(
+USER_KEY,
+JSON.stringify(currentUser)
+);
+
+
+updateAccountUI();
+
+}
+
+}
+
+
+else if(data.type === "users"){
+
+document.getElementById(
+"visitors"
+).textContent =
+data.count ?? 0;
+
+}
+
+
+else if(
+data.type === "message" ||
+data.type === "chat"
+){
+
+displayChatMessage(
+data.data || data
+);
+
+}
+
+
+else if(data.type === "error"){
+
+updateChatStatus(
+"ERREUR : " +
+(
+data.message ||
+"Erreur serveur"
+)
+);
+
+}
+
+}catch(error){
+
+console.error(
+"[WSS JSON]",
+error
+);
+
+}
+
+};
+
+
+socket.onclose = () => {
+
+socketConnected =
+false;
+
+updateSocketUI();
+
+if(token){
+
+scheduleSocketReconnect();
+
+}
+
+};
+
+
+socket.onerror = () => {
+
+socketConnected =
+false;
+
+updateSocketUI();
+
+updateChatStatus(
+"ERREUR WSS"
+);
+
+};
+
+}
+
+
+/* =========================================================
+   CHAT
+========================================================= */
+
+function updateChatStatus(text){
+
+document.getElementById(
+"chatStatus"
+).textContent =
+text;
+
+}
+
+
+function showChatLoginRequired(){
+
+document.getElementById(
+"chatBox"
+).innerHTML = `
+<div class="chat-message">
+<span class="chat-user">
+SYSTEM
+</span>
+<br><br>
+⚠ ACCÈS REFUSÉ
+<br><br>
+Tu dois être connecté pour utiliser le chat.
+</div>
+`;
+
+updateChatStatus(
+"Connexion requise."
+);
+
+}
+
+
+function displayChatMessage(data){
+
+const box =
+document.getElementById(
+"chatBox"
+);
+
+
+const element =
+document.createElement(
+"div"
+);
+
+
+element.className =
+"chat-message";
+
+
+const time =
+data.timestamp ||
+data.time;
+
+
+let formattedTime = "";
+
+
+if(time){
+
+try{
+
+formattedTime =
+new Date(time)
+.toLocaleTimeString(
+"fr-FR"
+);
+
+}catch{}
+
+}
+
+
+element.innerHTML = `
+
+<span class="chat-user">
+${escapeHTML(
+data.username || "USER"
+)}
+</span>
+
+${
+formattedTime
+?
+`<span class="chat-time">
+[${formattedTime}]
+</span>`
+:
+""
+}
+
+<br>
+
+${escapeHTML(
+data.message || ""
+)}
+
+`;
+
+
+box.appendChild(
+element
+);
+
+
+box.scrollTop =
+box.scrollHeight;
+
+}
+
+
+function clearChat(){
+
+document.getElementById(
+"chatBox"
+).innerHTML =
+"";
+
+}
+
 
 async function loadChatHistory(){
- if(!currentUser||!token)return showChatLoginRequired();
- clearChat();addSystemMessage("Chargement de chat-log/...");
- try{const list=await apiRequest("/api/chat/logs");const logs=list.logs||[];
-  for(const log of logs){const num=(log.name.match(/(\d+)/)||[])[1];if(!num)continue;const d=await apiRequest("/api/chat/log/"+num);for(const m of d.messages||[])displayChatMessage(m)}
-  if(!logs.length)addSystemMessage("Aucun historique dans chat-log.");
-  updateChatStatus("Historique chargé ✓");
- }catch(e){console.error("[CHAT LOG]",e);addSystemMessage("Impossible de charger chat-log : "+e.message)}
+
+if(
+!currentUser ||
+!token
+){
+
+return showChatLoginRequired();
+
 }
 
-function addSystemMessage(m){const b=document.getElementById("chatBox"),e=document.createElement("div");e.className="chat-message";e.innerHTML=`<span class="chat-user">SYSTEM</span><br>${escapeHTML(m)}`;b.appendChild(e);b.scrollTop=b.scrollHeight}
+
+clearChat();
+
+addSystemMessage(
+"Chargement de chat-log/..."
+);
+
+
+try{
+
+const list =
+await apiRequest(
+"/api/chat/logs"
+);
+
+
+const logs =
+list.logs || [];
+
+
+for(
+const log of logs
+){
+
+const match =
+log.name.match(/(\d+)/);
+
+
+const number =
+match && match[1];
+
+
+if(!number){
+
+continue;
+
+}
+
+
+const data =
+await apiRequest(
+"/api/chat/log/" +
+number
+);
+
+
+for(
+const message of
+data.messages || []
+){
+
+displayChatMessage(
+message
+);
+
+}
+
+}
+
+
+if(!logs.length){
+
+addSystemMessage(
+"Aucun historique dans chat-log."
+);
+
+}
+
+
+updateChatStatus(
+"Historique chargé ✓"
+);
+
+
+}catch(error){
+
+console.error(
+"[CHAT LOG]",
+error
+);
+
+
+addSystemMessage(
+"Impossible de charger chat-log : " +
+error.message
+);
+
+}
+
+}
+
+
+function addSystemMessage(message){
+
+const box =
+document.getElementById(
+"chatBox"
+);
+
+
+const element =
+document.createElement(
+"div"
+);
+
+
+element.className =
+"chat-message";
+
+
+element.innerHTML = `
+
+<span class="chat-user">
+SYSTEM
+</span>
+
+<br>
+
+${escapeHTML(message)}
+
+`;
+
+
+box.appendChild(
+element
+);
+
+
+box.scrollTop =
+box.scrollHeight;
+
+}
+
 
 function sendChat(){
- if(!currentUser||!token){showPage("account");return}
- const input=document.getElementById("chatMessage"),message=input.value.trim();if(!message)return updateChatStatus("Entre un message.");if(!socket||socket.readyState!==WebSocket.OPEN){updateChatStatus("WSS non connecté.");connectSocket();return}
- socket.send(JSON.stringify({type:"message",message}));input.value="";updateChatStatus("Message envoyé ✓")
+
+if(
+!currentUser ||
+!token
+){
+
+showPage(
+"account"
+);
+
+return;
+
 }
+
+
+const input =
+document.getElementById(
+"chatMessage"
+);
+
+
+const message =
+input.value.trim();
+
+
+if(!message){
+
+return updateChatStatus(
+"Entre un message."
+);
+
+}
+
+
+if(
+!socket ||
+socket.readyState !==
+WebSocket.OPEN
+){
+
+updateChatStatus(
+"WSS non connecté."
+);
+
+connectSocket();
+
+return;
+
+}
+
+
+socket.send(
+JSON.stringify({
+type:"message",
+message
+})
+);
+
+
+input.value =
+"";
+
+
+updateChatStatus(
+"Message envoyé ✓"
+);
+
+}
+
+
+/* =========================================================
+   MEDIA
+========================================================= */
 
 async function uploadFile(type){
- const ids={image:["imageFile","imageUploadStatus"],music:["musicFile","musicUploadStatus"],video:["videoFile","videoUploadStatus"]},[inputId,statusId]=ids[type],input=document.getElementById(inputId),status=document.getElementById(statusId),file=input.files[0];
- if(!file)return status.textContent="Aucun fichier sélectionné.";
- if(file.size>MAX_FILE_SIZE)return status.textContent="Fichier trop gros. Maximum : 25 MB.";
- if(!token)return status.textContent="Connecte-toi pour uploader.";
- status.textContent="Upload vers GitHub...";
- try{const fd=new FormData();fd.append("file",file);fd.append("folder",type);const d=await fetch(API+"/api/upload",{method:"POST",headers:{Authorization:"Bearer "+token},body:fd}).then(async r=>{const x=await r.json().catch(()=>({}));if(!r.ok)throw new Error(x.error||`HTTP ${r.status}`);return x});status.innerHTML=`UPLOAD OK ✓<br><a href="${escapeHTML(d.download)}" target="_blank" rel="noopener">Ouvrir le fichier</a>`;input.value="";loadMedia()}catch(e){console.error(e);status.textContent="ERREUR : "+e.message}
+
+const ids = {
+
+image:[
+"imageFile",
+"imageUploadStatus"
+],
+
+music:[
+"musicFile",
+"musicUploadStatus"
+],
+
+video:[
+"videoFile",
+"videoUploadStatus"
+]
+
+};
+
+
+const [
+inputId,
+statusId
+] =
+ids[type];
+
+
+const input =
+document.getElementById(
+inputId
+);
+
+
+const status =
+document.getElementById(
+statusId
+);
+
+
+const file =
+input.files[0];
+
+
+if(!file){
+
+return status.textContent =
+"Aucun fichier sélectionné.";
+
 }
 
-async function loadMedia(){await Promise.all([loadFolder("image","imageList","image"),loadFolder("music","musicList","music"),loadFolder("video","videoList","video")])}
-async function loadFolder(folder,id,type){
- const c=document.getElementById(id);c.innerHTML="Chargement...";
- try{const d=await apiRequest("/api/files/"+encodeURIComponent(folder));const files=(d.files||[]).filter(f=>f.name&&!f.name.endsWith(".gitkeep"));if(!files.length){c.textContent="Aucun fichier.";return}c.innerHTML="";
- files.forEach(f=>{const item=document.createElement("div");item.className="media-item";const n=escapeHTML(f.name),u=escapeHTML(f.download);if(type==="image")item.innerHTML=`<img src="${u}" alt="${n}" loading="lazy"><br><br><b>${n}</b><br><br><a href="${u}" target="_blank">OPEN</a>`;else if(type==="music")item.innerHTML=`<b>${n}</b><br><br><audio controls preload="metadata" src="${u}"></audio><br><br><a href="${u}" target="_blank">OPEN</a>`;else item.innerHTML=`<video controls preload="metadata" src="${u}"></video><br><br><b>${n}</b><br><br><a href="${u}" target="_blank">OPEN</a>`;c.appendChild(item)})
- }catch(e){console.error("[MEDIA "+folder+"]",e);c.innerHTML=`<span class="offline">ERREUR : ${escapeHTML(e.message)}</span>`}
+
+if(
+file.size >
+MAX_FILE_SIZE
+){
+
+return status.textContent =
+"Fichier trop gros. Maximum : 25 MB.";
+
 }
+
+
+if(!token){
+
+return status.textContent =
+"Connecte-toi pour uploader.";
+
+}
+
+
+status.textContent =
+"Upload vers GitHub...";
+
+
+try{
+
+const form =
+new FormData();
+
+
+form.append(
+"file",
+file
+);
+
+
+form.append(
+"folder",
+type
+);
+
+
+const response =
+await fetch(
+API + "/api/upload",
+{
+method:"POST",
+headers:{
+Authorization:
+"Bearer " + token
+},
+body:form
+}
+);
+
+
+const data =
+await response
+.json()
+.catch(
+() => ({})
+);
+
+
+if(!response.ok){
+
+throw new Error(
+data.error ||
+`HTTP ${response.status}`
+);
+
+}
+
+
+status.innerHTML = `
+UPLOAD OK ✓
+<br>
+<a
+href="${escapeHTML(data.download)}"
+target="_blank"
+rel="noopener"
+>
+Ouvrir le fichier
+</a>
+`;
+
+
+input.value = "";
+
+loadMedia();
+
+
+}catch(error){
+
+console.error(error);
+
+status.textContent =
+"ERREUR : " +
+error.message;
+
+}
+
+}
+
+
+async function loadMedia(){
+
+await Promise.all([
+
+loadFolder(
+"image",
+"imageList",
+"image"
+),
+
+loadFolder(
+"music",
+"musicList",
+"music"
+),
+
+loadFolder(
+"video",
+"videoList",
+"video"
+)
+
+]);
+
+}
+
+
+async function loadFolder(
+folder,
+id,
+type
+){
+
+const container =
+document.getElementById(id);
+
+
+container.innerHTML =
+"Chargement...";
+
+
+try{
+
+const data =
+await apiRequest(
+"/api/files/" +
+encodeURIComponent(folder)
+);
+
+
+const files =
+(data.files || [])
+.filter(
+file =>
+file.name &&
+!file.name.endsWith(".gitkeep")
+);
+
+
+if(!files.length){
+
+container.textContent =
+"Aucun fichier.";
+
+return;
+
+}
+
+
+container.innerHTML =
+"";
+
+
+files.forEach(file => {
+
+const item =
+document.createElement(
+"div"
+);
+
+
+item.className =
+"media-item";
+
+
+const name =
+escapeHTML(
+file.name
+);
+
+
+const url =
+escapeHTML(
+file.download
+);
+
+
+if(type === "image"){
+
+item.innerHTML = `
+
+<img
+src="${url}"
+alt="${name}"
+loading="lazy"
+>
+
+<br><br>
+
+<b>${name}</b>
+
+<br><br>
+
+<a
+href="${url}"
+target="_blank"
+>
+OPEN
+</a>
+
+`;
+
+}
+
+
+else if(type === "music"){
+
+item.innerHTML = `
+
+<b>${name}</b>
+
+<br><br>
+
+<audio
+controls
+preload="metadata"
+src="${url}"
+>
+</audio>
+
+<br><br>
+
+<a
+href="${url}"
+target="_blank"
+>
+OPEN
+</a>
+
+`;
+
+}
+
+
+else{
+
+item.innerHTML = `
+
+<video
+controls
+preload="metadata"
+src="${url}"
+>
+</video>
+
+<br><br>
+
+<b>${name}</b>
+
+<br><br>
+
+<a
+href="${url}"
+target="_blank"
+>
+OPEN
+</a>
+
+`;
+
+}
+
+
+container.appendChild(
+item
+);
+
+});
+
+
+}catch(error){
+
+console.error(
+"[MEDIA " + folder + "]",
+error
+);
+
+
+container.innerHTML = `
+
+<span class="offline">
+ERREUR :
+${escapeHTML(error.message)}
+</span>
+
+`;
+
+}
+
+}
+
+
+/* =========================================================
+   PAGE NAVIGATION
+========================================================= */
 
 function showPage(name){
- document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(name)?.classList.add("active");document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===name));
- if(name==="chat"){if(!currentUser||!token)return showChatLoginRequired(),setTimeout(()=>showPage("account"),900);loadChatHistory();if(!socketConnected)connectSocket()}
- if(name==="media")loadMedia();if(name==="account")updateAccountUI();window.scrollTo({top:0,behavior:"smooth"})
+
+document
+.querySelectorAll(".page")
+.forEach(
+page =>
+page.classList.remove(
+"active"
+)
+);
+
+
+document
+.getElementById(name)
+?.classList.add(
+"active"
+);
+
+
+document
+.querySelectorAll(
+"nav button"
+)
+.forEach(
+button =>
+button.classList.toggle(
+"active",
+button.dataset.page === name
+)
+);
+
+
+if(name === "chat"){
+
+if(
+!currentUser ||
+!token
+){
+
+showChatLoginRequired();
+
+setTimeout(
+() => showPage("account"),
+900
+);
+
+return;
+
 }
-document.querySelectorAll("nav button,.side-link").forEach(x=>x.addEventListener("click",()=>showPage(x.dataset.page)));
 
-function terminalPrint(t){document.getElementById("terminalOutput").textContent+="\n"+t}
-function terminalCommand(raw){const cmd=raw.trim().toLowerCase();if(!cmd)return;terminalPrint("\nguest@david:~$ "+raw);const out={help:`COMMANDS\nhelp  clear  about  date  time  random  whoami\naccount  login  logout  ls  status  media  chat  games  wss`,about:"DAVID RANDOM V2 // Render + GitHub + Supabase",ls:"image/\nmusic/\nvideo/\nchat-log/",whoami:currentUser?.username||"guest",wss:socketConnected?"WSS = ONLINE":"WSS = OFFLINE"};if(cmd==="clear")document.getElementById("terminalOutput").textContent="";else if(cmd==="account"||cmd==="login")showPage("account");else if(cmd==="media")showPage("media");else if(cmd==="chat")showPage("chat");else if(cmd==="games")showPage("games");else if(cmd==="logout")logoutAccount();else if(cmd==="status"){terminalPrint("Checking server...");checkServer()}else if(cmd==="date")terminalPrint(new Date().toLocaleDateString("fr-FR"));else if(cmd==="time")terminalPrint(new Date().toLocaleTimeString("fr-FR"));else if(cmd==="random")terminalPrint("RANDOM = "+Math.floor(Math.random()*999999));else terminalPrint(out[cmd]??("Command not found: "+raw))}
-document.getElementById("terminalInput").addEventListener("keydown",e=>{if(e.key==="Enter"){terminalCommand(e.target.value);e.target.value=""}});
-document.getElementById("chatMessage").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat()}});
 
-function addGuest(){const n=document.getElementById("guestName").value.trim(),m=document.getElementById("guestMessage").value.trim();if(!n||!m)return alert("Remplis les deux champs.");const e=document.createElement("div");e.className="chat-message";e.innerHTML=`<span class="chat-user">${escapeHTML(n)}</span><br>${escapeHTML(m)}`;document.getElementById("guestList").prepend(e);document.getElementById("guestName").value="";document.getElementById("guestMessage").value=""}
+loadChatHistory();
 
-let score=0,gameRunning=false,gameTimer=10,gameInterval=null;
-function startGame(){score=0;gameTimer=10;gameRunning=true;document.getElementById("score").textContent=0;document.getElementById("gameTime").textContent=10;clearInterval(gameInterval);gameInterval=setInterval(()=>{document.getElementById("gameTime").textContent=--gameTimer;if(gameTimer<=0){clearInterval(gameInterval);gameRunning=false;alert("GAME OVER\n\nScore: "+score)}},1000)}
-function gameClick(){if(!gameRunning)return;document.getElementById("score").textContent=++score;document.getElementById("clickTarget").style.transform=`translate(${Math.random()*120-60}px,${Math.random()*100-50}px)`}
 
-function updateClock(){document.getElementById("clock").textContent=new Date().toLocaleTimeString("fr-FR")}setInterval(updateClock,1000);updateClock();
-restoreAccount();updateAccountUI();checkServer();if(token)connectSocket();
-console.log("DAVID RANDOM V2","API:",API,"WSS:",SOCKET_URL,"Account token:",token?"PRESENT":"NONE");
+if(!socketConnected){
+
+connectSocket();
+
+}
+
+}
+
+
+if(name === "media"){
+
+loadMedia();
+
+}
+
+
+if(name === "account"){
+
+updateAccountUI();
+
+}
+
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+}
+
+
+document
+.querySelectorAll(
+"nav button,.side-link"
+)
+.forEach(
+element =>
+element.addEventListener(
+"click",
+() =>
+showPage(
+element.dataset.page
+)
+)
+);
+
+
+/* =========================================================
+   TERMINAL
+========================================================= */
+
+function terminalPrint(text){
+
+document.getElementById(
+"terminalOutput"
+).textContent +=
+"\n" + text;
+
+}
+
+
+function terminalCommand(raw){
+
+const command =
+raw.trim().toLowerCase();
+
+
+if(!command){
+
+return;
+
+}
+
+
+terminalPrint(
+"\nguest@david:~$ " +
+raw
+);
+
+
+const commands = {
+
+help:
+`COMMANDS
+help
+clear
+about
+date
+time
+random
+whoami
+account
+login
+logout
+ls
+status
+media
+chat
+games
+wss`,
+
+about:
+"DAVID RANDOM V2 // Render + GitHub + WSS",
+
+ls:
+`image/
+music/
+video/
+chat-log/
+accounts/`,
+
+whoami:
+currentUser?.username ||
+"guest",
+
+wss:
+socketConnected
+?
+"WSS = ONLINE"
+:
+"WSS = OFFLINE"
+
+};
+
+
+if(command === "clear"){
+
+document.getElementById(
+"terminalOutput"
+).textContent =
+"";
+
+}
+
+else if(
+command === "account" ||
+command === "login"
+){
+
+showPage("account");
+
+}
+
+else if(command === "media"){
+
+showPage("media");
+
+}
+
+else if(command === "chat"){
+
+showPage("chat");
+
+}
+
+else if(command === "games"){
+
+showPage("games");
+
+}
+
+else if(command === "logout"){
+
+logoutAccount();
+
+}
+
+else if(command === "status"){
+
+terminalPrint(
+"Checking server..."
+);
+
+checkServer();
+
+}
+
+else if(command === "date"){
+
+terminalPrint(
+new Date()
+.toLocaleDateString(
+"fr-FR"
+)
+);
+
+}
+
+else if(command === "time"){
+
+terminalPrint(
+new Date()
+.toLocaleTimeString(
+"fr-FR"
+)
+);
+
+}
+
+else if(command === "random"){
+
+terminalPrint(
+"RANDOM = " +
+Math.floor(
+Math.random() * 999999
+)
+);
+
+}
+
+else{
+
+terminalPrint(
+commands[command] ??
+"Command not found: " +
+raw
+);
+
+}
+
+}
+
+
+document
+.getElementById(
+"terminalInput"
+)
+.addEventListener(
+"keydown",
+event => {
+
+if(event.key === "Enter"){
+
+terminalCommand(
+event.target.value
+);
+
+event.target.value =
+"";
+
+}
+
+}
+);
+
+
+/* =========================================================
+   CHAT ENTER
+========================================================= */
+
+document
+.getElementById(
+"chatMessage"
+)
+.addEventListener(
+"keydown",
+event => {
+
+if(
+event.key === "Enter" &&
+!event.shiftKey
+){
+
+event.preventDefault();
+
+sendChat();
+
+}
+
+}
+);
+
+
+/* =========================================================
+   GUESTBOOK
+========================================================= */
+
+function addGuest(){
+
+const name =
+document.getElementById(
+"guestName"
+).value.trim();
+
+
+const message =
+document.getElementById(
+"guestMessage"
+).value.trim();
+
+
+if(!name || !message){
+
+return alert(
+"Remplis les deux champs."
+);
+
+}
+
+
+const element =
+document.createElement(
+"div"
+);
+
+
+element.className =
+"chat-message";
+
+
+element.innerHTML = `
+
+<span class="chat-user">
+${escapeHTML(name)}
+</span>
+
+<br>
+
+${escapeHTML(message)}
+
+`;
+
+
+document
+.getElementById(
+"guestList"
+)
+.prepend(
+element
+);
+
+
+document.getElementById(
+"guestName"
+).value =
+"";
+
+
+document.getElementById(
+"guestMessage"
+).value =
+"";
+
+}
+
+
+/* =========================================================
+   GAME
+========================================================= */
+
+let score = 0;
+
+let gameRunning = false;
+
+let gameTimer = 10;
+
+let gameInterval = null;
+
+
+function startGame(){
+
+score = 0;
+
+gameTimer = 10;
+
+gameRunning = true;
+
+
+document.getElementById(
+"score"
+).textContent =
+"0";
+
+
+document.getElementById(
+"gameTime"
+).textContent =
+"10";
+
+
+clearInterval(
+gameInterval
+);
+
+
+gameInterval =
+setInterval(
+() => {
+
+gameTimer--;
+
+document.getElementById(
+"gameTime"
+).textContent =
+gameTimer;
+
+
+if(gameTimer <= 0){
+
+clearInterval(
+gameInterval
+);
+
+gameRunning =
+false;
+
+
+alert(
+"GAME OVER\n\nScore: " +
+score
+);
+
+}
+
+},
+1000
+);
+
+}
+
+
+function gameClick(){
+
+if(!gameRunning){
+
+return;
+
+}
+
+
+score++;
+
+
+document.getElementById(
+"score"
+).textContent =
+score;
+
+
+document.getElementById(
+"clickTarget"
+).style.transform =
+`translate(
+${Math.random()*120-60}px,
+${Math.random()*100-50}px
+)`;
+
+}
+
+
+/* =========================================================
+   CLOCK
+========================================================= */
+
+function updateClock(){
+
+document.getElementById(
+"clock"
+).textContent =
+new Date()
+.toLocaleTimeString(
+"fr-FR"
+);
+
+}
+
+
+setInterval(
+updateClock,
+1000
+);
+
+updateClock();
+
+
+/* =========================================================
+   START
+========================================================= */
+
+restoreAccount();
+
+updateAccountUI();
+
+checkServer();
+
+
+if(token){
+
+connectSocket();
+
+}
+
+
+console.log(
+"DAVID RANDOM V2",
+"API:",
+API,
+"WSS:",
+SOCKET_URL,
+"Account token:",
+token
+?
+"PRESENT"
+:
+"NONE"
+);
+
 </script>
+
 </body>
 </html>
