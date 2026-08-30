@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "messages": [
     {
       "id": "da19795a-abd2-4096-82bf-0e87ddb4f97f",
@@ -14,6 +13,14 @@
       "user_id": "75a9cf6b-e91c-4e97-a214-acb3fd6e9447",
       "message": "test",
       "timestamp": "2026-08-30T12:21:40.757Z"
+    },
+    {
+      "id": "c426edf7eb260ff6",
+      "username": "david_officiel",
+      "user_id": "83465ad9318ccaccd5abf548",
+      "profile_picture": "https://i.pinimg.com/736x/1b/59/26/1b592683de7657eee1f6887f21859727.jpg",
+      "message": "test v2",
+      "timestamp": "2026-08-30T12:44:40.131Z"
     }
   ]
 }
