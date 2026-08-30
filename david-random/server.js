@@ -1,4 +1,3 @@
-```js
 // ============================================================
 // DAVID RANDOM V2 - SERVER
 // Render + GitHub Storage + WebSocket + Accounts
@@ -3138,4 +3137,3 @@ server.listen(
 
     }
 );
-```
