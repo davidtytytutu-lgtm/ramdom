@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -532,18 +531,6 @@ cursor:pointer;
 user-select:none
 }
 
-.log-list{
-max-height:420px;
-overflow:auto
-}
-
-.log-entry{
-padding:10px;
-border:1px solid var(--dark);
-margin-bottom:8px;
-background:#080d08
-}
-
 .muted{
 color:#58745c;
 font-size:12px
@@ -556,7 +543,6 @@ text-align:center;
 font-size:12px
 }
 </style>
-
 </head>
 
 <body>
@@ -600,7 +586,14 @@ ACCOUNT:
 
 <nav>
 
-<button class="active" data-page="home">[ HOME ]</button> <button data-page="chat">[ CHAT ]</button> <button data-page="media">[ MEDIA ]</button> <button data-page="terminal">[ TERMINAL ]</button> <button data-page="games">[ GAMES ]</button> <button data-page="guestbook">[ GUESTBOOK ]</button> <button data-page="account">[ ACCOUNT ]</button> <button data-page="about">[ ABOUT ]</button>
+<button class="active" data-page="home">[ HOME ]</button>
+<button data-page="chat">[ CHAT ]</button>
+<button data-page="media">[ MEDIA ]</button>
+<button data-page="terminal">[ TERMINAL ]</button>
+<button data-page="games">[ GAMES ]</button>
+<button data-page="guestbook">[ GUESTBOOK ]</button>
+<button data-page="account">[ ACCOUNT ]</button>
+<button data-page="about">[ ABOUT ]</button>
 
 </nav>
 
@@ -637,19 +630,23 @@ ACCOUNT:
 
 <br><br>
 
-RENDER: <span id="renderSide" class="offline">CHECKING</span>
+RENDER:
+<span id="renderSide" class="offline">CHECKING</span>
 
 <br>
 
-GITHUB: <span class="online">ONLINE</span>
+GITHUB:
+<span class="online">ONLINE</span>
 
 <br>
 
-API: <span id="apiSide" class="offline">CHECKING</span>
+API:
+<span id="apiSide" class="offline">CHECKING</span>
 
 <br>
 
-WSS: <span id="sidebarSocket" class="offline">CONNECTING</span>
+WSS:
+<span id="sidebarSocket" class="offline">CONNECTING</span>
 
 </div>
 
@@ -671,10 +668,10 @@ GUEST
 
 <br><br>
 
-/image/ <br>
-/music/ <br>
-/video/ <br>
-/chat-log/ <br>
+/image/<br>
+/music/<br>
+/video/<br>
+/chat-log/<br>
 /accounts/
 
 </div>
@@ -683,26 +680,20 @@ GUEST
 
 <main>
 
-<!-- HOME -->
-
 <section class="page active" id="home">
 
 <div class="panel hero">
 
 <div class="panel-content">
 
-<h1>
-WELCOME TO DAVID RANDOM
-</h1>
+<h1>WELCOME TO DAVID RANDOM</h1>
 
 <p>
 <span class="prompt">root@david:~$</span>
 whoami
 </p>
 
-<p id="homeWhoami">
-visitor
-</p>
+<p id="homeWhoami">visitor</p>
 
 <p>
 <span class="prompt">root@david:~$</span>
@@ -732,9 +723,7 @@ Explore.
 
 <h3>▣ CHAT</h3>
 
-<p>
-Discute avec les visiteurs.
-</p>
+<p>Discute avec les visiteurs.</p>
 
 <button class="retro-btn" onclick="showPage('chat')">
 OPEN
@@ -746,9 +735,7 @@ OPEN
 
 <h3>▧ MEDIA</h3>
 
-<p>
-Images, musique et vidéos.
-</p>
+<p>Images, musique et vidéos.</p>
 
 <button class="retro-btn" onclick="showPage('media')">
 OPEN
@@ -760,9 +747,7 @@ OPEN
 
 <h3>♙ ACCOUNT</h3>
 
-<p>
-Crée ton compte ou connecte-toi.
-</p>
+<p>Crée ton compte ou connecte-toi.</p>
 
 <button class="retro-btn" onclick="showPage('account')">
 OPEN
@@ -773,8 +758,6 @@ OPEN
 </div>
 
 </section>
-
-<!-- CHAT -->
 
 <section class="page" id="chat">
 
@@ -790,9 +773,7 @@ CHAT // GLOBAL // WSS
 
 <div class="chat-message">
 
-<span class="chat-user">
-SYSTEM
-</span>
+<span class="chat-user">SYSTEM</span>
 
 <br>
 
@@ -809,7 +790,6 @@ class="retro-input"
 id="chatUsername"
 placeholder="Pseudo"
 disabled
-
 >
 
 <input
@@ -818,7 +798,6 @@ id="chatMessage"
 placeholder="Message..."
 maxlength="500"
 autocomplete="off"
-
 >
 
 <button class="retro-btn" onclick="sendChat()">
@@ -836,8 +815,6 @@ Connexion WSS...
 </div>
 
 </section>
-
-<!-- MEDIA -->
 
 <section class="page" id="media">
 
@@ -857,7 +834,6 @@ UPLOAD // GITHUB STORAGE
 type="file"
 id="imageFile"
 accept="image/*"
-
 >
 
 <br><br>
@@ -865,15 +841,11 @@ accept="image/*"
 <button
 class="retro-btn"
 onclick="uploadFile('image')"
-
 >
+UPLOAD IMAGE
+</button>
 
-UPLOAD IMAGE </button>
-
-<div
-id="imageUploadStatus"
-class="upload-status"
-></div>
+<div id="imageUploadStatus" class="upload-status"></div>
 
 </div>
 
@@ -885,7 +857,6 @@ class="upload-status"
 type="file"
 id="musicFile"
 accept="audio/*"
-
 >
 
 <br><br>
@@ -893,15 +864,11 @@ accept="audio/*"
 <button
 class="retro-btn"
 onclick="uploadFile('music')"
-
 >
+UPLOAD MUSIC
+</button>
 
-UPLOAD MUSIC </button>
-
-<div
-id="musicUploadStatus"
-class="upload-status"
-></div>
+<div id="musicUploadStatus" class="upload-status"></div>
 
 </div>
 
@@ -913,7 +880,6 @@ class="upload-status"
 type="file"
 id="videoFile"
 accept="video/*"
-
 >
 
 <br><br>
@@ -921,15 +887,11 @@ accept="video/*"
 <button
 class="retro-btn"
 onclick="uploadFile('video')"
-
 >
+UPLOAD VIDEO
+</button>
 
-UPLOAD VIDEO </button>
-
-<div
-id="videoUploadStatus"
-class="upload-status"
-></div>
+<div id="videoUploadStatus" class="upload-status"></div>
 
 </div>
 
@@ -945,10 +907,7 @@ IMAGES // /image/
 
 <div class="panel-content">
 
-<div
-class="media-grid"
-id="imageList"
->
+<div class="media-grid" id="imageList">
 Ouvre cette page pour charger les images.
 </div>
 
@@ -964,10 +923,7 @@ MUSIC // /music/
 
 <div class="panel-content">
 
-<div
-class="media-grid"
-id="musicList"
->
+<div class="media-grid" id="musicList">
 Ouvre cette page pour charger les musiques.
 </div>
 
@@ -983,10 +939,7 @@ VIDEOS // /video/
 
 <div class="panel-content">
 
-<div
-class="media-grid"
-id="videoList"
->
+<div class="media-grid" id="videoList">
 Ouvre cette page pour charger les vidéos.
 </div>
 
@@ -995,8 +948,6 @@ Ouvre cette page pour charger les vidéos.
 </div>
 
 </section>
-
-<!-- TERMINAL -->
 
 <section class="page" id="terminal">
 
@@ -1010,10 +961,8 @@ TERMINAL // DAVID_OS
 
 <div class="terminal">
 
-<div
-class="terminal-output"
-id="terminalOutput"
->DAVID_OS v2.0
+<div class="terminal-output" id="terminalOutput">
+DAVID_OS v2.0
 Booting...
 Render server detected.
 GitHub storage detected.
@@ -1021,7 +970,8 @@ WSS system detected.
 ACCOUNT SYSTEM detected.
 CHAT-LOG SYSTEM detected.
 SYSTEM READY.
-Type "help".</div>
+Type "help".
+</div>
 
 <div class="terminal-input-line">
 
@@ -1034,7 +984,6 @@ class="terminal-input"
 id="terminalInput"
 autocomplete="off"
 spellcheck="false"
-
 >
 
 </div>
@@ -1046,8 +995,6 @@ spellcheck="false"
 </div>
 
 </section>
-
-<!-- GAMES -->
 
 <section class="page" id="games">
 
@@ -1061,9 +1008,7 @@ GAMES // MINI ARCADE
 
 <div class="game">
 
-<h2>
-CLICK THE RANDOM BOX
-</h2>
+<h2>CLICK THE RANDOM BOX</h2>
 
 <p>
 SCORE:
@@ -1086,10 +1031,9 @@ CLICK
 <button
 class="retro-btn"
 onclick="startGame()"
-
 >
-
-START GAME </button>
+START GAME
+</button>
 
 </div>
 
@@ -1098,8 +1042,6 @@ START GAME </button>
 </div>
 
 </section>
-
-<!-- GUESTBOOK -->
 
 <section class="page" id="guestbook">
 
@@ -1116,7 +1058,6 @@ class="retro-input"
 id="guestName"
 placeholder="Pseudo"
 maxlength="24"
-
 >
 
 <textarea
@@ -1129,10 +1070,9 @@ maxlength="500"
 <button
 class="retro-btn"
 onclick="addGuest()"
-
 >
-
-SIGN </button>
+SIGN
+</button>
 
 <div id="guestList">
 
@@ -1156,8 +1096,6 @@ Bienvenue !
 
 </section>
 
-<!-- ACCOUNT -->
-
 <section class="page" id="account">
 
 <div class="panel">
@@ -1168,12 +1106,7 @@ ACCOUNT // AUTHENTICATION
 
 <div class="panel-content">
 
-<!-- LOGGED OUT -->
-
-<div
-id="loggedOutAccount"
-class="auth-box"
->
+<div id="loggedOutAccount" class="auth-box">
 
 <div class="auth-section">
 
@@ -1189,7 +1122,6 @@ id="loginUsername"
 placeholder="Username"
 maxlength="24"
 autocomplete="username"
-
 >
 
 <label class="auth-label">
@@ -1202,24 +1134,20 @@ id="loginPassword"
 type="password"
 placeholder="Password"
 autocomplete="current-password"
-
 >
 
 <button
 class="retro-btn"
 onclick="loginAccount()"
-
 >
-
-[ LOGIN ] </button>
+[ LOGIN ]
+</button>
 
 </div>
 
 <div class="auth-section">
 
-<h3>
-CREATE ACCOUNT
-</h3>
+<h3>CREATE ACCOUNT</h3>
 
 <label class="auth-label">
 USERNAME
@@ -1231,7 +1159,6 @@ id="registerUsername"
 placeholder="Username"
 maxlength="24"
 autocomplete="username"
-
 >
 
 <label class="auth-label">
@@ -1244,7 +1171,6 @@ id="registerPassword"
 type="password"
 placeholder="Password"
 autocomplete="new-password"
-
 >
 
 <label class="auth-label">
@@ -1256,7 +1182,6 @@ class="retro-input"
 id="profilePicture"
 type="url"
 placeholder="https://site.com/avatar.png"
-
 >
 
 <small>
@@ -1268,23 +1193,17 @@ PNG / JPG / JPEG via URL.
 <button
 class="retro-btn"
 onclick="registerAccount()"
-
 >
-
-[ REGISTER ] </button>
+[ REGISTER ]
+</button>
 
 </div>
 
-<div
-id="authStatus"
-class="auth-status"
->
+<div id="authStatus" class="auth-status">
 STATUS: NOT CONNECTED
 </div>
 
 </div>
-
-<!-- LOGGED IN -->
 
 <div
 id="loggedInAccount"
@@ -1296,7 +1215,6 @@ style="display:none"
 id="accountAvatar"
 class="account-avatar"
 alt="Profile picture"
-
 >
 
 <div
@@ -1317,20 +1235,15 @@ ACCOUNT
 ● CONNECTED
 </div>
 
-<!-- AVATAR EDITOR -->
-
 <div class="avatar-editor">
 
-<h3>
-PROFILE PICTURE
-</h3>
+<h3>PROFILE PICTURE</h3>
 
 <div class="avatar-preview">
 
 <img
 id="avatarPreview"
 alt="Avatar preview"
-
 >
 
 <div>
@@ -1358,24 +1271,21 @@ class="retro-input"
 id="newProfilePicture"
 type="url"
 placeholder="https://site.com/avatar.png"
-
 >
 
 <button
 class="retro-btn"
 onclick="previewAvatar()"
-
 >
-
-[ PREVIEW ] </button>
+[ PREVIEW ]
+</button>
 
 <button
 class="retro-btn"
 onclick="changeProfilePicture()"
-
 >
-
-[ SAVE PROFILE PICTURE ] </button>
+[ SAVE PROFILE PICTURE ]
+</button>
 
 <div
 id="avatarStatus"
@@ -1391,10 +1301,9 @@ STATUS: READY
 <button
 class="retro-btn danger"
 onclick="logoutAccount()"
-
 >
-
-[ LOGOUT ] </button>
+[ LOGOUT ]
+</button>
 
 </div>
 
@@ -1413,8 +1322,6 @@ SESSION ACTIVE
 
 </section>
 
-<!-- ABOUT -->
-
 <section class="page" id="about">
 
 <div class="panel">
@@ -1425,7 +1332,8 @@ ABOUT // README.TXT
 
 <div class="panel-content">
 
-<pre>╔══════════════════════════════════╗
+<pre>
+╔══════════════════════════════════╗
 ║          DAVID RANDOM            ║
 ║                                  ║
 ║ Version : 2.0                    ║
@@ -1437,7 +1345,8 @@ ABOUT // README.TXT
 ║ Chat logs : GitHub               ║
 ║                                  ║
 ║ STATUS : ONLINE                  ║
-╚══════════════════════════════════╝</pre>
+╚══════════════════════════════════╝
+</pre>
 
 <p>
 David Random est un site expérimental inspiré
@@ -1465,7 +1374,8 @@ Best viewed at 800x600
 <br><br>
 
 <span class="blink">█</span>
-END OF TRANSMISSION <span class="blink">█</span>
+END OF TRANSMISSION
+<span class="blink">█</span>
 
 </footer>
 
@@ -1479,59 +1389,119 @@ END OF TRANSMISSION <span class="blink">█</span>
 ========================================================= */
 
 const API = "https://david-random.onrender.com";
+const SOCKET_URL = "wss://david-random.onrender.com/ws";
 
-const SOCKET_URL =
-    "wss://david-random.onrender.com/ws";
+const TOKEN_KEY = "david_random_token";
+const USER_KEY = "david_random_user";
 
-const TOKEN_KEY =
-    "david_random_token";
-
-const USER_KEY =
-    "david_random_user";
-
-const MAX_FILE_SIZE =
-    25 * 1024 * 1024;
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 
 /* =========================================================
    AUTH STATE
 ========================================================= */
 
-let token =
-    localStorage.getItem(TOKEN_KEY) || null;
+/*
+   IMPORTANT :
+   Il n'y a qu'UNE seule déclaration de token
+   et UNE seule déclaration de currentUser.
+*/
 
+let token = localStorage.getItem(TOKEN_KEY) || null;
 let currentUser = null;
 
-
-/* =========================================================
-   SOCKET STATE
-========================================================= */
-
 let socket = null;
-
 let socketConnected = false;
-
 let socketReconnectTimer = null;
 
 
 /* =========================================================
-   GAME STATE
+   RESTORE SAVED USER
 ========================================================= */
 
-let score = 0;
+function restoreSavedUser(){
 
-let gameRunning = false;
+    try{
 
-let gameTimer = 10;
+        const saved =
+            localStorage.getItem(USER_KEY);
 
-let gameInterval = null;
+        if(!saved){
+
+            currentUser = null;
+            return;
+
+        }
+
+        currentUser =
+            JSON.parse(saved);
+
+    }catch(error){
+
+        console.error(
+            "[AUTH] Saved user corrupted:",
+            error
+        );
+
+        localStorage.removeItem(USER_KEY);
+
+        currentUser = null;
+
+    }
+
+}
+
+
+/* =========================================================
+   SAVE SESSION
+========================================================= */
+
+function saveAccount(newToken,newUser){
+
+    token =
+        newToken || null;
+
+    currentUser =
+        newUser || null;
+
+    if(token){
+
+        localStorage.setItem(
+            TOKEN_KEY,
+            token
+        );
+
+    }else{
+
+        localStorage.removeItem(
+            TOKEN_KEY
+        );
+
+    }
+
+    if(currentUser){
+
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(currentUser)
+        );
+
+    }else{
+
+        localStorage.removeItem(
+            USER_KEY
+        );
+
+    }
+
+}
 
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function escapeHTML(value) {
+function escapeHTML(value){
 
     const div =
         document.createElement("div");
@@ -1540,10 +1510,11 @@ function escapeHTML(value) {
         String(value ?? "");
 
     return div.innerHTML;
+
 }
 
 
-function createDefaultAvatar(username) {
+function createDefaultAvatar(username){
 
     return (
         "https://ui-avatars.com/api/?" +
@@ -1553,81 +1524,7 @@ function createDefaultAvatar(username) {
         "&color=35ff5a" +
         "&bold=true"
     );
-}
 
-
-/* =========================================================
-   ACCOUNT STORAGE
-========================================================= */
-
-function saveAccount(newToken, user) {
-
-    token = newToken || null;
-
-    currentUser = user || null;
-
-    if (token) {
-
-        localStorage.setItem(
-            TOKEN_KEY,
-            token
-        );
-
-    } else {
-
-        localStorage.removeItem(
-            TOKEN_KEY
-        );
-
-    }
-
-
-    if (currentUser) {
-
-        localStorage.setItem(
-            USER_KEY,
-            JSON.stringify(currentUser)
-        );
-
-    } else {
-
-        localStorage.removeItem(
-            USER_KEY
-        );
-
-    }
-}
-
-
-function restoreAccount() {
-
-    token =
-        localStorage.getItem(TOKEN_KEY) || null;
-
-
-    try {
-
-        const saved =
-            localStorage.getItem(USER_KEY);
-
-        currentUser =
-            saved
-                ? JSON.parse(saved)
-                : null;
-
-    } catch (error) {
-
-        console.error(
-            "[AUTH] USER STORAGE CORRUPTED:",
-            error
-        );
-
-        localStorage.removeItem(
-            USER_KEY
-        );
-
-        currentUser = null;
-    }
 }
 
 
@@ -1635,38 +1532,22 @@ function restoreAccount() {
    API REQUEST
 ========================================================= */
 
-async function apiRequest(
-    endpoint,
-    options = {}
-) {
+async function apiRequest(endpoint,options={}){
 
     const headers = {
         ...(options.headers || {})
     };
 
-
     /*
-       Toujours utiliser le token
-       actuellement présent dans localStorage.
+       Token ajouté automatiquement.
     */
 
-    const storedToken =
-        localStorage.getItem(TOKEN_KEY);
-
-    if (storedToken) {
-
-        token = storedToken;
-
-    }
-
-
-    if (token) {
+    if(token){
 
         headers.Authorization =
-            `Bearer ${token}`;
+            "Bearer " + token;
 
     }
-
 
     const response =
         await fetch(
@@ -1681,263 +1562,34 @@ async function apiRequest(
     let data = null;
 
 
-    try {
+    try{
 
-        const text =
-            await response.text();
+        data =
+            await response.json();
 
-        if (text) {
-
-            data =
-                JSON.parse(text);
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "[API] JSON ERROR:",
-            error
-        );
+    }catch{
 
         throw new Error(
-            `SERVER RETURNED INVALID JSON (${response.status})`
+            "SERVER RETURNED INVALID JSON (" +
+            response.status +
+            ")"
         );
 
     }
 
 
-    if (!response.ok) {
-
-        /*
-           Si le token est invalide,
-           on ne le supprime PAS immédiatement.
-
-           Cela évite qu'un simple problème
-           temporaire déconnecte le compte.
-        */
-
-        if (
-            response.status === 401 ||
-            response.status === 403
-        ) {
-
-            throw new Error(
-                data?.error ||
-                "SESSION INVALID OR EXPIRED"
-            );
-
-        }
-
+    if(!response.ok){
 
         throw new Error(
             data?.error ||
             data?.message ||
-            `HTTP ${response.status}`
+            "HTTP " + response.status
         );
 
     }
 
 
-    return data || {};
-
-}
-
-
-/* =========================================================
-   RESTORE SESSION
-========================================================= */
-
-async function restoreSession() {
-
-    /*
-       On récupère TOUJOURS le token
-       depuis localStorage après un F5.
-    */
-
-    token =
-        localStorage.getItem(TOKEN_KEY) || null;
-
-
-    if (!token) {
-
-        console.log(
-            "[AUTH] Aucun token sauvegardé"
-        );
-
-        currentUser = null;
-
-        updateAccountUI();
-
-        return false;
-    }
-
-
-    /*
-       Affichage immédiat du compte sauvegardé.
-       Cela évite que l'interface affiche GUEST
-       pendant la vérification.
-    */
-
-    try {
-
-        const saved =
-            localStorage.getItem(USER_KEY);
-
-        if (saved) {
-
-            currentUser =
-                JSON.parse(saved);
-
-        }
-
-    } catch {
-
-        currentUser = null;
-
-    }
-
-
-    updateAccountUI();
-
-
-    console.log(
-        "[AUTH] Vérification de la session..."
-    );
-
-
-    try {
-
-        const data =
-            await apiRequest(
-                "/api/account/me",
-                {
-                    method: "GET"
-                }
-            );
-
-
-        if (
-            !data ||
-            !data.user
-        ) {
-
-            throw new Error(
-                "INVALID SESSION RESPONSE"
-            );
-
-        }
-
-
-        /*
-           IMPORTANT :
-           Le serveur devient la source
-           officielle des informations utilisateur.
-        */
-
-        currentUser =
-            data.user;
-
-
-        localStorage.setItem(
-            USER_KEY,
-            JSON.stringify(currentUser)
-        );
-
-
-        updateAccountUI();
-
-
-        console.log(
-            "[AUTH] SESSION RESTORED:",
-            currentUser.username
-        );
-
-
-        return true;
-
-
-    } catch (error) {
-
-        console.error(
-            "[AUTH] Session verification failed:",
-            error
-        );
-
-
-        /*
-           On ne supprime le token que si
-           le serveur confirme réellement
-           que la session est invalide.
-        */
-
-        const message =
-            String(error.message || "").toUpperCase();
-
-
-        if (
-            message.includes("401") ||
-            message.includes("403") ||
-            message.includes("SESSION INVALID") ||
-            message.includes("EXPIRED")
-        ) {
-
-            console.warn(
-                "[AUTH] Token rejected by server."
-            );
-
-
-            token = null;
-
-            currentUser = null;
-
-
-            localStorage.removeItem(
-                TOKEN_KEY
-            );
-
-            localStorage.removeItem(
-                USER_KEY
-            );
-
-
-            if (socket) {
-
-                try {
-                    socket.close();
-                } catch {}
-
-                socket = null;
-
-            }
-
-
-            socketConnected =
-                false;
-
-
-            updateSocketUI();
-
-            updateAccountUI();
-
-            return false;
-
-        }
-
-
-        /*
-           Erreur réseau / Render réveil / etc.
-           On garde le token.
-        */
-
-        console.warn(
-            "[AUTH] Temporary API error. Token kept."
-        );
-
-
-        return !!currentUser;
-
-    }
+    return data;
 
 }
 
@@ -1946,55 +1598,40 @@ async function restoreSession() {
    ACCOUNT UI
 ========================================================= */
 
-function updateAccountUI() {
+function updateAccountUI(){
 
     const out =
         document.getElementById(
             "loggedOutAccount"
         );
 
-
     const inn =
         document.getElementById(
             "loggedInAccount"
         );
-
 
     const head =
         document.getElementById(
             "headerAccountStatus"
         );
 
-
     const side =
         document.getElementById(
             "sidebarAccount"
         );
-
 
     const who =
         document.getElementById(
             "homeWhoami"
         );
 
-
-    const cu =
+    const chatUsername =
         document.getElementById(
             "chatUsername"
         );
 
 
-    if (!out || !inn) {
-
-        return;
-
-    }
-
-
-    if (
-        currentUser &&
-        token
-    ) {
+    if(currentUser && token){
 
         out.style.display =
             "none";
@@ -2019,147 +1656,88 @@ function updateAccountUI() {
             createDefaultAvatar(username);
 
 
-        const accountUsername =
-            document.getElementById(
-                "accountUsername"
-            );
-
-        if (accountUsername) {
-
-            accountUsername.textContent =
-                username;
-
-        }
+        document.getElementById(
+            "accountUsername"
+        ).textContent =
+            username;
 
 
-        const accountId =
-            document.getElementById(
-                "accountId"
-            );
-
-        if (accountId) {
-
-            accountId.textContent =
-                currentUser.id
-                    ? "ID: " + currentUser.id
-                    : "ACCOUNT ACTIVE";
-
-        }
+        document.getElementById(
+            "accountId"
+        ).textContent =
+            currentUser.id
+            ?
+            "ID: " + currentUser.id
+            :
+            "ACCOUNT ACTIVE";
 
 
-        const accountAvatar =
-            document.getElementById(
-                "accountAvatar"
-            );
-
-        if (accountAvatar) {
-
-            accountAvatar.src =
-                avatar;
-
-        }
+        document.getElementById(
+            "accountAvatar"
+        ).src =
+            avatar;
 
 
-        const avatarPreview =
-            document.getElementById(
-                "avatarPreview"
-            );
-
-        if (avatarPreview) {
-
-            avatarPreview.src =
-                avatar;
-
-        }
+        document.getElementById(
+            "avatarPreview"
+        ).src =
+            avatar;
 
 
-        const avatarText =
-            document.getElementById(
-                "avatarPreviewText"
-            );
-
-        if (avatarText) {
-
-            avatarText.textContent =
-                profile ||
-                "Avatar automatique";
-
-        }
+        document.getElementById(
+            "avatarPreviewText"
+        ).textContent =
+            profile ||
+            "Avatar automatique";
 
 
-        const newProfile =
-            document.getElementById(
-                "newProfilePicture"
-            );
-
-        if (
-            newProfile &&
-            document.activeElement !== newProfile
-        ) {
-
-            newProfile.value =
-                profile;
-
-        }
+        document.getElementById(
+            "newProfilePicture"
+        ).value =
+            profile;
 
 
-        if (head) {
+        head.textContent =
+            username;
 
-            head.textContent =
-                username;
-
-            head.className =
-                "online";
-
-        }
+        head.className =
+            "online";
 
 
-        if (who) {
-
-            who.textContent =
-                username;
-
-        }
+        who.textContent =
+            username;
 
 
-        if (side) {
+        side.innerHTML = `
+            <div class="account-mini">
 
-            side.innerHTML = `
-                <div class="account-mini">
+                <img
+                    src="${escapeHTML(avatar)}"
+                    alt="Avatar"
+                >
 
-                    <img
-                        src="${escapeHTML(avatar)}"
-                        alt="Avatar"
-                    >
-
-                    <div class="account-mini-name">
-                        ${escapeHTML(username)}
-                    </div>
-
-                    <br>
-
-                    <span class="online">
-                        CONNECTED
-                    </span>
-
+                <div class="account-mini-name">
+                    ${escapeHTML(username)}
                 </div>
-            `;
 
-        }
+                <br>
 
+                <span class="online">
+                    CONNECTED
+                </span>
 
-        if (cu) {
-
-            cu.value =
-                username;
-
-            cu.disabled =
-                true;
-
-        }
+            </div>
+        `;
 
 
-    } else {
+        chatUsername.value =
+            username;
+
+        chatUsername.disabled =
+            true;
+
+
+    }else{
 
         out.style.display =
             "block";
@@ -2168,42 +1746,26 @@ function updateAccountUI() {
             "none";
 
 
-        if (head) {
+        head.textContent =
+            "GUEST";
 
-            head.textContent =
-                "GUEST";
-
-            head.className =
-                "offline";
-
-        }
+        head.className =
+            "offline";
 
 
-        if (side) {
-
-            side.textContent =
-                "GUEST";
-
-        }
+        side.textContent =
+            "GUEST";
 
 
-        if (who) {
-
-            who.textContent =
-                "visitor";
-
-        }
+        who.textContent =
+            "visitor";
 
 
-        if (cu) {
+        chatUsername.value =
+            "";
 
-            cu.value =
-                "";
-
-            cu.disabled =
-                true;
-
-        }
+        chatUsername.disabled =
+            true;
 
     }
 
@@ -2214,32 +1776,22 @@ function updateAccountUI() {
    AUTH STATUS
 ========================================================= */
 
-function setAuthStatus(
-    text,
-    error = false
-) {
+function setAuthStatus(text,error=false){
 
     const status =
         document.getElementById(
             "authStatus"
         );
 
-
-    if (!status) {
-
-        return;
-
-    }
-
-
     status.textContent =
         "STATUS: " + text;
 
-
     status.className =
         error
-            ? "auth-status error"
-            : "auth-status success";
+        ?
+        "auth-status error"
+        :
+        "auth-status success";
 
 }
 
@@ -2248,32 +1800,22 @@ function setAuthStatus(
    AVATAR STATUS
 ========================================================= */
 
-function setAvatarStatus(
-    text,
-    error = false
-) {
+function setAvatarStatus(text,error=false){
 
     const status =
         document.getElementById(
             "avatarStatus"
         );
 
-
-    if (!status) {
-
-        return;
-
-    }
-
-
     status.textContent =
         "STATUS: " + text;
 
-
     status.className =
         error
-            ? "auth-status error"
-            : "auth-status success";
+        ?
+        "auth-status error"
+        :
+        "auth-status success";
 
 }
 
@@ -2282,7 +1824,7 @@ function setAvatarStatus(
    REGISTER
 ========================================================= */
 
-async function registerAccount() {
+async function registerAccount(){
 
     const username =
         document.getElementById(
@@ -2303,10 +1845,10 @@ async function registerAccount() {
         null;
 
 
-    if (
+    if(
         username.length < 3 ||
         username.length > 24
-    ) {
+    ){
 
         return setAuthStatus(
             "USERNAME MUST BE 3-24 CHARACTERS",
@@ -2316,10 +1858,10 @@ async function registerAccount() {
     }
 
 
-    if (
+    if(
         password.length < 8 ||
         password.length > 128
-    ) {
+    ){
 
         return setAuthStatus(
             "PASSWORD MUST BE 8-128 CHARACTERS",
@@ -2334,34 +1876,32 @@ async function registerAccount() {
     );
 
 
-    try {
+    try{
 
         const data =
             await apiRequest(
                 "/api/account/register",
                 {
-                    method: "POST",
+                    method:"POST",
 
-                    headers: {
+                    headers:{
                         "Content-Type":
                             "application/json"
                     },
 
-                    body:
-                        JSON.stringify({
-                            username,
-                            password,
-                            profile_picture:
-                                profile
-                        })
+                    body:JSON.stringify({
+                        username,
+                        password,
+                        profile_picture:profile
+                    })
                 }
             );
 
 
-        if (!data.token) {
+        if(!data.token){
 
             throw new Error(
-                "SERVER DID NOT RETURN TOKEN"
+                "SERVER DID NOT RETURN A TOKEN"
             );
 
         }
@@ -2389,13 +1929,12 @@ async function registerAccount() {
         connectSocket();
 
 
-    } catch (error) {
+    }catch(error){
 
         console.error(
             "[REGISTER]",
             error
         );
-
 
         setAuthStatus(
             error.message,
@@ -2411,7 +1950,7 @@ async function registerAccount() {
    LOGIN
 ========================================================= */
 
-async function loginAccount() {
+async function loginAccount(){
 
     const username =
         document.getElementById(
@@ -2425,10 +1964,7 @@ async function loginAccount() {
         ).value;
 
 
-    if (
-        !username ||
-        !password
-    ) {
+    if(!username || !password){
 
         return setAuthStatus(
             "USERNAME AND PASSWORD REQUIRED",
@@ -2443,32 +1979,31 @@ async function loginAccount() {
     );
 
 
-    try {
+    try{
 
         const data =
             await apiRequest(
                 "/api/account/login",
                 {
-                    method: "POST",
+                    method:"POST",
 
-                    headers: {
+                    headers:{
                         "Content-Type":
                             "application/json"
                     },
 
-                    body:
-                        JSON.stringify({
-                            username,
-                            password
-                        })
+                    body:JSON.stringify({
+                        username,
+                        password
+                    })
                 }
             );
 
 
-        if (!data.token) {
+        if(!data.token){
 
             throw new Error(
-                "SERVER DID NOT RETURN TOKEN"
+                "LOGIN RESPONSE DOES NOT CONTAIN TOKEN"
             );
 
         }
@@ -2496,13 +2031,12 @@ async function loginAccount() {
         connectSocket();
 
 
-    } catch (error) {
+    }catch(error){
 
         console.error(
             "[LOGIN]",
             error
         );
-
 
         setAuthStatus(
             error.message,
@@ -2515,15 +2049,169 @@ async function loginAccount() {
 
 
 /* =========================================================
+   RESTORE SESSION AFTER F5
+========================================================= */
+
+async function restoreSession(){
+
+    /*
+       On relit TOUJOURS le token depuis localStorage.
+    */
+
+    token =
+        localStorage.getItem(TOKEN_KEY) ||
+        null;
+
+
+    if(!token){
+
+        console.log(
+            "[AUTH] Aucun token sauvegardé."
+        );
+
+        return false;
+
+    }
+
+
+    console.log(
+        "[AUTH] Vérification de la session..."
+    );
+
+
+    try{
+
+        const data =
+            await apiRequest(
+                "/api/account/me",
+                {
+                    method:"GET"
+                }
+            );
+
+
+        if(
+            !data ||
+            !data.user
+        ){
+
+            throw new Error(
+                "INVALID SESSION RESPONSE"
+            );
+
+        }
+
+
+        currentUser =
+            data.user;
+
+
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(currentUser)
+        );
+
+
+        updateAccountUI();
+
+
+        console.log(
+            "[AUTH] Session active après rechargement:",
+            currentUser.username
+        );
+
+
+        return true;
+
+
+    }catch(error){
+
+        console.error(
+            "[AUTH] Session verification failed:",
+            error
+        );
+
+
+        /*
+           IMPORTANT :
+           On NE supprime PAS le token pour une
+           erreur réseau / serveur temporaire.
+
+           On le supprime uniquement si le serveur
+           répond explicitement 401/403.
+        */
+
+        const message =
+            String(error.message || "");
+
+
+        const invalidToken =
+            message.includes("401") ||
+            message.includes("403") ||
+            message.includes("INVALID TOKEN") ||
+            message.includes("TOKEN INVALID") ||
+            message.includes("TOKEN EXPIRED");
+
+
+        if(invalidToken){
+
+            console.warn(
+                "[AUTH] Token réellement invalide."
+            );
+
+
+            token = null;
+            currentUser = null;
+
+
+            localStorage.removeItem(
+                TOKEN_KEY
+            );
+
+            localStorage.removeItem(
+                USER_KEY
+            );
+
+
+            updateAccountUI();
+
+
+            return false;
+
+        }
+
+
+        /*
+           Si Render répond mal ou est temporairement
+           indisponible, on garde la session locale.
+        */
+
+        console.warn(
+            "[AUTH] Erreur temporaire API. Token conservé."
+        );
+
+
+        restoreSavedUser();
+
+        updateAccountUI();
+
+        return Boolean(
+            token &&
+            currentUser
+        );
+
+    }
+
+}
+
+
+/* =========================================================
    PREVIEW AVATAR
 ========================================================= */
 
-function previewAvatar() {
+function previewAvatar(){
 
-    if (
-        !currentUser ||
-        !token
-    ) {
+    if(!currentUser || !token){
 
         return setAvatarStatus(
             "LOGIN REQUIRED",
@@ -2533,17 +2221,13 @@ function previewAvatar() {
     }
 
 
-    const input =
+    const url =
         document.getElementById(
             "newProfilePicture"
-        );
+        ).value.trim();
 
 
-    const url =
-        input.value.trim();
-
-
-    if (!url) {
+    if(!url){
 
         return setAvatarStatus(
             "ENTER A PROFILE PICTURE URL",
@@ -2553,9 +2237,7 @@ function previewAvatar() {
     }
 
 
-    if (
-        !/^https?:\/\/.+/i.test(url)
-    ) {
+    if(!/^https?:\/\/.+/i.test(url)){
 
         return setAvatarStatus(
             "INVALID IMAGE URL",
@@ -2606,12 +2288,9 @@ function previewAvatar() {
    CHANGE PROFILE PICTURE
 ========================================================= */
 
-async function changeProfilePicture() {
+async function changeProfilePicture(){
 
-    if (
-        !currentUser ||
-        !token
-    ) {
+    if(!currentUser || !token){
 
         return setAvatarStatus(
             "LOGIN REQUIRED",
@@ -2627,7 +2306,7 @@ async function changeProfilePicture() {
         );
 
 
-    if (!input) {
+    if(!input){
 
         return setAvatarStatus(
             "PROFILE PICTURE INPUT NOT FOUND",
@@ -2641,7 +2320,7 @@ async function changeProfilePicture() {
         input.value.trim();
 
 
-    if (!url) {
+    if(!url){
 
         return setAvatarStatus(
             "ENTER A PROFILE PICTURE URL",
@@ -2651,9 +2330,7 @@ async function changeProfilePicture() {
     }
 
 
-    if (
-        !/^https?:\/\/.+/i.test(url)
-    ) {
+    if(!/^https?:\/\/.+/i.test(url)){
 
         return setAvatarStatus(
             "INVALID IMAGE URL",
@@ -2663,9 +2340,7 @@ async function changeProfilePicture() {
     }
 
 
-    if (
-        url.length > 2000
-    ) {
+    if(url.length > 2000){
 
         return setAvatarStatus(
             "PROFILE PICTURE URL TOO LONG",
@@ -2680,57 +2355,54 @@ async function changeProfilePicture() {
     );
 
 
-    try {
+    try{
 
         /*
-           Endpoint utilisé par ton serveur.
-           
-           D'après ton erreur précédente,
-           ton ancien endpoint /api/account/profile
-           n'existait pas.
-
-           Celui-ci doit correspondre au server.js.
+           Endpoint utilisé par le serveur V2.
         */
 
         const data =
             await apiRequest(
                 "/api/account/profile-picture",
                 {
-                    method: "POST",
+                    method:"POST",
 
-                    headers: {
+                    headers:{
                         "Content-Type":
                             "application/json"
                     },
 
-                    body:
-                        JSON.stringify({
-                            profile_picture:
-                                url
-                        })
+                    body:JSON.stringify({
+                        profile_picture:url
+                    })
                 }
             );
 
 
-        if (
-            !data ||
-            !data.user
-        ) {
+        const updatedUser =
+            data.user ||
+            data.account ||
+            null;
 
-            throw new Error(
-                "INVALID SERVER RESPONSE"
-            );
+
+        if(updatedUser){
+
+            currentUser =
+                updatedUser;
+
+        }else{
+
+            /*
+               Si le serveur confirme simplement
+               la modification sans renvoyer user.
+            */
+
+            currentUser = {
+                ...currentUser,
+                profile_picture:url
+            };
 
         }
-
-
-        /*
-           IMPORTANT :
-           Le token reste inchangé.
-        */
-
-        currentUser =
-            data.user;
 
 
         localStorage.setItem(
@@ -2747,7 +2419,7 @@ async function changeProfilePicture() {
         );
 
 
-    } catch (error) {
+    }catch(error){
 
         console.error(
             "[PROFILE PICTURE]",
@@ -2770,25 +2442,25 @@ async function changeProfilePicture() {
    LOGOUT
 ========================================================= */
 
-async function logoutAccount() {
+async function logoutAccount(){
 
-    try {
+    try{
 
-        if (token) {
+        if(token){
 
             await apiRequest(
                 "/api/account/logout",
                 {
-                    method: "POST"
+                    method:"POST"
                 }
             );
 
         }
 
-    } catch (error) {
+    }catch(error){
 
         console.warn(
-            "[LOGOUT] Server logout error:",
+            "[LOGOUT]",
             error
         );
 
@@ -2796,7 +2468,6 @@ async function logoutAccount() {
 
 
     token = null;
-
     currentUser = null;
 
 
@@ -2809,25 +2480,34 @@ async function logoutAccount() {
     );
 
 
-    if (socket) {
+    if(socket){
 
-        try {
+        try{
 
             socket.close();
 
-        } catch {}
-
-        socket = null;
+        }catch{}
 
     }
 
 
-    socketConnected =
-        false;
+    socket = null;
+
+    socketConnected = false;
+
+
+    if(socketReconnectTimer){
+
+        clearTimeout(
+            socketReconnectTimer
+        );
+
+        socketReconnectTimer = null;
+
+    }
 
 
     updateSocketUI();
-
     updateAccountUI();
 
 
@@ -2847,17 +2527,20 @@ async function logoutAccount() {
    SERVER STATUS
 ========================================================= */
 
-async function checkServer() {
+async function checkServer(){
 
-    try {
+    try{
 
         const data =
             await apiRequest(
-                "/api/status"
+                "/api/status",
+                {
+                    method:"GET"
+                }
             );
 
 
-        if (!data.online) {
+        if(!data.online){
 
             throw new Error(
                 "OFFLINE"
@@ -2866,42 +2549,39 @@ async function checkServer() {
         }
 
 
-        const serverStatus =
-            document.getElementById(
-                "serverStatus"
-            );
-
-
-        serverStatus.textContent =
+        document.getElementById(
+            "serverStatus"
+        ).textContent =
             "SYSTEM ONLINE";
 
-        serverStatus.className =
+
+        document.getElementById(
+            "serverStatus"
+        ).className =
             "online";
 
 
-        const renderSide =
-            document.getElementById(
-                "renderSide"
-            );
-
-
-        renderSide.textContent =
+        document.getElementById(
+            "renderSide"
+        ).textContent =
             "ONLINE";
 
-        renderSide.className =
+
+        document.getElementById(
+            "renderSide"
+        ).className =
             "online";
 
 
-        const apiSide =
-            document.getElementById(
-                "apiSide"
-            );
-
-
-        apiSide.textContent =
+        document.getElementById(
+            "apiSide"
+        ).textContent =
             "ONLINE";
 
-        apiSide.className =
+
+        document.getElementById(
+            "apiSide"
+        ).className =
             "online";
 
 
@@ -2911,7 +2591,7 @@ async function checkServer() {
             data.users ?? 0;
 
 
-    } catch (error) {
+    }catch(error){
 
         console.error(
             "[SERVER]",
@@ -2938,21 +2618,9 @@ async function checkServer() {
 
 
         document.getElementById(
-            "renderSide"
-        ).className =
-            "offline";
-
-
-        document.getElementById(
             "apiSide"
         ).textContent =
             "ERROR";
-
-
-        document.getElementById(
-            "apiSide"
-        ).className =
-            "offline";
 
     }
 
@@ -2960,10 +2628,10 @@ async function checkServer() {
 
 
 /* =========================================================
-   SOCKET UI
+   WSS UI
 ========================================================= */
 
-function updateSocketUI() {
+function updateSocketUI(){
 
     const status =
         document.getElementById(
@@ -2971,37 +2639,34 @@ function updateSocketUI() {
         );
 
 
-    if (!status) {
-
-        return;
-
-    }
-
-
     status.textContent =
         socketConnected
-            ? "ONLINE"
-            : "OFFLINE";
+        ?
+        "ONLINE"
+        :
+        "OFFLINE";
 
 
     status.className =
         socketConnected
-            ? "online"
-            : "offline";
+        ?
+        "online"
+        :
+        "offline";
 
 }
 
 
 /* =========================================================
-   SOCKET RECONNECT
+   WSS RECONNECT
 ========================================================= */
 
-function scheduleSocketReconnect() {
+function scheduleSocketReconnect(){
 
-    if (
+    if(
         socketReconnectTimer ||
         !token
-    ) {
+    ){
 
         return;
 
@@ -3015,22 +2680,7 @@ function scheduleSocketReconnect() {
                 socketReconnectTimer =
                     null;
 
-                /*
-                   Relire le token au cas où
-                   il aurait changé.
-                */
-
-                token =
-                    localStorage.getItem(
-                        TOKEN_KEY
-                    ) || null;
-
-
-                if (token) {
-
-                    connectSocket();
-
-                }
+                connectSocket();
 
             },
             3000
@@ -3040,25 +2690,15 @@ function scheduleSocketReconnect() {
 
 
 /* =========================================================
-   CONNECT SOCKET
+   WSS CONNECT
 ========================================================= */
 
-function connectSocket() {
+function connectSocket(){
 
-    /*
-       Relire le token depuis localStorage.
-    */
-
-    token =
-        localStorage.getItem(
-            TOKEN_KEY
-        ) || null;
-
-
-    if (!token) {
+    if(!token){
 
         console.log(
-            "[WSS] No authentication token."
+            "[WSS] Aucun token."
         );
 
         return;
@@ -3066,16 +2706,16 @@ function connectSocket() {
     }
 
 
-    if (
+    if(
         socket &&
         (
             socket.readyState ===
-                WebSocket.OPEN ||
+            WebSocket.OPEN ||
 
             socket.readyState ===
-                WebSocket.CONNECTING
+            WebSocket.CONNECTING
         )
-    ) {
+    ){
 
         return;
 
@@ -3087,7 +2727,7 @@ function connectSocket() {
     );
 
 
-    try {
+    try{
 
         socket =
             new WebSocket(
@@ -3096,10 +2736,10 @@ function connectSocket() {
                 encodeURIComponent(token)
             );
 
-    } catch (error) {
+    }catch(error){
 
         console.error(
-            "[WSS] Connection error:",
+            "[WSS] Creation failed:",
             error
         );
 
@@ -3131,204 +2771,167 @@ function connectSocket() {
     };
 
 
-    socket.onmessage =
-        event => {
+    socket.onmessage = event => {
 
-            try {
+        try{
 
-                const data =
-                    JSON.parse(
-                        event.data
-                    );
-
-
-                if (
-                    data.type ===
-                    "welcome"
-                ) {
-
-                    if (
-                        data.authenticated
-                    ) {
-
-                        /*
-                           Met à jour uniquement
-                           les données reçues.
-                        */
-
-                        if (!currentUser) {
-
-                            currentUser = {};
-
-                        }
+            const data =
+                JSON.parse(
+                    event.data
+                );
 
 
-                        if (
-                            data.username
-                        ) {
+            if(data.type === "welcome"){
 
-                            currentUser.username =
-                                data.username;
+                if(
+                    data.authenticated &&
+                    data.username
+                ){
 
-                        }
+                    currentUser = {
+                        ...currentUser,
 
+                        username:
+                            data.username,
 
-                        if (
-                            data.user_id
-                        ) {
+                        id:
+                            data.user_id ??
+                            currentUser?.id,
 
-                            currentUser.id =
-                                data.user_id;
-
-                        }
-
-
-                        if (
-                            data.profile_picture !==
-                            undefined
-                        ) {
-
-                            currentUser.profile_picture =
-                                data.profile_picture;
-
-                        }
+                        profile_picture:
+                            data.profile_picture ??
+                            currentUser?.profile_picture
+                    };
 
 
-                        localStorage.setItem(
-                            USER_KEY,
-                            JSON.stringify(
-                                currentUser
-                            )
-                        );
-
-
-                        updateAccountUI();
-
-                    }
-
-                }
-
-
-                else if (
-                    data.type ===
-                    "users"
-                ) {
-
-                    document.getElementById(
-                        "visitors"
-                    ).textContent =
-                        data.count ?? 0;
-
-                }
-
-
-                else if (
-                    data.type ===
-                        "message" ||
-                    data.type ===
-                        "chat"
-                ) {
-
-                    displayChatMessage(
-                        data.data ||
-                        data
-                    );
-
-                }
-
-
-                else if (
-                    data.type ===
-                    "error"
-                ) {
-
-                    updateChatStatus(
-                        "ERREUR : " +
-                        (
-                            data.message ||
-                            "Erreur serveur"
+                    localStorage.setItem(
+                        USER_KEY,
+                        JSON.stringify(
+                            currentUser
                         )
                     );
 
+
+                    updateAccountUI();
+
                 }
 
+            }
 
-            } catch (error) {
 
-                console.error(
-                    "[WSS JSON]",
-                    error
+            else if(
+                data.type === "users"
+            ){
+
+                document.getElementById(
+                    "visitors"
+                ).textContent =
+                    data.count ?? 0;
+
+            }
+
+
+            else if(
+                data.type === "message" ||
+                data.type === "chat"
+            ){
+
+                displayChatMessage(
+                    data.data || data
                 );
 
             }
 
-        };
 
+            else if(
+                data.type === "error"
+            ){
 
-    socket.onclose =
-        event => {
-
-            socketConnected =
-                false;
-
-
-            updateSocketUI();
-
-
-            console.log(
-                "[WSS] Closed:",
-                event.code,
-                event.reason
-            );
-
-
-            if (token) {
-
-                scheduleSocketReconnect();
+                updateChatStatus(
+                    "ERREUR : " +
+                    (
+                        data.message ||
+                        "Erreur serveur"
+                    )
+                );
 
             }
 
-        };
 
-
-    socket.onerror =
-        error => {
-
-            socketConnected =
-                false;
-
-
-            updateSocketUI();
-
-
-            updateChatStatus(
-                "ERREUR WSS"
-            );
-
+        }catch(error){
 
             console.error(
-                "[WSS]",
-                error
+                "[WSS JSON]",
+                error,
+                event.data
             );
 
-        };
+        }
+
+    };
+
+
+    socket.onclose = event => {
+
+        socketConnected =
+            false;
+
+
+        updateSocketUI();
+
+
+        console.warn(
+            "[WSS] Closed:",
+            event.code,
+            event.reason
+        );
+
+
+        if(token){
+
+            scheduleSocketReconnect();
+
+        }
+
+    };
+
+
+    socket.onerror = error => {
+
+        socketConnected =
+            false;
+
+
+        updateSocketUI();
+
+
+        console.error(
+            "[WSS] Error:",
+            error
+        );
+
+
+        updateChatStatus(
+            "ERREUR WSS"
+        );
+
+    };
 
 }
 
 
 /* =========================================================
-   CHAT STATUS
+   CHAT
 ========================================================= */
 
-function updateChatStatus(text) {
+function updateChatStatus(text){
 
     const element =
         document.getElementById(
             "chatStatus"
         );
 
-
-    if (element) {
+    if(element){
 
         element.textContent =
             text;
@@ -3338,11 +2941,7 @@ function updateChatStatus(text) {
 }
 
 
-/* =========================================================
-   CHAT LOGIN REQUIRED
-========================================================= */
-
-function showChatLoginRequired() {
+function showChatLoginRequired(){
 
     document.getElementById(
         "chatBox"
@@ -3372,11 +2971,7 @@ function showChatLoginRequired() {
 }
 
 
-/* =========================================================
-   CHAT MESSAGE
-========================================================= */
-
-function displayChatMessage(data) {
+function displayChatMessage(data){
 
     const box =
         document.getElementById(
@@ -3403,23 +2998,25 @@ function displayChatMessage(data) {
         "";
 
 
-    if (time) {
+    if(time){
 
-        try {
+        const date =
+            new Date(time);
+
+
+        if(!isNaN(date.getTime())){
 
             formattedTime =
-                new Date(time)
-                    .toLocaleTimeString(
-                        "fr-FR"
-                    );
+                date.toLocaleTimeString(
+                    "fr-FR"
+                );
 
-        } catch {}
+        }
 
     }
 
 
     element.innerHTML = `
-
         <span class="chat-user">
             ${escapeHTML(
                 data.username ||
@@ -3429,12 +3026,12 @@ function displayChatMessage(data) {
 
         ${
             formattedTime
-                ? `
-                    <span class="chat-time">
-                        [${formattedTime}]
-                    </span>
-                `
-                : ""
+            ?
+            `<span class="chat-time">
+                [${escapeHTML(formattedTime)}]
+            </span>`
+            :
+            ""
         }
 
         <br>
@@ -3443,7 +3040,6 @@ function displayChatMessage(data) {
             data.message ||
             ""
         )}
-
     `;
 
 
@@ -3458,11 +3054,7 @@ function displayChatMessage(data) {
 }
 
 
-/* =========================================================
-   CLEAR CHAT
-========================================================= */
-
-function clearChat() {
+function clearChat(){
 
     document.getElementById(
         "chatBox"
@@ -3472,11 +3064,7 @@ function clearChat() {
 }
 
 
-/* =========================================================
-   SYSTEM MESSAGE
-========================================================= */
-
-function addSystemMessage(message) {
+function addSystemMessage(message){
 
     const box =
         document.getElementById(
@@ -3495,7 +3083,6 @@ function addSystemMessage(message) {
 
 
     element.innerHTML = `
-
         <span class="chat-user">
             SYSTEM
         </span>
@@ -3503,7 +3090,6 @@ function addSystemMessage(message) {
         <br>
 
         ${escapeHTML(message)}
-
     `;
 
 
@@ -3519,17 +3105,19 @@ function addSystemMessage(message) {
 
 
 /* =========================================================
-   LOAD CHAT HISTORY
+   CHAT HISTORY
 ========================================================= */
 
-async function loadChatHistory() {
+async function loadChatHistory(){
 
-    if (
+    if(
         !currentUser ||
         !token
-    ) {
+    ){
 
-        return showChatLoginRequired();
+        showChatLoginRequired();
+
+        return;
 
     }
 
@@ -3542,7 +3130,7 @@ async function loadChatHistory() {
     );
 
 
-    try {
+    try{
 
         const list =
             await apiRequest(
@@ -3554,16 +3142,11 @@ async function loadChatHistory() {
             list.logs || [];
 
 
-        for (
-            const log of logs
-        ) {
+        for(const log of logs){
 
             const match =
-                String(
-                    log.name || ""
-                ).match(
-                    /(\d+)/
-                );
+                String(log.name || "")
+                .match(/(\d+)/);
 
 
             const number =
@@ -3571,7 +3154,7 @@ async function loadChatHistory() {
                 match[1];
 
 
-            if (!number) {
+            if(!number){
 
                 continue;
 
@@ -3585,10 +3168,10 @@ async function loadChatHistory() {
                 );
 
 
-            for (
+            for(
                 const message of
                 data.messages || []
-            ) {
+            ){
 
                 displayChatMessage(
                     message
@@ -3599,7 +3182,7 @@ async function loadChatHistory() {
         }
 
 
-        if (!logs.length) {
+        if(!logs.length){
 
             addSystemMessage(
                 "Aucun historique dans chat-log."
@@ -3613,7 +3196,7 @@ async function loadChatHistory() {
         );
 
 
-    } catch (error) {
+    }catch(error){
 
         console.error(
             "[CHAT LOG]",
@@ -3635,22 +3218,12 @@ async function loadChatHistory() {
    SEND CHAT
 ========================================================= */
 
-function sendChat() {
+function sendChat(){
 
-    /*
-       Relire le token.
-    */
-
-    token =
-        localStorage.getItem(
-            TOKEN_KEY
-        ) || null;
-
-
-    if (
+    if(
         !currentUser ||
         !token
-    ) {
+    ){
 
         showPage(
             "account"
@@ -3671,28 +3244,29 @@ function sendChat() {
         input.value.trim();
 
 
-    if (!message) {
+    if(!message){
 
-        return updateChatStatus(
+        updateChatStatus(
             "Entre un message."
         );
+
+        return;
 
     }
 
 
-    if (
+    if(
         !socket ||
         socket.readyState !==
         WebSocket.OPEN
-    ) {
+    ){
 
         updateChatStatus(
-            "WSS non connecté..."
+            "WSS non connecté. Connexion..."
         );
 
 
         connectSocket();
-
 
         return;
 
@@ -3701,7 +3275,7 @@ function sendChat() {
 
     socket.send(
         JSON.stringify({
-            type: "message",
+            type:"message",
             message
         })
     );
@@ -3722,21 +3296,21 @@ function sendChat() {
    MEDIA UPLOAD
 ========================================================= */
 
-async function uploadFile(type) {
+async function uploadFile(type){
 
     const ids = {
 
-        image: [
+        image:[
             "imageFile",
             "imageUploadStatus"
         ],
 
-        music: [
+        music:[
             "musicFile",
             "musicUploadStatus"
         ],
 
-        video: [
+        video:[
             "videoFile",
             "videoUploadStatus"
         ]
@@ -3767,39 +3341,35 @@ async function uploadFile(type) {
         input.files[0];
 
 
-    if (!file) {
+    if(!file){
 
-        return status.textContent =
+        status.textContent =
             "Aucun fichier sélectionné.";
 
+        return;
+
     }
 
 
-    if (
+    if(
         file.size >
         MAX_FILE_SIZE
-    ) {
+    ){
 
-        return status.textContent =
+        status.textContent =
             "Fichier trop gros. Maximum : 25 MB.";
+
+        return;
 
     }
 
 
-    /*
-       Toujours relire le token.
-    */
+    if(!token){
 
-    token =
-        localStorage.getItem(
-            TOKEN_KEY
-        ) || null;
-
-
-    if (!token) {
-
-        return status.textContent =
+        status.textContent =
             "Connecte-toi pour uploader.";
+
+        return;
 
     }
 
@@ -3808,7 +3378,7 @@ async function uploadFile(type) {
         "Upload vers GitHub...";
 
 
-    try {
+    try{
 
         const form =
             new FormData();
@@ -3828,31 +3398,30 @@ async function uploadFile(type) {
 
         const response =
             await fetch(
-                API +
-                "/api/upload",
+                API + "/api/upload",
                 {
-                    method: "POST",
+                    method:"POST",
 
-                    headers: {
+                    headers:{
                         Authorization:
                             "Bearer " +
                             token
                     },
 
-                    body: form
+                    body:form
                 }
             );
 
 
         const data =
             await response
-                .json()
-                .catch(
-                    () => ({})
-                );
+            .json()
+            .catch(
+                () => ({})
+            );
 
 
-        if (!response.ok) {
+        if(!response.ok){
 
             throw new Error(
                 data.error ||
@@ -3863,22 +3432,15 @@ async function uploadFile(type) {
 
 
         status.innerHTML = `
-
             UPLOAD OK ✓
-
             <br>
-
             <a
-                href="${escapeHTML(
-                    data.download ||
-                    "#"
-                )}"
+                href="${escapeHTML(data.download || "")}"
                 target="_blank"
                 rel="noopener"
             >
                 Ouvrir le fichier
             </a>
-
         `;
 
 
@@ -3889,7 +3451,7 @@ async function uploadFile(type) {
         loadMedia();
 
 
-    } catch (error) {
+    }catch(error){
 
         console.error(
             "[UPLOAD]",
@@ -3907,13 +3469,12 @@ async function uploadFile(type) {
 
 
 /* =========================================================
-   LOAD MEDIA
+   MEDIA LIST
 ========================================================= */
 
-async function loadMedia() {
+async function loadMedia(){
 
     await Promise.all([
-
         loadFolder(
             "image",
             "imageList",
@@ -3931,53 +3492,48 @@ async function loadMedia() {
             "videoList",
             "video"
         )
-
     ]);
 
 }
 
 
-/* =========================================================
-   LOAD MEDIA FOLDER
-========================================================= */
-
 async function loadFolder(
     folder,
     id,
     type
-) {
+){
 
     const container =
-        document.getElementById(id);
+        document.getElementById(
+            id
+        );
 
 
     container.innerHTML =
         "Chargement...";
 
 
-    try {
+    try{
 
         const data =
             await apiRequest(
                 "/api/files/" +
-                encodeURIComponent(
-                    folder
-                )
+                encodeURIComponent(folder)
             );
 
 
         const files =
             (data.files || [])
-                .filter(
-                    file =>
-                        file.name &&
-                        !file.name.endsWith(
-                            ".gitkeep"
-                        )
-                );
+            .filter(
+                file =>
+                    file.name &&
+                    !file.name.endsWith(
+                        ".gitkeep"
+                    )
+            );
 
 
-        if (!files.length) {
+        if(!files.length){
 
             container.textContent =
                 "Aucun fichier.";
@@ -4016,12 +3572,9 @@ async function loadFolder(
                     );
 
 
-                if (
-                    type === "image"
-                ) {
+                if(type === "image"){
 
                     item.innerHTML = `
-
                         <img
                             src="${url}"
                             alt="${name}"
@@ -4030,9 +3583,7 @@ async function loadFolder(
 
                         <br><br>
 
-                        <b>
-                            ${name}
-                        </b>
+                        <b>${name}</b>
 
                         <br><br>
 
@@ -4043,21 +3594,15 @@ async function loadFolder(
                         >
                             OPEN
                         </a>
-
                     `;
 
                 }
 
 
-                else if (
-                    type === "music"
-                ) {
+                else if(type === "music"){
 
                     item.innerHTML = `
-
-                        <b>
-                            ${name}
-                        </b>
+                        <b>${name}</b>
 
                         <br><br>
 
@@ -4065,8 +3610,7 @@ async function loadFolder(
                             controls
                             preload="metadata"
                             src="${url}"
-                        >
-                        </audio>
+                        ></audio>
 
                         <br><br>
 
@@ -4077,28 +3621,23 @@ async function loadFolder(
                         >
                             OPEN
                         </a>
-
                     `;
 
                 }
 
 
-                else {
+                else{
 
                     item.innerHTML = `
-
                         <video
                             controls
                             preload="metadata"
                             src="${url}"
-                        >
-                        </video>
+                        ></video>
 
                         <br><br>
 
-                        <b>
-                            ${name}
-                        </b>
+                        <b>${name}</b>
 
                         <br><br>
 
@@ -4109,7 +3648,6 @@ async function loadFolder(
                         >
                             OPEN
                         </a>
-
                     `;
 
                 }
@@ -4123,25 +3661,19 @@ async function loadFolder(
         );
 
 
-    } catch (error) {
+    }catch(error){
 
         console.error(
-            "[MEDIA " +
-            folder +
-            "]",
+            "[MEDIA " + folder + "]",
             error
         );
 
 
         container.innerHTML = `
-
             <span class="offline">
                 ERREUR :
-                ${escapeHTML(
-                    error.message
-                )}
+                ${escapeHTML(error.message)}
             </span>
-
         `;
 
     }
@@ -4153,12 +3685,10 @@ async function loadFolder(
    PAGE NAVIGATION
 ========================================================= */
 
-function showPage(name) {
+function showPage(name){
 
     document
-        .querySelectorAll(
-            ".page"
-        )
+        .querySelectorAll(".page")
         .forEach(
             page =>
                 page.classList.remove(
@@ -4175,79 +3705,49 @@ function showPage(name) {
 
 
     document
-        .querySelectorAll(
-            "nav button"
-        )
+        .querySelectorAll("nav button")
         .forEach(
             button =>
                 button.classList.toggle(
                     "active",
-                    button.dataset.page ===
-                    name
+                    button.dataset.page === name
                 )
         );
 
 
-    if (
-        name === "chat"
-    ) {
+    if(name === "chat"){
 
-        /*
-           Toujours relire le token.
-        */
-
-        token =
-            localStorage.getItem(
-                TOKEN_KEY
-            ) || null;
-
-
-        if (
+        if(
             !currentUser ||
             !token
-        ) {
+        ){
 
             showChatLoginRequired();
 
+        }else{
 
-            setTimeout(
-                () =>
-                    showPage(
-                        "account"
-                    ),
-                900
-            );
+            loadChatHistory();
 
 
-            return;
+            if(!socketConnected){
 
-        }
+                connectSocket();
 
-
-        loadChatHistory();
-
-
-        if (!socketConnected) {
-
-            connectSocket();
+            }
 
         }
 
     }
 
 
-    if (
-        name === "media"
-    ) {
+    if(name === "media"){
 
         loadMedia();
 
     }
 
 
-    if (
-        name === "account"
-    ) {
+    if(name === "account"){
 
         updateAccountUI();
 
@@ -4255,16 +3755,12 @@ function showPage(name) {
 
 
     window.scrollTo({
-        top: 0,
-        behavior: "smooth"
+        top:0,
+        behavior:"smooth"
     });
 
 }
 
-
-/* =========================================================
-   NAVIGATION EVENTS
-========================================================= */
 
 document
     .querySelectorAll(
@@ -4286,7 +3782,7 @@ document
    TERMINAL
 ========================================================= */
 
-function terminalPrint(text) {
+function terminalPrint(text){
 
     document.getElementById(
         "terminalOutput"
@@ -4296,13 +3792,13 @@ function terminalPrint(text) {
 }
 
 
-function terminalCommand(raw) {
+function terminalCommand(raw){
 
     const command =
         raw.trim().toLowerCase();
 
 
-    if (!command) {
+    if(!command){
 
         return;
 
@@ -4315,9 +3811,173 @@ function terminalCommand(raw) {
     );
 
 
-    const commands = {
+    if(command === "clear"){
 
-        help:
+        document.getElementById(
+            "terminalOutput"
+        ).textContent =
+            "";
+
+        return;
+
+    }
+
+
+    if(
+        command === "account" ||
+        command === "login"
+    ){
+
+        showPage("account");
+        return;
+
+    }
+
+
+    if(command === "logout"){
+
+        logoutAccount();
+        return;
+
+    }
+
+
+    if(command === "media"){
+
+        showPage("media");
+        return;
+
+    }
+
+
+    if(command === "chat"){
+
+        showPage("chat");
+        return;
+
+    }
+
+
+    if(command === "games"){
+
+        showPage("games");
+        return;
+
+    }
+
+
+    if(command === "status"){
+
+        terminalPrint(
+            "Checking server..."
+        );
+
+        checkServer();
+
+        return;
+
+    }
+
+
+    if(command === "date"){
+
+        terminalPrint(
+            new Date()
+            .toLocaleDateString(
+                "fr-FR"
+            )
+        );
+
+        return;
+
+    }
+
+
+    if(command === "time"){
+
+        terminalPrint(
+            new Date()
+            .toLocaleTimeString(
+                "fr-FR"
+            )
+        );
+
+        return;
+
+    }
+
+
+    if(command === "random"){
+
+        terminalPrint(
+            "RANDOM = " +
+            Math.floor(
+                Math.random() *
+                999999
+            )
+        );
+
+        return;
+
+    }
+
+
+    if(command === "whoami"){
+
+        terminalPrint(
+            currentUser?.username ||
+            "guest"
+        );
+
+        return;
+
+    }
+
+
+    if(command === "wss"){
+
+        terminalPrint(
+            socketConnected
+            ?
+            "WSS = ONLINE"
+            :
+            "WSS = OFFLINE"
+        );
+
+        return;
+
+    }
+
+
+    if(command === "about"){
+
+        terminalPrint(
+            "DAVID RANDOM V2 // Render + GitHub + WSS"
+        );
+
+        return;
+
+    }
+
+
+    if(command === "ls"){
+
+        terminalPrint(
+`image/
+music/
+video/
+chat-log/
+accounts/`
+        );
+
+        return;
+
+    }
+
+
+    if(command === "help"){
+
+        terminalPrint(
 `COMMANDS
 help
 clear
@@ -4334,168 +3994,21 @@ status
 media
 chat
 games
-wss`,
-
-        about:
-            "DAVID RANDOM V2 // Render + GitHub + WSS",
-
-        ls:
-`image/
-music/
-video/
-chat-log/
-accounts/`,
-
-        whoami:
-            currentUser?.username ||
-            "guest",
-
-        wss:
-            socketConnected
-                ? "WSS = ONLINE"
-                : "WSS = OFFLINE"
-
-    };
-
-
-    if (
-        command === "clear"
-    ) {
-
-        document.getElementById(
-            "terminalOutput"
-        ).textContent =
-            "";
-
-    }
-
-
-    else if (
-        command === "account" ||
-        command === "login"
-    ) {
-
-        showPage(
-            "account"
+wss`
         );
 
-    }
-
-
-    else if (
-        command === "media"
-    ) {
-
-        showPage(
-            "media"
-        );
+        return;
 
     }
 
 
-    else if (
-        command === "chat"
-    ) {
-
-        showPage(
-            "chat"
-        );
-
-    }
-
-
-    else if (
-        command === "games"
-    ) {
-
-        showPage(
-            "games"
-        );
-
-    }
-
-
-    else if (
-        command === "logout"
-    ) {
-
-        logoutAccount();
-
-    }
-
-
-    else if (
-        command === "status"
-    ) {
-
-        terminalPrint(
-            "Checking server..."
-        );
-
-        checkServer();
-
-    }
-
-
-    else if (
-        command === "date"
-    ) {
-
-        terminalPrint(
-            new Date()
-                .toLocaleDateString(
-                    "fr-FR"
-                )
-        );
-
-    }
-
-
-    else if (
-        command === "time"
-    ) {
-
-        terminalPrint(
-            new Date()
-                .toLocaleTimeString(
-                    "fr-FR"
-                )
-        );
-
-    }
-
-
-    else if (
-        command === "random"
-    ) {
-
-        terminalPrint(
-            "RANDOM = " +
-            Math.floor(
-                Math.random() *
-                999999
-            )
-        );
-
-    }
-
-
-    else {
-
-        terminalPrint(
-            commands[command] ??
-            "Command not found: " +
-            raw
-        );
-
-    }
+    terminalPrint(
+        "Command not found: " +
+        raw
+    );
 
 }
 
-
-/* =========================================================
-   TERMINAL ENTER
-========================================================= */
 
 document
     .getElementById(
@@ -4505,10 +4018,7 @@ document
         "keydown",
         event => {
 
-            if (
-                event.key ===
-                "Enter"
-            ) {
+            if(event.key === "Enter"){
 
                 terminalCommand(
                     event.target.value
@@ -4535,11 +4045,10 @@ document
         "keydown",
         event => {
 
-            if (
-                event.key ===
-                    "Enter" &&
+            if(
+                event.key === "Enter" &&
                 !event.shiftKey
-            ) {
+            ){
 
                 event.preventDefault();
 
@@ -4555,7 +4064,7 @@ document
    GUESTBOOK
 ========================================================= */
 
-function addGuest() {
+function addGuest(){
 
     const name =
         document.getElementById(
@@ -4569,14 +4078,13 @@ function addGuest() {
         ).value.trim();
 
 
-    if (
-        !name ||
-        !message
-    ) {
+    if(!name || !message){
 
-        return alert(
+        alert(
             "Remplis les deux champs."
         );
+
+        return;
 
     }
 
@@ -4592,7 +4100,6 @@ function addGuest() {
 
 
     element.innerHTML = `
-
         <span class="chat-user">
             ${escapeHTML(name)}
         </span>
@@ -4600,7 +4107,6 @@ function addGuest() {
         <br>
 
         ${escapeHTML(message)}
-
     `;
 
 
@@ -4631,14 +4137,17 @@ function addGuest() {
    GAME
 ========================================================= */
 
-function startGame() {
+let score = 0;
+let gameRunning = false;
+let gameTimer = 10;
+let gameInterval = null;
+
+
+function startGame(){
 
     score = 0;
-
     gameTimer = 10;
-
-    gameRunning =
-        true;
+    gameRunning = true;
 
 
     document.getElementById(
@@ -4671,9 +4180,7 @@ function startGame() {
                     gameTimer;
 
 
-                if (
-                    gameTimer <= 0
-                ) {
+                if(gameTimer <= 0){
 
                     clearInterval(
                         gameInterval
@@ -4698,11 +4205,9 @@ function startGame() {
 }
 
 
-function gameClick() {
+function gameClick(){
 
-    if (
-        !gameRunning
-    ) {
+    if(!gameRunning){
 
         return;
 
@@ -4722,8 +4227,8 @@ function gameClick() {
         "clickTarget"
     ).style.transform =
         `translate(
-            ${Math.random() * 120 - 60}px,
-            ${Math.random() * 100 - 50}px
+            ${Math.random()*120-60}px,
+            ${Math.random()*100-50}px
         )`;
 
 }
@@ -4733,15 +4238,15 @@ function gameClick() {
    CLOCK
 ========================================================= */
 
-function updateClock() {
+function updateClock(){
 
     document.getElementById(
         "clock"
     ).textContent =
         new Date()
-            .toLocaleTimeString(
-                "fr-FR"
-            );
+        .toLocaleTimeString(
+            "fr-FR"
+        );
 
 }
 
@@ -4751,26 +4256,23 @@ setInterval(
     1000
 );
 
-
 updateClock();
 
 
 /* =========================================================
-   STARTUP
+   INITIALIZATION
 ========================================================= */
 
-async function init() {
+async function init(){
 
     console.log(
         "DAVID RANDOM V2"
     );
 
-
     console.log(
         "API:",
         API
     );
-
 
     console.log(
         "WSS:",
@@ -4780,15 +4282,15 @@ async function init() {
 
     /*
        1. Restaurer immédiatement
-          token + utilisateur.
+          les données locales.
     */
 
-    restoreAccount();
+    restoreSavedUser();
 
 
     /*
-       2. Afficher immédiatement
-          le compte sauvegardé.
+       2. Mettre l'interface à jour
+          sans attendre Render.
     */
 
     updateAccountUI();
@@ -4802,32 +4304,37 @@ async function init() {
 
 
     /*
-       4. Vérifier réellement
-          la session auprès du serveur.
+       4. Vérifier le token avec /me.
     */
 
     const loggedIn =
         await restoreSession();
 
 
-    if (loggedIn) {
+    /*
+       5. Si la session existe,
+          connecter le WebSocket.
+    */
+
+    if(
+        loggedIn &&
+        token
+    ){
 
         console.log(
             "[AUTH] Session active après rechargement."
         );
 
 
-        /*
-           5. Connecter le WebSocket
-              avec le token restauré.
-        */
+        updateAccountUI();
+
 
         connectSocket();
 
-    } else {
+    }else{
 
         console.log(
-            "[AUTH] Aucun compte connecté."
+            "[AUTH] Pas de session active."
         );
 
     }
@@ -4836,19 +4343,38 @@ async function init() {
     console.log(
         "Account token:",
         token
-            ? "PRESENT"
-            : "NONE"
+        ?
+        "PRESENT"
+        :
+        "NONE"
     );
 
 }
 
 
 /*
-   DOM déjà chargé puisque le script
-   est à la fin du <body>.
+   UNE SEULE initialisation.
+   Pas de DOMContentLoaded supplémentaire.
 */
 
-init();
+if(
+    document.readyState ===
+    "loading"
+){
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        init,
+        {
+            once:true
+        }
+    );
+
+}else{
+
+    init();
+
+}
 
 </script>
 
