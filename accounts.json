@@ -1,15 +1,1 @@
-{
-  "version": 2,
-  "format": "DR1",
-  "encrypted": true,
-  "count": 1,
-  "updatedAt": "2026-08-30T11:51:55.970Z",
-  "users": [
-    {
-      "id": "4c05cac1e65f8e10",
-      "username": "david_officiel",
-      "profile_picture": "https://i.pinimg.com/736x/1b/59/26/1b592683de7657eee1f6887f21859727.jpg",
-      "createdAt": "2026-08-30T11:51:55.969Z"
-    }
-  ]
-}
+
