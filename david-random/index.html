@@ -639,21 +639,15 @@ bottom:90px
 ========================================================= */
 
 .random-grid{
-
     display:grid;
 
     grid-template-columns:
-        repeat(
-            auto-fill,
-            160px
-        );
+        repeat(auto-fill,160px);
 
     gap:10px;
 
     margin-top:20px;
-
 }
-
 
 .random-card{
     position:relative;
@@ -675,7 +669,6 @@ bottom:90px
         box-shadow .15s;
 }
 
-
 .random-card:hover{
 
     border-color:var(--green);
@@ -685,28 +678,25 @@ bottom:90px
     box-shadow:
         0 0 15px
         rgba(53,255,90,.25);
-
 }
 
 
-/* =========================================================
-   IMAGE / GIF / WEBP / PNG
-========================================================= */
+/* GIF / PNG / WEBP / JPG */
 
 .random-card img{
 
     width:100%;
-
     height:100%;
 
     object-fit:contain;
-
     object-position:center;
 
     display:block;
 
 }
 
+
+/* TITRE */
 
 .random-card-title{
 
@@ -717,6 +707,7 @@ bottom:90px
     bottom:0;
 
     padding:7px;
+    padding-top:25px;
 
     background:
         linear-gradient(
@@ -728,12 +719,17 @@ bottom:90px
 
     font-size:12px;
 
-    padding-top:25px;
-
     pointer-events:none;
 
+    overflow:hidden;
+
+    white-space:nowrap;
+
+    text-overflow:ellipsis;
 }
 
+
+/* NUMERO */
 
 .random-card-number{
 
@@ -753,25 +749,17 @@ bottom:90px
     font-size:10px;
 
     pointer-events:none;
-
 }
 
+
+/* MOBILE */
 
 @media(max-width:700px){
 
     .random-grid{
 
         grid-template-columns:
-            repeat(
-                2,
-                1fr
-            );
-
-    }
-
-    .random-card{
-
-        height:130px;
+            repeat(2,160px);
 
     }
 
@@ -782,7 +770,8 @@ bottom:90px
 
     .random-grid{
 
-        grid-template-columns:1fr;
+        grid-template-columns:
+            160px;
 
     }
 
@@ -5547,16 +5536,14 @@ function loadRandomGallery(){
             `;
 
 
-            card.addEventListener(
-                "click",
-                () => {
+card.addEventListener(
+    "click",
+    () => {
 
-                    runRandomEvent(
-                        item.event
-                    );
+        handleRandomCard(item);
 
-                }
-            );
+    }
+);
 
 
             grid.appendChild(
@@ -5644,6 +5631,62 @@ function runRandomEvent(event){
 
 }
 
+/* =========================================================
+   RANDOM CARD HANDLER
+========================================================= */
+
+function handleRandomCard(item){
+
+    if(!item){
+        return;
+    }
+
+
+    /*
+       EVENT PRIORITAIRE
+    */
+
+    if(
+        typeof item.event === "string" &&
+        item.event.trim() !== ""
+    ){
+
+        runRandomEvent(
+            item.event.trim()
+        );
+
+        return;
+    }
+
+
+    /*
+       PAS D'EVENT → URL
+    */
+
+    if(
+        typeof item.url === "string" &&
+        item.url.trim() !== ""
+    ){
+
+        window.open(
+            item.url.trim(),
+            "_blank",
+            "noopener,noreferrer"
+        );
+
+        return;
+    }
+
+
+    /*
+       RIEN
+    */
+
+    console.log(
+        "[RANDOM] Aucun event ni URL."
+    );
+
+}
 
 /* SHAKE */
 
