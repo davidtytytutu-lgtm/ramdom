@@ -7733,62 +7733,94 @@ async function buyShopItem(itemId){
 
     try{
 
-        const response = await fetch(
-            "https://david-random.onrender.com/api/shop/buy",
-            {
-                method:"POST",
+        const response =
+            await fetch(
+                "https://david-random.onrender.com/api/shop/buy",
+                {
+                    method:"POST",
 
-                headers:{
-                    "Content-Type":
-                        "application/json",
+                    headers:{
+                        "Content-Type":
+                            "application/json",
 
-                    "Authorization":
-                        "Bearer " + token
-                },
+                        "Authorization":
+                            "Bearer " + token
+                    },
 
-                body:JSON.stringify({
-
-                    item_id:itemId
-
-                })
-            }
-        );
+                    body:JSON.stringify({
+                        item_id:itemId
+                    })
+                }
+            );
 
 
         const data =
             await response.json();
 
 
-        if(!response.ok || !data.success){
+        if(
+            !response.ok ||
+            !data.success
+        ){
 
             throw new Error(
-                data.error || "Achat refusé"
+                data.error ||
+                "Achat refusé"
             );
 
         }
 
 
-        /* Mise à jour du compte */
+        /*
+         * =========================
+         * METTRE À JOUR LE COMPTE
+         * =========================
+         */
 
-        if(currentUser){
+        currentUser = {
+            ...currentUser,
 
-            currentUser.coins =
-                data.coins;
+            coins:
+                data.coins,
 
-            currentUser.owned_emotes =
-                data.inventory.owned_emotes;
+            owned_emotes:
+                data.inventory?.owned_emotes || [],
 
-            currentUser.owned_themes =
-                data.inventory.owned_themes;
+            owned_themes:
+                data.inventory?.owned_themes || [],
 
-            currentUser.name_effect =
-                data.inventory.name_effect;
+            name_effect:
+                data.inventory?.name_effect || "none"
+        };
 
-        }
+
+        /*
+         * Sauvegarder le compte
+         */
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(
+                currentUser
+            )
+        );
 
 
+        /*
+         * Mettre à jour les coins
+         */
         updateCoinsUI();
 
+
+        /*
+         * IMPORTANT :
+         * reconstruire le picker
+         */
+        initEmotePicker();
+
+
+        /*
+         * Actualiser le Shop
+         */
         await loadShop();
 
 
@@ -7797,13 +7829,25 @@ async function buyShopItem(itemId){
             itemId
         );
 
-    }
-    catch(error){
+
+        console.log(
+            "[SHOP] Inventaire:",
+            currentUser.owned_emotes
+        );
+
+
+        console.log(
+            "[SHOP] Picker reconstruit"
+        );
+
+
+    }catch(error){
 
         console.error(
             "[SHOP BUY]",
             error
         );
+
 
         alert(
             "Erreur d'achat : " +
