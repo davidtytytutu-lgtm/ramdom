@@ -2364,17 +2364,18 @@ function initEmotePicker(){
 window.toggleEmotePicker = function(){
 
     const picker =
-        document.getElementById(
-            "emotePicker"
-        );
+        document.getElementById("emotePicker");
 
     const button =
-        document.getElementById(
-            "emoteButton"
-        );
-
+        document.getElementById("emoteButton");
 
     if(!picker) return;
+
+
+    /*
+     * Reconstruire le picker à chaque ouverture
+     */
+    initEmotePicker();
 
 
     const open =
@@ -2391,7 +2392,6 @@ window.toggleEmotePicker = function(){
     }
 
 };
-
 
 /*
  * FERMER LE PICKER
