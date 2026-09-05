@@ -874,6 +874,114 @@ padding:20px;
 text-align:center;
 font-size:12px
 }
+
+/* =========================
+   DAVID SHOP
+========================= */
+
+.shop-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    margin-bottom:20px;
+    padding:15px;
+    border:1px solid var(--dark);
+    background:#050805;
+}
+
+.shop-coins{
+    color:var(--yellow);
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.shop-grid{
+    display:grid;
+    grid-template-columns:repeat(
+        auto-fit,
+        minmax(180px, 1fr)
+    );
+    gap:15px;
+}
+
+.shop-item{
+    padding:12px;
+    border:1px solid var(--dark);
+    background:#050805;
+    text-align:center;
+}
+
+.shop-item:hover{
+    border-color:var(--green);
+}
+
+.shop-preview{
+    height:140px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin-bottom:12px;
+    background:#000;
+    border:1px solid #183b1d;
+    overflow:hidden;
+}
+
+.shop-preview img{
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+}
+
+.shop-item-title{
+    margin-bottom:8px;
+    color:var(--green);
+    font-weight:bold;
+}
+
+.shop-item-description{
+    min-height:35px;
+    margin-bottom:10px;
+    font-size:12px;
+    color:var(--soft);
+}
+
+.shop-item-price{
+    margin:10px 0;
+    color:var(--yellow);
+    font-weight:bold;
+}
+
+.shop-buy-btn{
+    width:100%;
+    padding:9px;
+    border:1px solid var(--green);
+    background:#061006;
+    color:var(--green);
+    font-family:inherit;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.shop-buy-btn:hover{
+    background:var(--green);
+    color:#000;
+}
+
+.shop-buy-btn:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+
+.shop-loading,
+.shop-message{
+    grid-column:1/-1;
+    padding:25px;
+    border:1px dashed var(--dark);
+    text-align:center;
+    color:var(--soft);
+}
+
 </style>
 </head>
 
@@ -5125,7 +5233,6 @@ function showPage(name){
 
             loadChatHistory();
 
-
             if(!socketConnected){
 
                 connectSocket();
@@ -5150,15 +5257,38 @@ function showPage(name){
 
     }
 
-if(name === "random"){
 
-    loadRandomGallery();
+    if(name === "random"){
+
+        loadRandomGallery();
+
+    }
+
+
+    /* =========================
+       SHOP
+    ========================= */
+
+if(name === "shop"){
+
+    console.log("[SHOP] Ouverture du Shop");
+
+    console.log(
+        "[SHOP] loadShop existe :",
+        typeof loadShop
+    );
+
+    loadShop();
 
 }
 
+
     window.scrollTo({
+
         top:0,
+
         behavior:"smooth"
+
     });
 
 }
@@ -5178,6 +5308,7 @@ document
                     )
             )
     );
+
 
 
 /* =========================================================
@@ -7243,250 +7374,6 @@ function randomMatrix(){
 
 }
 
-/* =========================================================
-   DAVID SHOP
-========================================================= */
-
-async function loadShop(){
-
-    const container =
-        document.getElementById("shopItems");
-
-    const balance =
-        document.getElementById("shopCoinBalance");
-
-    if(!container){
-        console.log("[SHOP] Container introuvable");
-        return;
-    }
-
-    if(!token){
-        container.innerHTML = `
-            <div class="shop-message">
-                [ LOGIN REQUIRED ]
-                <br><br>
-                Connectez-vous pour accéder au DAVID SHOP.
-            </div>
-        `;
-        return;
-    }
-
-    try{
-
-        console.log("[SHOP] Chargement...");
-
-        container.innerHTML = `
-            <div class="shop-loading">
-                [ CONNEXION AU SHOP... ]
-            </div>
-        `;
-
-        const data = await apiRequest(
-            "/api/shop",
-            {
-                method: "GET"
-            }
-        );
-
-        console.log("[SHOP] API:", data);
-
-        if(!data || !data.success){
-            throw new Error(
-                data?.error || "SHOP ERROR"
-            );
-        }
-
-        if(balance){
-            balance.textContent =
-                Number(data.coins || 0)
-                    .toLocaleString("fr-FR");
-        }
-
-        const ownedEmotes =
-            data.inventory?.owned_emotes || [];
-
-        container.innerHTML = "";
-
-        for(const item of data.items){
-
-            const owned =
-                ownedEmotes.includes(item.id);
-
-            const card =
-                document.createElement("div");
-
-            card.className = "shop-item";
-
-            card.innerHTML = `
-
-                <div class="shop-preview">
-
-                    ${
-                        item.image
-                        ?
-                        `<img
-                            src="${item.image}"
-                            alt="${item.name}"
-                        >`
-                        :
-                        ""
-                    }
-
-                </div>
-
-                <div class="shop-item-title">
-                    ${item.name}
-                </div>
-
-                <div class="shop-item-description">
-                    ${item.description}
-                </div>
-
-                <div class="shop-item-price">
-                    ${item.price} ◈
-                </div>
-
-                <button
-                    class="shop-buy-btn"
-                    data-shop-id="${item.id}"
-                    ${owned ? "disabled" : ""}
-                >
-                    ${
-                        owned
-                        ? "[ POSSEDÉ ]"
-                        : "[ ACHETER ]"
-                    }
-                </button>
-
-            `;
-
-            container.appendChild(card);
-        }
-
-        container
-            .querySelectorAll(".shop-buy-btn")
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        buyShopItem(
-                            button.dataset.shopId
-                        );
-
-                    }
-                );
-
-            });
-
-        console.log(
-            "[SHOP] Shop chargé :",
-            data.items.length,
-            "articles"
-        );
-
-    }catch(error){
-
-        console.error(
-            "[SHOP] Erreur :",
-            error
-        );
-
-        container.innerHTML = `
-            <div class="shop-message">
-                [ SHOP ERROR ]
-                <br><br>
-                ${error.message}
-            </div>
-        `;
-
-    }
-
-}
-
-
-async function buyShopItem(itemId){
-
-    try{
-
-        const data =
-            await apiRequest(
-                "/api/shop/buy",
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:JSON.stringify({
-                        item_id:itemId
-                    })
-                }
-            );
-
-        console.log(
-            "[SHOP] Achat:",
-            data
-        );
-
-        if(!data || !data.success){
-
-            throw new Error(
-                data?.error ||
-                "PURCHASE FAILED"
-            );
-
-        }
-
-        if(currentUser){
-
-            currentUser.coins =
-                data.coins;
-
-            currentUser.owned_emotes =
-                data.inventory.owned_emotes;
-
-            currentUser.owned_themes =
-                data.inventory.owned_themes;
-
-            currentUser.name_effect =
-                data.inventory.name_effect;
-
-            localStorage.setItem(
-                USER_KEY,
-                JSON.stringify(currentUser)
-            );
-
-        }
-
-        updateCoinsUI();
-
-        await loadShop();
-
-        console.log(
-            "[SHOP] Achat réussi !"
-        );
-
-    }catch(error){
-
-        console.error(
-            "[SHOP] Achat refusé:",
-            error
-        );
-
-        alert(
-            "Achat impossible : " +
-            error.message
-        );
-
-        await loadShop();
-
-    }
-
-}
 
 /* =========================================================
    DAVID COINS UI
@@ -7513,103 +7400,95 @@ function updateCoinsUI(){
             : "0";
 }
 
-// ==========================================
-// DAVID SHOP
-// ==========================================
-
 async function loadShop(){
 
-    const container = document.getElementById("shopItems");
-    const balance = document.getElementById("shopCoinBalance");
+    const container =
+        document.getElementById("shopItems");
 
     if(!container){
         return;
     }
 
-    if(!token){
-
-        container.innerHTML = `
-            <div class="shop-message">
-                [ LOGIN REQUIRED ]
-                <br>
-                Connectez-vous pour accéder au DAVID SHOP.
-            </div>
-        `;
-
-        return;
-    }
+    container.innerHTML =
+        '<div class="shop-loading">[ CHARGEMENT DU SHOP... ]</div>';
 
     try{
 
-        container.innerHTML = `
-            <div class="shop-loading">
-                [ CHARGEMENT DU SHOP... ]
-            </div>
-        `;
+        const response = await fetch(
+            "https://david-random.onrender.com/api/shop",
+            {
+                method:"GET",
+                headers:{
+                    "Authorization":
+                        "Bearer " + token
+                }
+            }
+        );
 
-        const data = await apiRequest("/api/shop", {
-            method: "GET"
-        });
+        const data =
+            await response.json();
 
-        if(!data || !data.success){
-            throw new Error("SHOP ERROR");
+        if(!response.ok || !data.success){
+
+            throw new Error(
+                data.error || "Erreur du Shop"
+            );
+
         }
 
-        // Balance
+        const balance =
+            document.getElementById(
+                "shopCoinBalance"
+            );
 
         if(balance){
 
             balance.textContent =
-                Number(data.coins || 0).toLocaleString("fr-FR");
+                Number(
+                    data.coins || 0
+                ).toLocaleString("fr-FR");
 
         }
-
-        // Inventaire
-
-        const ownedEmotes =
-            data.inventory?.owned_emotes || [];
-
-        const ownedThemes =
-            data.inventory?.owned_themes || [];
-
-        const nameEffect =
-            data.inventory?.name_effect || "none";
-
-
-        // Articles
 
         container.innerHTML = "";
 
         for(const item of data.items){
 
-            let owned = false;
-
-            if(item.type === "emote"){
-                owned = ownedEmotes.includes(item.id);
-            }
-
-            if(item.type === "theme"){
-                owned = ownedThemes.includes(item.id);
-            }
-
-            if(item.type === "name_effect"){
-                owned = nameEffect === item.id;
-            }
+            const owned =
+                (
+                    data.inventory?.owned_emotes || []
+                ).includes(item.id);
 
 
-            const card = document.createElement("div");
+            const card =
+                document.createElement("div");
 
-            card.className = "shop-item";
-
+            card.className =
+                "shop-item";
 
             card.innerHTML = `
+
+                <div class="shop-preview">
+
+                    ${
+                        item.image
+                        ?
+                        `<img
+                            src="${item.image}"
+                            alt="${item.name}"
+                        >`
+                        :
+                        ""
+                    }
+
+                </div>
 
                 <div class="shop-item-title">
                     ${item.name}
                 </div>
 
                 <div class="shop-item-description">
-                    ${item.description}
+                    ${item.description || ""}
                 </div>
 
                 <div class="shop-item-price">
@@ -7618,97 +7497,112 @@ async function loadShop(){
 
                 <button
                     class="shop-buy-btn"
-                    data-shop-id="${item.id}"
+                    data-shop-item="${item.id}"
                     ${owned ? "disabled" : ""}
                 >
-                    ${owned ? "[ POSSEDÉ ]" : "[ ACHETER ]"}
+                    ${
+                        owned
+                        ? "[ POSSEDÉ ]"
+                        : "[ ACHETER ]"
+                    }
                 </button>
 
             `;
-
 
             container.appendChild(card);
 
         }
 
 
-        // Boutons achat
-
         container
-            .querySelectorAll(".shop-buy-btn")
+            .querySelectorAll("[data-shop-item]")
             .forEach(button => {
 
-                button.addEventListener("click", async () => {
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                    const itemId =
-                        button.dataset.shopId;
+                        buyShopItem(
+                            button.dataset.shopItem
+                        );
 
-                    await buyShopItem(itemId);
-
-                });
+                    }
+                );
 
             });
 
+    }
+    catch(error){
 
-    }catch(error){
-
-        console.error("[SHOP]", error);
+        console.error(
+            "[SHOP]",
+            error
+        );
 
         container.innerHTML = `
+
             <div class="shop-message">
-                [ SHOP OFFLINE ]
-                <br>
-                Impossible de charger la boutique.
+
+                [ ERREUR SHOP ]
+
+                <br><br>
+
+                ${error.message}
+
             </div>
+
         `;
 
     }
 
 }
 
+
 async function buyShopItem(itemId){
 
     try{
 
-        const button =
-            document.querySelector(
-                `[data-shop-id="${itemId}"]`
-            );
-
-        if(button){
-            button.disabled = true;
-            button.textContent = "[ ACHAT... ]";
-        }
-
-
-        const data = await apiRequest(
-            "/api/shop/buy",
+        const response = await fetch(
+            "https://david-random.onrender.com/api/shop/buy",
             {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
+                method:"POST",
+
+                headers:{
+                    "Content-Type":
+                        "application/json",
+
+                    "Authorization":
+                        "Bearer " + token
                 },
-                body: JSON.stringify({
-                    item_id: itemId
+
+                body:JSON.stringify({
+
+                    item_id:itemId
+
                 })
             }
         );
 
 
-        if(!data || !data.success){
+        const data =
+            await response.json();
+
+
+        if(!response.ok || !data.success){
 
             throw new Error(
-                data?.error || "PURCHASE FAILED"
+                data.error || "Achat refusé"
             );
 
         }
 
 
-        // Mise à jour du compte
+        /* Mise à jour du compte */
 
         if(currentUser){
 
-            currentUser.coins = data.coins;
+            currentUser.coins =
+                data.coins;
 
             currentUser.owned_emotes =
                 data.inventory.owned_emotes;
@@ -7719,41 +7613,31 @@ async function buyShopItem(itemId){
             currentUser.name_effect =
                 data.inventory.name_effect;
 
-
-            localStorage.setItem(
-                USER_KEY,
-                JSON.stringify(currentUser)
-            );
-
         }
 
 
         updateCoinsUI();
 
-        loadShop();
+        await loadShop();
 
 
         console.log(
-            "[SHOP] Achat réussi :",
+            "[SHOP] Achat réussi:",
             itemId
         );
 
-
-    }catch(error){
+    }
+    catch(error){
 
         console.error(
-            "[SHOP] Achat refusé :",
+            "[SHOP BUY]",
             error
         );
 
-
         alert(
-            "Achat impossible : " +
+            "Erreur d'achat : " +
             error.message
         );
-
-
-        loadShop();
 
     }
 
