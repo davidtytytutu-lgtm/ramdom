@@ -547,17 +547,52 @@ async function loadUsers() {
         pour les anciens comptes.
         */
 
-        let coinsUpdated = false;
+        let accountDataUpdated = false;
 
-        for(const user of users){
+for(const user of users){
 
-            if(typeof user.coins !== "number"){
+    if(
+        typeof user.coins !== "number" ||
+        !Number.isFinite(user.coins) ||
+        user.coins < 0
+    ){
 
-                user.coins = 0;
+        user.coins = 0;
 
-                coinsUpdated = true;
-            }
-        }
+        accountDataUpdated = true;
+    }
+
+
+    if(
+        !Array.isArray(user.owned_emotes)
+    ){
+
+        user.owned_emotes = [];
+
+        accountDataUpdated = true;
+    }
+
+
+    if(
+        !Array.isArray(user.owned_themes)
+    ){
+
+        user.owned_themes = [];
+
+        accountDataUpdated = true;
+    }
+
+
+    if(
+        typeof user.name_effect !== "string"
+    ){
+
+        user.name_effect = "none";
+
+        accountDataUpdated = true;
+    }
+
+}
 
 
         /*
@@ -565,11 +600,11 @@ async function loadUsers() {
         coins: 0, on sauvegarde la base.
         */
 
-        if(coinsUpdated){
-
+if(accountDataUpdated){
+    
             console.log(
-                "[COINS] Initialisation des soldes..."
-            );
+    "[ACCOUNT] Initialisation des données du shop..."
+);
 
             /*
             usersLoaded doit être true
@@ -581,8 +616,8 @@ async function loadUsers() {
             await saveUsers();
 
             console.log(
-                "[COINS] Soldes initialisés à 0 ◈"
-            );
+    "[ACCOUNT] Inventaire et personnalisations initialisés."
+);
 
         }else{
 
@@ -739,33 +774,52 @@ function publicUser(
     }
 
 
-    return {
+   return {
 
-        id:
-            user.id,
+    id:
+        user.id,
 
-        username:
-            user.username,
+    username:
+        user.username,
 
-        profile_picture:
-            user.profile_picture ||
-            null,
+    profile_picture:
+        user.profile_picture ||
+        null,
 
-        coins:
-            Number.isFinite(
-                user.coins
-            )
-                ? Math.max(
-                    0,
-                    Math.floor(
-                        user.coins
-                    )
+    coins:
+        Number.isFinite(
+            user.coins
+        )
+            ? Math.max(
+                0,
+                Math.floor(
+                    user.coins
                 )
-                : 0,
+            )
+            : 0,
 
-        created_at:
-            user.created_at
-    };
+    owned_emotes:
+        Array.isArray(
+            user.owned_emotes
+        )
+            ? user.owned_emotes
+            : [],
+
+    owned_themes:
+        Array.isArray(
+            user.owned_themes
+        )
+            ? user.owned_themes
+            : [],
+
+    name_effect:
+        typeof user.name_effect === "string"
+            ? user.name_effect
+            : "none",
+
+    created_at:
+        user.created_at
+};
 }
 
 function getTokenFromRequest(
@@ -1176,7 +1230,6 @@ app.post(
                 );
 
 const user = {
-
     id:
         crypto.randomUUID(),
 
@@ -1191,6 +1244,15 @@ const user = {
 
     coins:
         0,
+
+    owned_emotes:
+        [],
+
+    owned_themes:
+        [],
+
+    name_effect:
+        "none",
 
     created_at:
         new Date()
