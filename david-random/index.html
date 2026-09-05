@@ -463,6 +463,10 @@ background:#000
 width:100%
 }
 
+#neocities-info {
+    margin-top: 10px;
+}
+
 /* ================= CHAT ================= */
 
 .chat-box{
@@ -1098,6 +1102,43 @@ OPEN
 
 </div>
 
+</div>
+
+<div id="neocities-info" class="panel">
+    <div class="panel-title">
+        NEOCITIES // SITE STATUS
+    </div>
+
+    <div class="panel-content">
+        <p>
+            <span class="prompt">root@david:~$</span>
+            neocities --info david-officiel
+        </p>
+
+        <p>
+            SITE:
+            <span id="neocitiesSite" class="online">LOADING...</span>
+        </p>
+
+        <p>
+            LAST UPDATE:
+            <span id="neocitiesLastUpdate" class="online">LOADING...</span>
+        </p>
+
+        <p>
+            VIEWS:
+            <span id="neocitiesViews" class="online">--</span>
+        </p>
+
+        <p>
+            HITS:
+            <span id="neocitiesHits" class="online">--</span>
+        </p>
+
+        <p id="neocitiesStatus" class="muted">
+            Connecting to Neocities API...
+        </p>
+    </div>
 </div>
 
 </section>
@@ -3264,64 +3305,72 @@ async function logoutAccount(){
 
 async function checkServer(){
 
+    const serverStatus =
+        document.getElementById("serverStatus");
+
+    const renderSide =
+        document.getElementById("renderSide");
+
+    const apiSide =
+        document.getElementById("apiSide");
+
     try{
 
+        serverStatus.textContent =
+            "CHECKING SERVER...";
+
+        renderSide.textContent =
+            "CHECKING";
+
+        apiSide.textContent =
+            "CHECKING";
+
+        const response =
+            await fetch(
+                API + "/api/status",
+                {
+                    cache:"no-store"
+                }
+            );
+
         const data =
-            await apiRequest(
-                "/api/status"
-            );
+            await response.json();
 
+        console.log(
+            "[SERVER STATUS]",
+            response.status,
+            data
+        );
 
-        if(!data.online){
-
+        if(!response.ok){
             throw new Error(
-                "OFFLINE"
+                data?.error ||
+                `HTTP ${response.status}`
             );
-
         }
 
-
-        document.getElementById(
-            "serverStatus"
-        ).textContent =
+        serverStatus.textContent =
             "SYSTEM ONLINE";
 
-
-        document.getElementById(
-            "serverStatus"
-        ).className =
+        serverStatus.className =
             "online";
 
-
-        document.getElementById(
-            "renderSide"
-        ).textContent =
+        renderSide.textContent =
             "ONLINE";
 
-
-        document.getElementById(
-            "renderSide"
-        ).className =
+        renderSide.className =
             "online";
 
-
-        document.getElementById(
-            "apiSide"
-        ).textContent =
+        apiSide.textContent =
             "ONLINE";
 
-
-        document.getElementById(
-            "apiSide"
-        ).className =
+        apiSide.className =
             "online";
-
 
         document.getElementById(
             "visitors"
         ).textContent =
             data.users ?? 0;
-
 
     }catch(error){
 
@@ -3330,34 +3379,25 @@ async function checkServer(){
             error
         );
 
-
-        document.getElementById(
-            "serverStatus"
-        ).textContent =
+        serverStatus.textContent =
             "API OFFLINE";
 
-
-        document.getElementById(
-            "serverStatus"
-        ).className =
+        serverStatus.className =
             "offline";
 
-
-        document.getElementById(
-            "renderSide"
-        ).textContent =
+        renderSide.textContent =
             "ERROR";
 
+        renderSide.className =
+            "offline";
 
-        document.getElementById(
-            "apiSide"
-        ).textContent =
+        apiSide.textContent =
             "ERROR";
 
+        apiSide.className =
+            "offline";
     }
-
 }
-
 
 /* =========================================================
    SOCKET UI
@@ -6702,6 +6742,134 @@ function randomMatrix(){
    INIT
 ========================================================= */
 
+async function loadNeocitiesInfo(){
+
+    const status =
+        document.getElementById(
+            "neocitiesStatus"
+        );
+
+    const site =
+        document.getElementById(
+            "neocitiesSite"
+        );
+
+    const update =
+        document.getElementById(
+            "neocitiesLastUpdate"
+        );
+
+    const views =
+        document.getElementById(
+            "neocitiesViews"
+        );
+
+    const hits =
+        document.getElementById(
+            "neocitiesHits"
+        );
+
+    try{
+
+        const response =
+            await fetch(
+                API + "/api/neocities",
+                {
+                    cache:"no-store"
+                }
+            );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "[NEOCITIES]",
+            response.status,
+            data
+        );
+
+        if(
+            !response.ok ||
+            data.result !== "success"
+        ){
+            throw new Error(
+                data.error ||
+                `HTTP ${response.status}`
+            );
+        }
+
+        const info =
+            data.info;
+
+        site.textContent =
+            info.sitename || "UNKNOWN";
+
+        views.textContent =
+            Number(
+                info.views || 0
+            ).toLocaleString("fr-FR");
+
+        hits.textContent =
+            Number(
+                info.hits || 0
+            ).toLocaleString("fr-FR");
+
+        if(info.last_updated){
+
+            const date =
+                new Date(
+                    info.last_updated
+                );
+
+            update.textContent =
+                date.toLocaleString(
+                    "fr-FR",
+                    {
+                        dateStyle:"medium",
+                        timeStyle:"medium"
+                    }
+                );
+
+        }else{
+
+            update.textContent =
+                "UNKNOWN";
+
+        }
+
+        status.textContent =
+            "● NEOCITIES API ONLINE";
+
+        status.className =
+            "online";
+
+    }catch(error){
+
+        console.error(
+            "[NEOCITIES]",
+            error
+        );
+
+        status.textContent =
+            "● NEOCITIES API ERROR";
+
+        status.className =
+            "offline";
+
+        site.textContent =
+            "ERROR";
+
+        update.textContent =
+            "--";
+
+        views.textContent =
+            "--";
+
+        hits.textContent =
+            "--";
+    }
+}
+
 
 async function init(){
 
@@ -6716,9 +6884,10 @@ async function init(){
     loadRandomGallery();
 
     checkServer();
+    loadNeocitiesInfo();
 
-    const loggedIn =
-        await restoreSession();
+const loggedIn =
+    await restoreSession();
 
     if(
         loggedIn &&
