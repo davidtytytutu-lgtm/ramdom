@@ -954,6 +954,60 @@ app.get(
         });
     }
 );
+
+/* =========================================================
+   DAVID COINS
+========================================================= */
+
+app.post(
+    "/api/coins/reward",
+    requireAuth,
+    async (req, res) => {
+
+        try {
+
+            const REWARD =
+                10;
+
+            if (
+                typeof req.user.coins !== "number" ||
+                !Number.isFinite(req.user.coins) ||
+                req.user.coins < 0
+            ) {
+                req.user.coins = 0;
+            }
+
+            req.user.coins += REWARD;
+
+            await saveUsers();
+
+            console.log(
+                `[COINS] ${req.user.username} +${REWARD} ◈ = ${req.user.coins} ◈`
+            );
+
+            res.json({
+                success: true,
+                reward: REWARD,
+                coins: req.user.coins
+            });
+
+        } catch (error) {
+
+            console.error(
+                "[COINS]",
+                error
+            );
+
+            res
+                .status(500)
+                .json({
+                    success: false,
+                    error: "COINS REWARD FAILED"
+                });
+        }
+    }
+);
+
 /* =========================================================
    NEOCITIES API
 ========================================================= */
