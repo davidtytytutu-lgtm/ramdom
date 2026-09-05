@@ -928,6 +928,7 @@ ACCOUNT:
 <button data-page="account">[ ACCOUNT ]</button>
 <button data-page="about">[ ABOUT ]</button>
 <button data-page="coins">[ DAVID COINS ]</button>
+<button data-page="shop">[ SHOP ]</button>
 
 </nav>
 
@@ -969,6 +970,7 @@ ACCOUNT:
 <div class="side-link" data-page="account">♙ Account</div>
 <div class="side-link" data-page="about">ⓘ About</div>
 <div class="side-link" data-page="coins">◈ David Coins</div>
+<div class="side-link" data-page="shop">✦ SHOP</div>
 
 <div class="side-box">
 
@@ -1884,6 +1886,44 @@ de DAVID RANDOM.
 </div>
 
 </div>
+
+</section>
+
+<section class="page" id="shop">
+
+    <div class="panel">
+
+        <div class="panel-title">
+            DAVID SHOP // STORE.TXT
+        </div>
+
+        <div class="panel-content">
+
+            <pre>
+╔══════════════════════════════════════════════╗
+║                 DAVID SHOP                   ║
+║                                              ║
+║      ACHETEZ DES EXCLUSIVITÉS ◈             ║
+╚══════════════════════════════════════════════╝
+            </pre>
+
+            <div id="shopBalance">
+                BALANCE : <span id="shopCoinBalance">0</span> ◈
+            </div>
+
+            <div id="shopItems">
+
+                <!-- Les articles seront chargés ici -->
+
+                <div class="shop-loading">
+                    [ CHARGEMENT DU SHOP... ]
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </section>
 
@@ -7204,6 +7244,251 @@ function randomMatrix(){
 }
 
 /* =========================================================
+   DAVID SHOP
+========================================================= */
+
+async function loadShop(){
+
+    const container =
+        document.getElementById("shopItems");
+
+    const balance =
+        document.getElementById("shopCoinBalance");
+
+    if(!container){
+        console.log("[SHOP] Container introuvable");
+        return;
+    }
+
+    if(!token){
+        container.innerHTML = `
+            <div class="shop-message">
+                [ LOGIN REQUIRED ]
+                <br><br>
+                Connectez-vous pour accéder au DAVID SHOP.
+            </div>
+        `;
+        return;
+    }
+
+    try{
+
+        console.log("[SHOP] Chargement...");
+
+        container.innerHTML = `
+            <div class="shop-loading">
+                [ CONNEXION AU SHOP... ]
+            </div>
+        `;
+
+        const data = await apiRequest(
+            "/api/shop",
+            {
+                method: "GET"
+            }
+        );
+
+        console.log("[SHOP] API:", data);
+
+        if(!data || !data.success){
+            throw new Error(
+                data?.error || "SHOP ERROR"
+            );
+        }
+
+        if(balance){
+            balance.textContent =
+                Number(data.coins || 0)
+                    .toLocaleString("fr-FR");
+        }
+
+        const ownedEmotes =
+            data.inventory?.owned_emotes || [];
+
+        container.innerHTML = "";
+
+        for(const item of data.items){
+
+            const owned =
+                ownedEmotes.includes(item.id);
+
+            const card =
+                document.createElement("div");
+
+            card.className = "shop-item";
+
+            card.innerHTML = `
+
+                <div class="shop-preview">
+
+                    ${
+                        item.image
+                        ?
+                        `<img
+                            src="${item.image}"
+                            alt="${item.name}"
+                        >`
+                        :
+                        ""
+                    }
+
+                </div>
+
+                <div class="shop-item-title">
+                    ${item.name}
+                </div>
+
+                <div class="shop-item-description">
+                    ${item.description}
+                </div>
+
+                <div class="shop-item-price">
+                    ${item.price} ◈
+                </div>
+
+                <button
+                    class="shop-buy-btn"
+                    data-shop-id="${item.id}"
+                    ${owned ? "disabled" : ""}
+                >
+                    ${
+                        owned
+                        ? "[ POSSEDÉ ]"
+                        : "[ ACHETER ]"
+                    }
+                </button>
+
+            `;
+
+            container.appendChild(card);
+        }
+
+        container
+            .querySelectorAll(".shop-buy-btn")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        buyShopItem(
+                            button.dataset.shopId
+                        );
+
+                    }
+                );
+
+            });
+
+        console.log(
+            "[SHOP] Shop chargé :",
+            data.items.length,
+            "articles"
+        );
+
+    }catch(error){
+
+        console.error(
+            "[SHOP] Erreur :",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="shop-message">
+                [ SHOP ERROR ]
+                <br><br>
+                ${error.message}
+            </div>
+        `;
+
+    }
+
+}
+
+
+async function buyShopItem(itemId){
+
+    try{
+
+        const data =
+            await apiRequest(
+                "/api/shop/buy",
+                {
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:JSON.stringify({
+                        item_id:itemId
+                    })
+                }
+            );
+
+        console.log(
+            "[SHOP] Achat:",
+            data
+        );
+
+        if(!data || !data.success){
+
+            throw new Error(
+                data?.error ||
+                "PURCHASE FAILED"
+            );
+
+        }
+
+        if(currentUser){
+
+            currentUser.coins =
+                data.coins;
+
+            currentUser.owned_emotes =
+                data.inventory.owned_emotes;
+
+            currentUser.owned_themes =
+                data.inventory.owned_themes;
+
+            currentUser.name_effect =
+                data.inventory.name_effect;
+
+            localStorage.setItem(
+                USER_KEY,
+                JSON.stringify(currentUser)
+            );
+
+        }
+
+        updateCoinsUI();
+
+        await loadShop();
+
+        console.log(
+            "[SHOP] Achat réussi !"
+        );
+
+    }catch(error){
+
+        console.error(
+            "[SHOP] Achat refusé:",
+            error
+        );
+
+        alert(
+            "Achat impossible : " +
+            error.message
+        );
+
+        await loadShop();
+
+    }
+
+}
+
+/* =========================================================
    DAVID COINS UI
 ========================================================= */
 
@@ -7226,6 +7511,252 @@ function updateCoinsUI(){
         Number.isFinite(coins)
             ? Math.max(0, Math.floor(coins)).toLocaleString("fr-FR")
             : "0";
+}
+
+// ==========================================
+// DAVID SHOP
+// ==========================================
+
+async function loadShop(){
+
+    const container = document.getElementById("shopItems");
+    const balance = document.getElementById("shopCoinBalance");
+
+    if(!container){
+        return;
+    }
+
+    if(!token){
+
+        container.innerHTML = `
+            <div class="shop-message">
+                [ LOGIN REQUIRED ]
+                <br>
+                Connectez-vous pour accéder au DAVID SHOP.
+            </div>
+        `;
+
+        return;
+    }
+
+    try{
+
+        container.innerHTML = `
+            <div class="shop-loading">
+                [ CHARGEMENT DU SHOP... ]
+            </div>
+        `;
+
+        const data = await apiRequest("/api/shop", {
+            method: "GET"
+        });
+
+        if(!data || !data.success){
+            throw new Error("SHOP ERROR");
+        }
+
+        // Balance
+
+        if(balance){
+
+            balance.textContent =
+                Number(data.coins || 0).toLocaleString("fr-FR");
+
+        }
+
+        // Inventaire
+
+        const ownedEmotes =
+            data.inventory?.owned_emotes || [];
+
+        const ownedThemes =
+            data.inventory?.owned_themes || [];
+
+        const nameEffect =
+            data.inventory?.name_effect || "none";
+
+
+        // Articles
+
+        container.innerHTML = "";
+
+        for(const item of data.items){
+
+            let owned = false;
+
+            if(item.type === "emote"){
+                owned = ownedEmotes.includes(item.id);
+            }
+
+            if(item.type === "theme"){
+                owned = ownedThemes.includes(item.id);
+            }
+
+            if(item.type === "name_effect"){
+                owned = nameEffect === item.id;
+            }
+
+
+            const card = document.createElement("div");
+
+            card.className = "shop-item";
+
+
+            card.innerHTML = `
+
+                <div class="shop-item-title">
+                    ${item.name}
+                </div>
+
+                <div class="shop-item-description">
+                    ${item.description}
+                </div>
+
+                <div class="shop-item-price">
+                    ${item.price} ◈
+                </div>
+
+                <button
+                    class="shop-buy-btn"
+                    data-shop-id="${item.id}"
+                    ${owned ? "disabled" : ""}
+                >
+                    ${owned ? "[ POSSEDÉ ]" : "[ ACHETER ]"}
+                </button>
+
+            `;
+
+
+            container.appendChild(card);
+
+        }
+
+
+        // Boutons achat
+
+        container
+            .querySelectorAll(".shop-buy-btn")
+            .forEach(button => {
+
+                button.addEventListener("click", async () => {
+
+                    const itemId =
+                        button.dataset.shopId;
+
+                    await buyShopItem(itemId);
+
+                });
+
+            });
+
+
+    }catch(error){
+
+        console.error("[SHOP]", error);
+
+        container.innerHTML = `
+            <div class="shop-message">
+                [ SHOP OFFLINE ]
+                <br>
+                Impossible de charger la boutique.
+            </div>
+        `;
+
+    }
+
+}
+
+async function buyShopItem(itemId){
+
+    try{
+
+        const button =
+            document.querySelector(
+                `[data-shop-id="${itemId}"]`
+            );
+
+        if(button){
+            button.disabled = true;
+            button.textContent = "[ ACHAT... ]";
+        }
+
+
+        const data = await apiRequest(
+            "/api/shop/buy",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    item_id: itemId
+                })
+            }
+        );
+
+
+        if(!data || !data.success){
+
+            throw new Error(
+                data?.error || "PURCHASE FAILED"
+            );
+
+        }
+
+
+        // Mise à jour du compte
+
+        if(currentUser){
+
+            currentUser.coins = data.coins;
+
+            currentUser.owned_emotes =
+                data.inventory.owned_emotes;
+
+            currentUser.owned_themes =
+                data.inventory.owned_themes;
+
+            currentUser.name_effect =
+                data.inventory.name_effect;
+
+
+            localStorage.setItem(
+                USER_KEY,
+                JSON.stringify(currentUser)
+            );
+
+        }
+
+
+        updateCoinsUI();
+
+        loadShop();
+
+
+        console.log(
+            "[SHOP] Achat réussi :",
+            itemId
+        );
+
+
+    }catch(error){
+
+        console.error(
+            "[SHOP] Achat refusé :",
+            error
+        );
+
+
+        alert(
+            "Achat impossible : " +
+            error.message
+        );
+
+
+        loadShop();
+
+    }
+
 }
 
 /* =========================================================
