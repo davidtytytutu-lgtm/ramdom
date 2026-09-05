@@ -1849,7 +1849,7 @@ DAVID COINS // WALLET.TXT
 ╔══════════════════════════════════╗
 ║          DAVID COINS             ║
 ║                                  ║
-║ Balance : 0                      ║
+║ Balance : <span id="coinBalance">0</span> ◈                    ║
 ║                                  ║
 ║ Status  : ONLINE                 ║
 ╚══════════════════════════════════╝
@@ -2307,6 +2307,112 @@ function restoreSavedUser(){
 
 }
 
+/* =========================================================
+   RESTORE SESSION
+========================================================= */
+
+async function restoreSession(){
+
+    token =
+        localStorage.getItem(
+            TOKEN_KEY
+        ) ||
+        null;
+
+
+    if(!token){
+
+        currentUser =
+            null;
+
+        updateAccountUI();
+
+        updateCoinsUI();
+
+        return false;
+    }
+
+
+    try{
+
+        const data =
+            await apiRequest(
+                "/api/account/me",
+                {
+                    method:"GET"
+                }
+            );
+
+
+        if(
+            !data ||
+            !data.user
+        ){
+
+            throw new Error(
+                "INVALID SESSION RESPONSE"
+            );
+        }
+
+
+        currentUser =
+            data.user;
+
+
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(
+                currentUser
+            )
+        );
+
+
+        updateAccountUI();
+
+        updateCoinsUI();
+
+
+        return true;
+
+
+    }catch(error){
+
+        console.error(
+            "[AUTH] Session invalide :",
+            error
+        );
+
+
+        token =
+            null;
+
+        currentUser =
+            null;
+
+
+        localStorage.removeItem(
+            TOKEN_KEY
+        );
+
+        localStorage.removeItem(
+            USER_KEY
+        );
+
+
+        updateAccountUI();
+
+        updateCoinsUI();
+
+
+        console.log(
+            "[AUTH] Déconnecté automatiquement"
+        );
+
+
+        return false;
+    }
+
+}
 
 /* =========================================================
    SAVE ACCOUNT
@@ -2938,9 +3044,7 @@ async function loginAccount(){
 }
 
 
-/* =========================================================
-   RESTORE SESSION
-========================================================= */
+
 
 /* =========================================================
    RESTORE SESSION
@@ -6745,6 +6849,31 @@ function randomMatrix(){
         1500
     );
 
+}
+
+/* =========================================================
+   DAVID COINS UI
+========================================================= */
+
+function updateCoinsUI(){
+
+    const balanceElement = document.getElementById("coinBalance");
+
+    if(!balanceElement){
+        return;
+    }
+
+    if(!currentUser){
+        balanceElement.textContent = "0";
+        return;
+    }
+
+    const coins = Number(currentUser.coins);
+
+    balanceElement.textContent =
+        Number.isFinite(coins)
+            ? Math.max(0, Math.floor(coins)).toLocaleString("fr-FR")
+            : "0";
 }
 
 /* =========================================================
