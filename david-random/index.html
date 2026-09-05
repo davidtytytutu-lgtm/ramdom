@@ -982,6 +982,51 @@ font-size:12px
     color:var(--soft);
 }
 
+/* =========================
+   NAME EFFECTS
+========================= */
+
+.shop-name-preview{
+    font-size:32px;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+
+.name-rgb{
+    background:linear-gradient(
+        90deg,
+        red,
+        orange,
+        yellow,
+        lime,
+        cyan,
+        blue,
+        violet,
+        red
+    );
+
+    background-size:400% 100%;
+
+    -webkit-background-clip:text;
+    background-clip:text;
+
+    -webkit-text-fill-color:transparent;
+
+    animation:nameRGB 3s linear infinite;
+}
+
+@keyframes nameRGB{
+
+    0%{
+        background-position:0% 50%;
+    }
+
+    100%{
+        background-position:400% 50%;
+    }
+
+}
 </style>
 </head>
 
@@ -4559,19 +4604,21 @@ function displayChatMessage(data){
 
 
     element.innerHTML = `
-        <span class="chat-user">
-            ${escapeHTML(
-                data.username ||
-                "USER"
-            )}
-        </span>
-
+        <span
+    class="
+        chat-user
         ${
-            formattedTime
-            ?
-            `<span class="chat-time">
-                [${escapeHTML(formattedTime)}]
-            </span>`
+            data.name_effect === "name_rgb"
+                ? "name-rgb"
+                : ""
+        }
+    "
+>
+    ${escapeHTML(
+        data.username ||
+        "USER"
+    )}
+</span>
             :
             ""
         }
@@ -7626,10 +7673,21 @@ async function loadShop(){
         for(const item of data.items){
 
             const owned =
-                (
-                    data.inventory?.owned_emotes || []
-                ).includes(item.id);
+    item.type === "emote"
+        ? (
+            data.inventory?.owned_emotes || []
+        ).includes(item.id)
 
+        : item.type === "theme"
+        ? (
+            data.inventory?.owned_themes || []
+        ).includes(item.id)
+
+        : item.type === "name_effect"
+        ? data.inventory?.name_effect === item.id
+
+        : false;
+  
 
             const card =
                 document.createElement("div");
@@ -7641,18 +7699,44 @@ async function loadShop(){
 
                 <div class="shop-preview">
 
-                    ${
-                        item.image
-                        ?
-                        `<img
-                            src="${item.image}"
-                            alt="${item.name}"
-                        >`
-                        :
-                        ""
-                    }
+    ${
+        item.type === "name_effect"
 
-                </div>
+        ?
+
+        `
+        <div class="
+            shop-name-preview
+            ${
+                item.id === "name_rgb"
+                    ? "name-rgb"
+                    : ""
+            }
+        ">
+            NAME
+        </div>
+        `
+
+        :
+
+        item.image
+
+        ?
+
+        `
+        <img
+            src="${item.image}"
+            alt="${item.name}"
+        >
+        `
+
+        :
+
+        ""
+
+    }
+
+</div>
 
                 <div class="shop-item-title">
                     ${item.name}
@@ -7791,6 +7875,7 @@ async function buyShopItem(itemId){
 
             name_effect:
                 data.inventory?.name_effect || "none"
+                
         };
 
 
