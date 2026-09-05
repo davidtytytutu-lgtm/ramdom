@@ -1120,6 +1120,13 @@ emote_pepe_song: {
     price: 40,
     image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/pepe_song.gif"
 },
+name_rgb: {
+    id: "name_rgb",
+    type: "name_effect",
+    name: "NAME RGB",
+    description: "Un effet RGB animé pour ton pseudo",
+    price: 100
+},    
 };
 
 // ------------------------------------------
