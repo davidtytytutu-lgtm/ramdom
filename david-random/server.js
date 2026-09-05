@@ -541,8 +541,55 @@ async function loadUsers() {
         users =
             loadedUsers;
 
-        usersLoaded =
-            true;
+
+        /*
+        Initialiser les DAVID COINS
+        pour les anciens comptes.
+        */
+
+        let coinsUpdated = false;
+
+        for(const user of users){
+
+            if(typeof user.coins !== "number"){
+
+                user.coins = 0;
+
+                coinsUpdated = true;
+            }
+        }
+
+
+        /*
+        Si des anciens comptes ont reçu
+        coins: 0, on sauvegarde la base.
+        */
+
+        if(coinsUpdated){
+
+            console.log(
+                "[COINS] Initialisation des soldes..."
+            );
+
+            /*
+            usersLoaded doit être true
+            avant d'appeler saveUsers().
+            */
+
+            usersLoaded = true;
+
+            await saveUsers();
+
+            console.log(
+                "[COINS] Soldes initialisés à 0 ◈"
+            );
+
+        }else{
+
+            usersLoaded = true;
+
+        }
+
 
         console.log(
             `[USERS] ${users.length} comptes chargés`
@@ -570,7 +617,6 @@ async function loadUsers() {
         return false;
     }
 }
-
 /* =========================================================
    SAVE USERS
 ========================================================= */
@@ -685,10 +731,13 @@ function publicUser(
     user
 ) {
 
-    if (!user) {
+    if (
+        !user
+    ) {
 
         return null;
     }
+
 
     return {
 
@@ -702,11 +751,22 @@ function publicUser(
             user.profile_picture ||
             null,
 
+        coins:
+            Number.isFinite(
+                user.coins
+            )
+                ? Math.max(
+                    0,
+                    Math.floor(
+                        user.coins
+                    )
+                )
+                : 0,
+
         created_at:
             user.created_at
     };
 }
-
 
 function getTokenFromRequest(
     req
@@ -1061,24 +1121,27 @@ app.post(
                     12
                 );
 
-            const user = {
+const user = {
 
-                id:
-                    crypto.randomUUID(),
+    id:
+        crypto.randomUUID(),
 
-                username,
+    username,
 
-                password_hash:
-                    passwordHash,
+    password_hash:
+        passwordHash,
 
-                profile_picture:
-                    profile ||
-                    null,
+    profile_picture:
+        profile ||
+        null,
 
-                created_at:
-                    new Date()
-                        .toISOString()
-            };
+    coins:
+        0,
+
+    created_at:
+        new Date()
+            .toISOString()
+};
 
             users.push(
                 user
