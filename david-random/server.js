@@ -1120,6 +1120,7 @@ emote_pepe_song: {
     price: 40,
     image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/pepe_song.gif"
 },
+};
 
 // ------------------------------------------
 // GET SHOP
