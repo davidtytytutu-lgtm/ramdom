@@ -2902,32 +2902,33 @@ async function loginAccount(){
    RESTORE SESSION
 ========================================================= */
 
+/* =========================================================
+   RESTORE SESSION
+========================================================= */
+
 async function restoreSession(){
 
-    token =
-        localStorage.getItem(
-            TOKEN_KEY
-        ) ||
-        null;
-
+    token = localStorage.getItem(TOKEN_KEY) || null;
 
     if(!token){
 
+        currentUser = null;
+
+        localStorage.removeItem(USER_KEY);
+
+        updateAccountUI();
+
         return false;
-
     }
-
 
     try{
 
-        const data =
-            await apiRequest(
-                "/api/account/me",
-                {
-                    method:"GET"
-                }
-            );
-
+        const data = await apiRequest(
+            "/api/account/me",
+            {
+                method: "GET"
+            }
+        );
 
         if(
             !data ||
@@ -2937,88 +2938,56 @@ async function restoreSession(){
             throw new Error(
                 "INVALID SESSION RESPONSE"
             );
-
         }
 
-
-        currentUser =
-            data.user;
-
+        currentUser = data.user;
 
         localStorage.setItem(
             USER_KEY,
-            JSON.stringify(
-                currentUser
-            )
+            JSON.stringify(currentUser)
         );
-
 
         updateAccountUI();
 
+        console.log(
+            "[AUTH] Session valide"
+        );
 
         return true;
-
 
     }catch(error){
 
         console.error(
-            "[AUTH]",
+            "[AUTH] Session invalide :",
             error
         );
 
+        /*
+         * Si /api/account/me échoue,
+         * la session est considérée comme invalide.
+         */
 
-        const message =
-            String(
-                error.message || ""
-            );
+        token = null;
 
+        currentUser = null;
 
-        const invalidToken =
-            message.includes("401") ||
-            message.includes("403") ||
-            message.includes("INVALID TOKEN") ||
-            message.includes("TOKEN INVALID") ||
-            message.includes("TOKEN EXPIRED");
+        localStorage.removeItem(
+            TOKEN_KEY
+        );
 
-
-        if(invalidToken){
-
-            token = null;
-
-            currentUser = null;
-
-
-            localStorage.removeItem(
-                TOKEN_KEY
-            );
-
-            localStorage.removeItem(
-                USER_KEY
-            );
-
-
-            updateAccountUI();
-
-
-            return false;
-
-        }
-
-
-        restoreSavedUser();
+        localStorage.removeItem(
+            USER_KEY
+        );
 
         updateAccountUI();
 
-
-        return Boolean(
-            token &&
-            currentUser
+        console.log(
+            "[AUTH] Déconnecté automatiquement"
         );
 
+        return false;
     }
-
 }
-
 
 /* =========================================================
    AVATAR
@@ -6873,30 +6842,41 @@ async function loadNeocitiesInfo(){
 
 async function init(){
 
-    console.log(
-        "DAVID RANDOM V2"
-    );
+    console.log("DAVID RANDOM V2");
 
-    restoreSavedUser();
-
-    updateAccountUI();
-
+    // Charger la galerie
     loadRandomGallery();
 
+    // Vérifier le serveur Render
     checkServer();
+
+    // Charger les informations publiques Neocities
     loadNeocitiesInfo();
 
-const loggedIn =
-    await restoreSession();
+    // Vérifier si une session existe réellement
+    const loggedIn = await restoreSession();
 
-    if(
-        loggedIn &&
-        token
-    ){
+    if(loggedIn && token){
+
+        console.log("[AUTH] Session valide");
 
         updateAccountUI();
 
         connectSocket();
+
+    }else{
+
+        console.log("[AUTH] Aucun compte connecté");
+
+        // Supprimer toute ancienne session locale invalide
+        token = null;
+        currentUser = null;
+
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        // Remettre l'interface en mode déconnecté
+        updateAccountUI();
 
     }
 
@@ -6904,8 +6884,9 @@ const loggedIn =
         "EMOTES:",
         Object.keys(EMOTES)
     );
-
 }
+
+init();
 
 </script>
 
