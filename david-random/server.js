@@ -2963,25 +2963,29 @@ wss.on(
                         return;
                     }
 
-                    const chatMessage = {
+                   const chatMessage = {
 
-                        username:
-                            current.username,
+    username:
+        current.username,
 
-                        user_id:
-                            current.id,
+    user_id:
+        current.id,
 
-                        profile_picture:
-                            current.profile_picture ||
-                            null,
+    profile_picture:
+        current.profile_picture ||
+        null,
 
-                        message,
+    name_effect:
+        typeof current.name_effect === "string"
+            ? current.name_effect
+            : "none",
 
-                        timestamp:
-                            new Date()
-                                .toISOString()
-                    };
+    message,
 
+    timestamp:
+        new Date()
+            .toISOString()
+};
                     try {
 
                         await saveChatMessage(
