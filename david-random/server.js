@@ -1067,65 +1067,59 @@ app.post(
 
 const SHOP_ITEMS = {
     // EMOTES
-    emote_hype: {
-        id: "emote_hype",
-        type: "emote",
-        name: "HYPE",
-        description: "Emote exclusive HYPE",
-        price: 25
-    },
+   emote_pepe_angry: {
+    id: "emote_pepe_angry",
+    type: "emote",
+    name: "PEPE ANGRY",
+    description: "Pepe énervé",
+    price: 25,
+    image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/pepe_angry.gif"
+},
 
-    emote_skull: {
-        id: "emote_skull",
-        type: "emote",
-        name: "SKULL",
-        description: "Emote exclusive SKULL",
-        price: 40
-    },
+emote_pepe_cheer: {
+    id: "emote_pepe_cheer",
+    type: "emote",
+    name: "PEPE CHEER",
+    description: "Pepe qui encourage",
+    price: 25,
+    image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/pepe_cheer.gif"
+},
 
-    emote_fire: {
-        id: "emote_fire",
-        type: "emote",
-        name: "FIRE",
-        description: "Emote exclusive FIRE",
-        price: 50
-    },
+emote_pepe_clap: {
+    id: "emote_pepe_clap",
+    type: "emote",
+    name: "PEPE CLAP",
+    description: "Pepe applaudit",
+    price: 30,
+    image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/pepe_clap.gif"
+},
 
-    // THEMES
-    theme_blue: {
-        id: "theme_blue",
-        type: "theme",
-        name: "BLUE",
-        description: "Thème bleu pour DAVID RANDOM",
-        price: 75
-    },
+emote_pepe_dance: {
+    id: "emote_pepe_dance",
+    type: "emote",
+    name: "PEPE DANCE",
+    description: "Pepe danse",
+    price: 40,
+    image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/pepe_dance.gif"
+},
 
-    theme_red: {
-        id: "theme_red",
-        type: "theme",
-        name: "RED",
-        description: "Thème rouge pour DAVID RANDOM",
-        price: 75
-    },
+emote_pepe_pug: {
+    id: "emote_pepe_pug",
+    type: "emote",
+    name: "PEPE PUG",
+    description: "Pepe avec un pug",
+    price: 35,
+    image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/pepe_pug.gif"
+},
 
-    theme_orange: {
-        id: "theme_orange",
-        type: "theme",
-        name: "ORANGE",
-        description: "Thème orange pour DAVID RANDOM",
-        price: 75
-    },
-
-    // NOM
-    name_rgb: {
-        id: "name_rgb",
-        type: "name_effect",
-        name: "RGB",
-        description: "Nom RGB animé dans le chat",
-        price: 150
-    }
-};
-
+emote_pepe_song: {
+    id: "emote_pepe_song",
+    type: "emote",
+    name: "PEPE SONG",
+    description: "Pepe chante",
+    price: 40,
+    image: "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/pepe_song.gif"
+},
 
 // ------------------------------------------
 // GET SHOP
