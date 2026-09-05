@@ -898,74 +898,57 @@ app.get(
    NEOCITIES API
 ========================================================= */
 
-app.get(
-    "/api/neocities",
-    async (req, res) => {
+app.get("/api/neocities", async (req, res) => {
 
-        try {
+    try {
 
-            const user =
-                process.env.NEOCITIES_USER;
+        const user = process.env.NEOCITIES_USER;
+        const pass = process.env.NEOCITIES_PASS;
 
-            const pass =
-                process.env.NEOCITIES_PASS;
+        if (!user || !pass) {
 
-            if (!user || !pass) {
+            return res.status(500).json({
+                result: "error",
+                error: "NEOCITIES_USER ou NEOCITIES_PASS manquant"
+            });
 
-                return res
-                    .status(500)
-                    .json({
-                        result: "error",
-                        error:
-                            "NEOCITIES_USER ou NEOCITIES_PASS manquant"
-                    });
-            }
-
-            const auth =
-                Buffer
-                    .from(`${user}:${pass}`)
-                    .toString("base64");
-
-            const response =
-                await fetch(
-                    "https://neocities.org/api/info",
-                    {
-                        headers: {
-                            "Authorization":
-                                `Basic ${auth}`
-                        }
-                    }
-                );
-
-            const data =
-                await response.json();
-
-            if (!response.ok) {
-
-                return res
-                    .status(response.status)
-                    .json(data);
-            }
-
-            res.json(data);
-
-        } catch (error) {
-
-            console.error(
-                "[NEOCITIES]",
-                error
-            );
-
-            res
-                .status(502)
-                .json({
-                    result: "error",
-                    error:
-                        "Neocities API unavailable"
-                });
         }
+
+        const auth = Buffer
+            .from(`${user}:${pass}`)
+            .toString("base64");
+
+        const response = await fetch(
+            "https://neocities.org/api/info",
+            {
+                headers: {
+                    Authorization: `Basic ${auth}`
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return res
+                .status(response.status)
+                .json(data);
+        }
+
+        res.json(data);
+
+    } catch (error) {
+
+        console.error("[NEOCITIES]", error);
+
+        res.status(502).json({
+            result: "error",
+            error: "Neocities API unavailable"
+        });
+
     }
-);
+
+});
 /* =========================================================
    REGISTER
 ========================================================= */
