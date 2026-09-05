@@ -1061,7 +1061,295 @@ app.post(
         }
     }
 );
+// ==========================================
+// DAVID SHOP
+// ==========================================
 
+const SHOP_ITEMS = {
+    // EMOTES
+    emote_hype: {
+        id: "emote_hype",
+        type: "emote",
+        name: "HYPE",
+        description: "Emote exclusive HYPE",
+        price: 25
+    },
+
+    emote_skull: {
+        id: "emote_skull",
+        type: "emote",
+        name: "SKULL",
+        description: "Emote exclusive SKULL",
+        price: 40
+    },
+
+    emote_fire: {
+        id: "emote_fire",
+        type: "emote",
+        name: "FIRE",
+        description: "Emote exclusive FIRE",
+        price: 50
+    },
+
+    // THEMES
+    theme_blue: {
+        id: "theme_blue",
+        type: "theme",
+        name: "BLUE",
+        description: "Thème bleu pour DAVID RANDOM",
+        price: 75
+    },
+
+    theme_red: {
+        id: "theme_red",
+        type: "theme",
+        name: "RED",
+        description: "Thème rouge pour DAVID RANDOM",
+        price: 75
+    },
+
+    theme_orange: {
+        id: "theme_orange",
+        type: "theme",
+        name: "ORANGE",
+        description: "Thème orange pour DAVID RANDOM",
+        price: 75
+    },
+
+    // NOM
+    name_rgb: {
+        id: "name_rgb",
+        type: "name_effect",
+        name: "RGB",
+        description: "Nom RGB animé dans le chat",
+        price: 150
+    }
+};
+
+
+// ------------------------------------------
+// GET SHOP
+// ------------------------------------------
+
+app.get(
+    "/api/shop",
+    requireAuth,
+    async (req, res) => {
+
+        try {
+
+            res.json({
+                success: true,
+                items: Object.values(SHOP_ITEMS),
+                inventory: {
+                    owned_emotes: Array.isArray(req.user.owned_emotes)
+                        ? req.user.owned_emotes
+                        : [],
+
+                    owned_themes: Array.isArray(req.user.owned_themes)
+                        ? req.user.owned_themes
+                        : [],
+
+                    name_effect:
+                        typeof req.user.name_effect === "string"
+                            ? req.user.name_effect
+                            : "none"
+                },
+
+                coins:
+                    Number.isFinite(req.user.coins)
+                        ? Math.max(0, Math.floor(req.user.coins))
+                        : 0
+            });
+
+        } catch(error) {
+
+            console.error("[SHOP] Erreur GET:", error);
+
+            res.status(500).json({
+                success: false,
+                error: "SHOP ERROR"
+            });
+
+        }
+
+    }
+);
+
+
+// ------------------------------------------
+// BUY SHOP ITEM
+// ------------------------------------------
+
+app.post(
+    "/api/shop/buy",
+    requireAuth,
+    async (req, res) => {
+
+        try {
+
+            const itemId =
+                typeof req.body?.item_id === "string"
+                    ? req.body.item_id
+                    : "";
+
+            const item = SHOP_ITEMS[itemId];
+
+            if(!item){
+
+                return res.status(404).json({
+                    success: false,
+                    error: "ITEM NOT FOUND"
+                });
+
+            }
+
+
+            // Vérification des coins
+
+            if(
+                typeof req.user.coins !== "number" ||
+                !Number.isFinite(req.user.coins) ||
+                req.user.coins < 0
+            ){
+
+                req.user.coins = 0;
+
+            }
+
+
+            // Vérification achat déjà effectué
+
+            if(item.type === "emote"){
+
+                if(!Array.isArray(req.user.owned_emotes)){
+                    req.user.owned_emotes = [];
+                }
+
+                if(req.user.owned_emotes.includes(item.id)){
+
+                    return res.status(400).json({
+                        success: false,
+                        error: "ALREADY OWNED"
+                    });
+
+                }
+
+            }
+
+
+            if(item.type === "theme"){
+
+                if(!Array.isArray(req.user.owned_themes)){
+                    req.user.owned_themes = [];
+                }
+
+                if(req.user.owned_themes.includes(item.id)){
+
+                    return res.status(400).json({
+                        success: false,
+                        error: "ALREADY OWNED"
+                    });
+
+                }
+
+            }
+
+
+            if(item.type === "name_effect"){
+
+                if(req.user.name_effect === item.id){
+
+                    return res.status(400).json({
+                        success: false,
+                        error: "ALREADY OWNED"
+                    });
+
+                }
+
+            }
+
+
+            // Vérification du solde
+
+            if(req.user.coins < item.price){
+
+                return res.status(400).json({
+                    success: false,
+                    error: "NOT ENOUGH COINS",
+                    required: item.price,
+                    coins: req.user.coins
+                });
+
+            }
+
+
+            // Retrait des coins
+
+            req.user.coins -= item.price;
+
+
+            // Attribution de l'objet
+
+            if(item.type === "emote"){
+
+                req.user.owned_emotes.push(item.id);
+
+            }
+
+
+            if(item.type === "theme"){
+
+                req.user.owned_themes.push(item.id);
+
+            }
+
+
+            if(item.type === "name_effect"){
+
+                req.user.name_effect = item.id;
+
+            }
+
+
+            // Sauvegarde GitHub
+
+            await saveUsers();
+
+
+            console.log(
+                `[SHOP] ${req.user.username} a acheté ${item.id} (-${item.price} ◈)`
+            );
+
+
+            res.json({
+                success: true,
+
+                item: item,
+
+                coins: req.user.coins,
+
+                inventory: {
+                    owned_emotes: req.user.owned_emotes,
+                    owned_themes: req.user.owned_themes,
+                    name_effect: req.user.name_effect
+                }
+            });
+
+
+        } catch(error) {
+
+            console.error("[SHOP] Erreur achat:", error);
+
+            res.status(500).json({
+                success: false,
+                error: "SHOP PURCHASE ERROR"
+            });
+
+        }
+
+    }
+);
 /* =========================================================
    NEOCITIES API
 ========================================================= */
