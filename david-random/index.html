@@ -1864,6 +1864,23 @@ Les DAVID COINS sont la monnaie virtuelle
 de DAVID RANDOM.
 </p>
 
+<br>
+
+<button
+    class="retro-btn"
+    id="watchAdButton"
+    onclick="watchDavidAd()"
+>
+    [ ▶ REGARDER UNE PUB ]
+</button>
+
+<p
+    id="adStatus"
+    class="muted"
+>
+    Récompense : +20 ◈
+</p>
+
 </div>
 
 </div>
@@ -2411,6 +2428,339 @@ async function restoreSession(){
 
         return false;
     }
+
+}
+
+/* =========================================================
+   DAVID COINS // VIDEO AD
+========================================================= */
+
+const DAVID_AD_VIDEO =
+    "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@main/david-random/gif%203/Pub%20Beans%20-%20Un%20monstre%20attaque%20des%20astronautes%20sur%20la%20lune.mp4";
+
+let davidAdPlaying = false;
+
+
+async function watchDavidAd(){
+
+    if(
+        davidAdPlaying
+    ){
+        return;
+    }
+
+    if(
+        !currentUser ||
+        !token
+    ){
+
+        alert(
+            "Tu dois être connecté pour gagner des DAVID COINS."
+        );
+
+        return;
+    }
+
+    davidAdPlaying = true;
+
+    const button =
+        document.getElementById(
+            "watchAdButton"
+        );
+
+    const status =
+        document.getElementById(
+            "adStatus"
+        );
+
+    if(button){
+        button.disabled = true;
+        button.textContent =
+            "[ PUBLICITÉ EN COURS... ]";
+    }
+
+    if(status){
+        status.textContent =
+            "Publicité en cours...";
+    }
+
+
+    const video =
+        document.createElement(
+            "video"
+        );
+
+    video.src =
+        DAVID_AD_VIDEO;
+
+    video.autoplay =
+        true;
+
+    video.playsInline =
+        true;
+
+    video.controls =
+        false;
+
+    video.preload =
+        "auto";
+
+    video.style.position =
+        "fixed";
+
+    video.style.inset =
+        "0";
+
+    video.style.width =
+        "100vw";
+
+    video.style.height =
+        "100vh";
+
+    video.style.objectFit =
+        "contain";
+
+    video.style.background =
+        "#000";
+
+    video.style.zIndex =
+        "100000";
+
+    video.style.cursor =
+        "default";
+
+    document.body.appendChild(
+        video
+    );
+
+
+    let rewarded =
+        false;
+
+
+    video.addEventListener(
+        "ended",
+        async () => {
+
+            if(rewarded){
+                return;
+            }
+
+            rewarded = true;
+
+            console.log(
+                "[COINS AD] Vidéo terminée"
+            );
+
+
+            try{
+
+                const data =
+                    await apiRequest(
+                        "/api/coins/reward",
+                        {
+                            method:
+                                "POST"
+                        }
+                    );
+
+
+                if(
+                    !data ||
+                    !data.success
+                ){
+
+                    throw new Error(
+                        "REWARD FAILED"
+                    );
+
+                }
+
+
+                currentUser.coins =
+                    data.coins;
+
+
+                localStorage.setItem(
+                    USER_KEY,
+                    JSON.stringify(
+                        currentUser
+                    )
+                );
+
+
+                updateCoinsUI();
+
+
+                if(status){
+
+                    status.textContent =
+                        `Publicité terminée ! +${data.reward} ◈`;
+
+                }
+
+
+                console.log(
+                    "[COINS AD]",
+                    `+${data.reward} ◈`,
+                    `Balance : ${data.coins} ◈`
+                );
+
+
+            }catch(error){
+
+                console.error(
+                    "[COINS AD]",
+                    error
+                );
+
+                if(status){
+
+                    status.textContent =
+                        "Erreur lors de la récompense.";
+
+                }
+
+            }
+
+
+            await closeDavidAd(
+                video
+            );
+
+        }
+    );
+
+
+    video.addEventListener(
+        "error",
+        async () => {
+
+            console.error(
+                "[COINS AD] Erreur vidéo"
+            );
+
+            if(status){
+
+                status.textContent =
+                    "Impossible de charger la publicité.";
+
+            }
+
+            await closeDavidAd(
+                video
+            );
+
+        }
+    );
+
+
+    try{
+
+        /*
+         * Le clic sur le bouton fournit
+         * l'activation utilisateur nécessaire
+         * pour demander le plein écran.
+         */
+
+        if(
+            video.requestFullscreen
+        ){
+
+            await video.requestFullscreen();
+
+        }
+
+    }catch(error){
+
+        console.warn(
+            "[COINS AD] Fullscreen refusé :",
+            error
+        );
+
+    }
+
+
+    try{
+
+        await video.play();
+
+    }catch(error){
+
+        console.error(
+            "[COINS AD] Lecture impossible :",
+            error
+        );
+
+        if(status){
+
+            status.textContent =
+                "La lecture automatique a été bloquée.";
+
+        }
+
+        await closeDavidAd(
+            video
+        );
+
+    }
+
+}
+
+
+async function closeDavidAd(
+    video
+){
+
+    try{
+
+        if(
+            document.fullscreenElement
+        ){
+
+            await document.exitFullscreen();
+
+        }
+
+    }catch(error){
+
+        console.warn(
+            "[COINS AD] Sortie fullscreen :",
+            error
+        );
+
+    }
+
+
+    video.pause();
+
+    video.removeAttribute(
+        "src"
+    );
+
+    video.load();
+
+    video.remove();
+
+
+    const button =
+        document.getElementById(
+            "watchAdButton"
+        );
+
+    if(button){
+
+        button.disabled =
+            false;
+
+        button.textContent =
+            "[ ▶ REGARDER UNE PUB ]";
+
+    }
+
+
+    davidAdPlaying =
+        false;
 
 }
 
@@ -3086,16 +3436,18 @@ async function restoreSession(){
 
         currentUser = data.user;
 
-        localStorage.setItem(
-            USER_KEY,
-            JSON.stringify(currentUser)
-        );
+localStorage.setItem(
+    USER_KEY,
+    JSON.stringify(currentUser)
+);
 
-        updateAccountUI();
+updateAccountUI();
+updateCoinsUI();
 
-        console.log(
-            "[AUTH] Session valide"
-        );
+console.log(
+    "[AUTH] Session valide",
+    currentUser
+);
 
         return true;
 
@@ -7041,11 +7393,12 @@ async function init(){
         token = null;
         currentUser = null;
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+localStorage.removeItem(TOKEN_KEY);
+localStorage.removeItem(USER_KEY);
 
-        // Remettre l'interface en mode déconnecté
-        updateAccountUI();
+updateAccountUI();
+updateCoinsUI
+updateAccountUI();
 
     }
 
