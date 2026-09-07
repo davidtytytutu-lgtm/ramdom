@@ -3,721 +3,318 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
-<title>THE NAMELESS DEITY // THE GOD</title>
+<title>The Nameless Deity</title>
 
 <style>
 *{
     box-sizing:border-box;
-    margin:0;
-    padding:0;
 }
 
 html,body{
     width:100%;
     height:100%;
+    margin:0;
     overflow:hidden;
     background:#000;
 }
 
 body{
-    position:relative;
-    background:#000;
-    cursor:crosshair;
-    font-family:Georgia,"Times New Roman",serif;
+    font-family:Arial,Helvetica,sans-serif;
 }
 
-/* =========================================================
-   ESPACE
-========================================================= */
+#camera{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    transform:translate3d(0,0,0);
+    transform-origin:center;
+    will-change:transform;
+}
 
 #space{
     position:fixed;
     inset:0;
-
+    overflow:hidden;
     background:
         radial-gradient(
             ellipse at center,
-            #090914 0%,
-            #040408 42%,
+            #18172f 0%,
+            #0b0a18 30%,
+            #05050a 65%,
             #000 100%
         );
 }
 
-/* =========================================================
-   FX GLOBAL
-========================================================= */
-
-#fx{
-    position:fixed;
-    inset:0;
-
-    width:100%;
-    height:100%;
-
-    z-index:10;
-    pointer-events:none;
-}
-
-/* =========================================================
-   INTRO BREACH
-========================================================= */
-
-#breachLayer{
-    position:fixed;
-    left:50%;
-    top:50%;
-
-    width:min(34vw,420px);
-    height:min(18vw,220px);
-
-    transform:
-        translate(-50%,-50%)
-        scale(.08);
-
-    z-index:18;
-
-    pointer-events:none;
-
-    opacity:0;
-
-    filter:
-        drop-shadow(0 0 7px rgba(100,110,255,.9))
-        drop-shadow(0 0 25px rgba(90,80,255,.7))
-        drop-shadow(0 0 55px rgba(80,70,255,.35));
-
-    will-change:
-        transform,
-        opacity;
-}
-
-/* Aura */
-
-#breachAura{
+#space::before{
+    content:"";
     position:absolute;
-    inset:-25%;
-
-    border-radius:50%;
-
+    inset:-15%;
     background:
         radial-gradient(
-            ellipse,
-            rgba(120,120,255,.20) 0%,
-            rgba(80,80,255,.12) 25%,
-            rgba(70,60,220,.07) 45%,
-            transparent 72%
+            ellipse at center,
+            rgba(80,70,255,.11),
+            transparent 50%
         );
-
-    filter:blur(18px);
-
-    opacity:0;
-
-    transform:scale(.5);
+    animation:spacePulse 6s ease-in-out infinite;
 }
 
-/* Halo */
+@keyframes spacePulse{
+    0%,100%{
+        opacity:.45;
+        transform:scale(1);
+    }
 
-#breachHalo{
-    position:absolute;
-    inset:-12%;
-
-    border-radius:50%;
-
-    border:
-        1px solid rgba(150,150,255,.28);
-
-    box-shadow:
-        0 0 10px rgba(120,120,255,.35),
-        0 0 25px rgba(100,100,255,.22),
-        inset 0 0 25px rgba(100,100,255,.15);
-
-    opacity:0;
-
-    transform:
-        scale(.65);
-
-    filter:blur(.4px);
+    50%{
+        opacity:.9;
+        transform:scale(1.05);
+    }
 }
 
-/* =========================================================
-   VRAIE DÉCHIRURE
-========================================================= */
-
-#breach{
-    position:absolute;
-
-    left:50%;
-    top:50%;
-
+#fx,
+#particles{
+    position:fixed;
+    inset:0;
     width:100%;
     height:100%;
-
-    transform:
-        translate(-50%,-50%)
-        scaleX(.08);
-
-    opacity:0;
-
-    overflow:visible;
+    pointer-events:none;
 }
 
-/*
-    La forme noire au centre donne
-    l'impression que l'écran est réellement
-    déchiré.
-*/
+#fx{
+    z-index:10;
+}
 
-#breachCore{
-    position:absolute;
+#particles{
+    z-index:27;
+}
 
+#riftGlow{
+    position:fixed;
     left:50%;
     top:50%;
-
-    width:92%;
-    height:58%;
-
-    transform:
-        translate(-50%,-50%)
-        scaleY(.32);
-
-    border-radius:
-        50% 50% 48% 52% /
-        62% 58% 42% 38%;
-
-    background:#000;
-
-    box-shadow:
-        0 0 0 2px rgba(30,30,80,.35),
-        0 0 20px rgba(80,80,255,.25),
-        inset 0 0 30px rgba(0,0,0,.9);
-
-    opacity:.98;
-}
-
-/* =========================================================
-   BORDS DE LA BREACH
-========================================================= */
-
-.breachEdge{
-    position:absolute;
-
-    left:50%;
-    top:50%;
-
-    width:96%;
-    height:62%;
-
-    transform:
-        translate(-50%,-50%);
-
-    border-radius:
-        50% 48% 52% 46% /
-        62% 55% 45% 38%;
-
-    pointer-events:none;
-}
-
-.breachEdge::before,
-.breachEdge::after{
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    border-radius:inherit;
-
-    border:2px solid rgba(130,135,255,.85);
-
-    box-shadow:
-        0 0 6px rgba(110,120,255,.95),
-        0 0 18px rgba(90,90,255,.75),
-        0 0 38px rgba(80,70,255,.42);
-
-    clip-path:
-        polygon(
-            0% 48%,
-            8% 40%,
-            18% 35%,
-            29% 30%,
-            42% 27%,
-            55% 28%,
-            69% 31%,
-            82% 37%,
-            94% 44%,
-            100% 50%,
-            93% 56%,
-            82% 64%,
-            69% 70%,
-            55% 73%,
-            41% 72%,
-            27% 69%,
-            16% 63%,
-            7% 57%
-        );
-}
-
-.breachEdge::after{
-    transform:
-        scale(.94);
-
-    border-color:
-        rgba(210,215,255,.65);
-
-    filter:
-        blur(1.5px);
-}
-
-/* =========================================================
-   FISSURES
-========================================================= */
-
-.fissures{
-    position:absolute;
-
-    inset:0;
-
-    pointer-events:none;
-}
-
-.fissure{
-    position:absolute;
-
-    height:2px;
-
-    transform-origin:left center;
-
-    background:
-        linear-gradient(
-            90deg,
-            rgba(100,100,255,0),
-            rgba(145,150,255,.95),
-            rgba(190,195,255,.65),
-            rgba(90,90,255,0)
-        );
-
-    box-shadow:
-        0 0 5px rgba(120,130,255,.85),
-        0 0 14px rgba(90,90,255,.55);
-
-    opacity:0;
-}
-
-/* Fissures internes */
-
-.f1{
-    width:35%;
-    left:2%;
-    top:43%;
-    transform:rotate(-8deg) scaleX(.1);
-}
-
-.f2{
-    width:28%;
-    left:6%;
-    top:52%;
-    transform:rotate(13deg) scaleX(.1);
-}
-
-.f3{
-    width:31%;
-    left:66%;
-    top:40%;
-    transform:rotate(12deg) scaleX(.1);
-}
-
-.f4{
-    width:25%;
-    left:69%;
-    top:57%;
-    transform:rotate(-14deg) scaleX(.1);
-}
-
-.f5{
-    width:18%;
-    left:40%;
-    top:24%;
-    transform:rotate(4deg) scaleX(.1);
-}
-
-.f6{
-    width:21%;
-    left:40%;
-    top:73%;
-    transform:rotate(-4deg) scaleX(.1);
-}
-
-/* =========================================================
-   PARTICULES HALO
-========================================================= */
-
-#breachParticles{
-    position:absolute;
-
-    inset:-45%;
-
-    pointer-events:none;
-}
-
-.bParticle{
-    position:absolute;
-
-    width:2px;
-    height:2px;
-
+    width:18px;
+    height:18px;
+    transform:translate(-50%,-50%);
     border-radius:50%;
-
-    background:#bfc4ff;
-
-    box-shadow:
-        0 0 4px #9fa8ff,
-        0 0 10px rgba(100,110,255,.8);
-
+    background:#fff;
     opacity:0;
-
-    will-change:
-        transform,
-        opacity;
+    z-index:12;
+    pointer-events:none;
 }
-
-/* =========================================================
-   GOD
-========================================================= */
 
 #godLayer{
     position:fixed;
-
     left:50%;
     top:50%;
-
     width:min(46vw,540px);
     height:min(46vw,540px);
-
-    transform:
-        translate(-50%,-50%);
-
-    z-index:20;
-
-    pointer-events:none;
-
-    will-change:transform;
-}
-
-#fragmentCanvas{
-    position:absolute;
-    inset:0;
-
-    width:100%;
-    height:100%;
-
-    opacity:0;
-
+    transform:translate(-50%,-50%);
+    z-index:30;
     pointer-events:none;
 }
 
 #godGlow{
     position:absolute;
-    inset:-15%;
-
+    left:50%;
+    top:50%;
+    width:125%;
+    height:125%;
+    transform:translate(-50%,-50%) scale(.4);
     border-radius:50%;
-
     background:
         radial-gradient(
             circle,
-            rgba(255,195,55,.28) 0%,
-            rgba(255,170,30,.14) 25%,
-            rgba(255,130,10,.06) 48%,
-            transparent 74%
+            rgba(255,235,120,.50) 0%,
+            rgba(255,200,40,.25) 20%,
+            rgba(255,170,20,.10) 38%,
+            transparent 70%
         );
-
-    filter:blur(25px);
-
     opacity:0;
+    filter:blur(14px);
+    mix-blend-mode:screen;
+}
 
-    transform:scale(.7);
-
-    pointer-events:none;
+#godAura{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:145%;
+    height:145%;
+    transform:translate(-50%,-50%) scale(.3);
+    border-radius:50%;
+    background:
+        radial-gradient(
+            circle,
+            rgba(255,215,70,.10),
+            rgba(255,180,20,.04) 30%,
+            transparent 65%
+        );
+    opacity:0;
+    filter:blur(20px);
+    mix-blend-mode:screen;
 }
 
 #god{
     position:absolute;
-    inset:0;
-
+    left:50%;
+    top:50%;
     width:100%;
     height:100%;
-
     object-fit:contain;
-
     opacity:0;
-
-    transform:
-        translate3d(0,0,0)
-        scale(.65);
-
+    transform:translate(-50%,-50%) scale(.45);
     filter:
-        brightness(.86)
-        contrast(1.22)
-        saturate(1.08)
-        drop-shadow(0 0 12px rgba(130,140,255,.60))
-        drop-shadow(0 0 35px rgba(90,90,255,.34));
-
-    will-change:
-        transform,
-        opacity;
+        brightness(.9)
+        contrast(1.25)
+        saturate(1.1)
+        drop-shadow(0 0 12px rgba(255,220,90,.75))
+        drop-shadow(0 0 32px rgba(255,190,40,.4));
+    will-change:transform,opacity;
 }
-
-/* =========================================================
-   TITRE
-========================================================= */
 
 #title{
     position:fixed;
-
     left:50%;
-    bottom:8%;
-
-    transform:
-        translateX(-50%)
-        translateY(25px);
-
-    z-index:50;
-
-    color:#eeeeff;
-
+    bottom:7%;
+    transform:translateX(-50%);
+    z-index:40;
+    color:#fff;
+    font-size:clamp(18px,2.5vw,32px);
+    font-weight:bold;
+    letter-spacing:clamp(4px,1vw,12px);
     text-align:center;
-
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
-
-    font-size:
-        clamp(20px,3vw,43px);
-
-    letter-spacing:
-        clamp(3px,.75vw,9px);
-
-    white-space:nowrap;
-
     opacity:0;
-
     text-shadow:
-        0 0 5px rgba(255,255,255,.95),
-        0 0 15px rgba(130,130,255,.95),
-        0 0 35px rgba(90,90,255,.60),
-        0 0 70px rgba(90,90,255,.25);
-
+        0 0 8px rgba(255,255,255,.8),
+        0 0 22px rgba(255,210,70,.7),
+        0 0 45px rgba(255,160,20,.4);
+    white-space:nowrap;
     pointer-events:none;
-
-    transition:
-        opacity 1s ease,
-        transform 1s ease;
+    transition:opacity 1.5s ease;
 }
-
-#title.show{
-    opacity:1;
-
-    transform:
-        translateX(-50%)
-        translateY(0);
-}
-
-#title.hide{
-    opacity:0;
-
-    transform:
-        translateX(-50%)
-        translateY(-18px);
-}
-
-/* =========================================================
-   VIGNETTE
-========================================================= */
 
 #vignette{
     position:fixed;
     inset:0;
-
-    z-index:40;
-
+    z-index:50;
     pointer-events:none;
-
     background:
         radial-gradient(
             ellipse at center,
-            transparent 38%,
-            rgba(0,0,0,.30) 67%,
-            rgba(0,0,0,.84) 100%
+            transparent 35%,
+            rgba(0,0,0,.22) 65%,
+            rgba(0,0,0,.82) 100%
         );
 }
 
-/* =========================================================
-   GRAIN
-========================================================= */
-
 #grain{
     position:fixed;
-
     inset:-50%;
-
-    z-index:45;
-
+    z-index:60;
     pointer-events:none;
-
     opacity:.045;
-
-    background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
-
-    animation:
-        grainMove .2s steps(2) infinite;
+    background-image:url(
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"
+    );
+    animation:grainMove .2s steps(2) infinite;
 }
 
 @keyframes grainMove{
-    0%{transform:translate(0,0)}
-    25%{transform:translate(-2%,3%)}
-    50%{transform:translate(3%,-2%)}
-    75%{transform:translate(-3%,-3%)}
-    100%{transform:translate(2%,2%)}
-}
+    0%{
+        transform:translate(0,0);
+    }
 
-/* =========================================================
-   FLASH
-========================================================= */
+    50%{
+        transform:translate(-1%,1%);
+    }
+
+    100%{
+        transform:translate(1%,-1%);
+    }
+}
 
 #flash{
     position:fixed;
     inset:0;
-
     z-index:100;
-
     background:#fff;
-
     opacity:0;
-
     pointer-events:none;
 }
-
-/* =========================================================
-   START
-========================================================= */
 
 #startMessage{
     position:fixed;
-
     left:50%;
     top:50%;
-
-    transform:
-        translate(-50%,-50%);
-
-    z-index:60;
-
-    color:rgba(230,235,255,.72);
-
-    font-size:
-        clamp(12px,1.2vw,17px);
-
-    letter-spacing:4px;
-
-    text-transform:uppercase;
-
+    transform:translate(-50%,-50%);
+    z-index:90;
+    color:#fff;
     text-align:center;
-
-    opacity:.75;
-
-    pointer-events:none;
-
-    transition:
-        opacity .8s ease,
-        transform .8s ease;
+    font-size:clamp(14px,1.5vw,20px);
+    letter-spacing:4px;
+    text-transform:uppercase;
+    cursor:pointer;
+    user-select:none;
+    padding:20px 30px;
+    text-shadow:
+        0 0 10px #fff,
+        0 0 25px #6d65ff;
+    animation:startPulse 2s ease-in-out infinite;
 }
 
-#startMessage.hidden{
-    opacity:0;
+@keyframes startPulse{
+    0%,100%{
+        opacity:.5;
+        transform:translate(-50%,-50%) scale(1);
+    }
 
-    transform:
-        translate(-50%,-50%)
-        scale(.92);
+    50%{
+        opacity:1;
+        transform:translate(-50%,-50%) scale(1.04);
+    }
 }
 </style>
 </head>
 
 <body>
 
-<div id="space"></div>
+<div id="camera">
 
-<canvas id="fx"></canvas>
+    <div id="space"></div>
 
-<!-- =====================================================
-     BREACH
-===================================================== -->
+    <canvas id="fx"></canvas>
+    <canvas id="particles"></canvas>
 
-<div id="breachLayer">
+    <div id="riftGlow"></div>
 
-    <div id="breachAura"></div>
+    <div id="godLayer">
 
-    <div id="breachHalo"></div>
+        <div id="godAura"></div>
+        <div id="godGlow"></div>
 
-    <div id="breach">
-
-        <div id="breachCore"></div>
-
-        <div class="breachEdge"></div>
-
-        <div class="fissures">
-
-            <div class="fissure f1"></div>
-            <div class="fissure f2"></div>
-            <div class="fissure f3"></div>
-            <div class="fissure f4"></div>
-            <div class="fissure f5"></div>
-            <div class="fissure f6"></div>
-
-        </div>
+        <img
+            id="god"
+            src="https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@refs/heads/main/david-random/the%20god/Nameless_Deity.gif"
+            alt="Nameless Deity"
+            draggable="false"
+        >
 
     </div>
 
-    <div id="breachParticles"></div>
+    <div id="title">
+        THE NAMELESS DEITY
+    </div>
+
+    <div id="vignette"></div>
+    <div id="grain"></div>
 
 </div>
-
-<!-- =====================================================
-     GOD
-===================================================== -->
-
-<div id="godLayer">
-
-    <canvas id="fragmentCanvas"></canvas>
-
-    <div id="godGlow"></div>
-
-    <img
-        id="god"
-        crossorigin="anonymous"
-        src="https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@refs/heads/main/david-random/the%20god/Nameless_Deity.gif"
-        alt="THE NAMELESS DEITY"
-    >
-
-</div>
-
-<div id="title">
-    THE NAMELESS DEITY // THE GOD
-</div>
-
-<div id="startMessage">
-    CLICK TO AWAKEN
-</div>
-
-<div id="vignette"></div>
-
-<div id="grain"></div>
 
 <div id="flash"></div>
 
-<!-- =====================================================
-     AUDIO
-===================================================== -->
+<div id="startMessage">
+    CLICK TO BEGIN
+</div>
 
 <audio
     id="introSound"
@@ -739,11 +336,35 @@ body{
 </audio>
 
 <script>
-"use strict";
 
 /* =========================================================
    ELEMENTS
 ========================================================= */
+
+const camera =
+    document.getElementById("camera");
+
+const canvas =
+    document.getElementById("fx");
+
+const ctx =
+    canvas.getContext("2d",{
+        alpha:true
+    });
+
+const particleCanvas =
+    document.getElementById("particles");
+
+const particleCtx =
+    particleCanvas.getContext("2d",{
+        alpha:true
+    });
+
+const space =
+    document.getElementById("space");
+
+const riftGlow =
+    document.getElementById("riftGlow");
 
 const godLayer =
     document.getElementById("godLayer");
@@ -754,35 +375,17 @@ const god =
 const godGlow =
     document.getElementById("godGlow");
 
-const fragmentCanvas =
-    document.getElementById("fragmentCanvas");
+const godAura =
+    document.getElementById("godAura");
 
 const title =
     document.getElementById("title");
 
-const startMessage =
-    document.getElementById("startMessage");
-
 const flash =
     document.getElementById("flash");
 
-const breachLayer =
-    document.getElementById("breachLayer");
-
-const breach =
-    document.getElementById("breach");
-
-const breachAura =
-    document.getElementById("breachAura");
-
-const breachHalo =
-    document.getElementById("breachHalo");
-
-const breachParticles =
-    document.getElementById("breachParticles");
-
-const fissures =
-    [...document.querySelectorAll(".fissure")];
+const startMessage =
+    document.getElementById("startMessage");
 
 const introSound =
     document.getElementById("introSound");
@@ -795,98 +398,101 @@ const music =
 
 
 /* =========================================================
-   CONSTANTES
+   TIMING
 ========================================================= */
 
-const INTRO_DURATION = 11;
-
-const SPAWN_DURATION = 3;
+const INTRO_DURATION=11;
+const SPAWN_DURATION=3;
 
 
 /* =========================================================
-   VARIABLES GOD
+   STATE
 ========================================================= */
 
-let godX = 0;
-let godY = 0;
+let started=false;
+let deityActive=false;
+let spawnFinished=false;
+let spawnShakeActive=false;
 
-let velocityX = 0;
-let velocityY = 0;
+let introStartTime=0;
+let spawnStartTime=0;
+let animationTime=0;
 
-let targetX = 0;
-let targetY = 0;
+let godX=0;
+let godY=0;
 
-let nextTargetTime = 0;
+let velocityX=0;
+let velocityY=0;
 
-let started = false;
-let deityActive = false;
-let spawnFinished = false;
-
-let introStartTime = 0;
-
-let animationTime = 0;
-
-let W = innerWidth;
-let H = innerHeight;
+let targetX=0;
+let targetY=0;
+let nextTargetTime=0;
 
 
 /* =========================================================
-   UTILITAIRES
+   CANVAS
 ========================================================= */
 
-function clamp(v,min,max){
-    return Math.max(
-        min,
-        Math.min(max,v)
+let W=window.innerWidth;
+let H=window.innerHeight;
+let DPR=1;
+
+function getCanvasDPR(){
+
+    return Math.min(
+        window.devicePixelRatio || 1,
+        1.25
     );
 }
 
-function rand(min,max){
-    return Math.random() *
-        (max-min) +
-        min;
-}
-
-function easeOutCubic(t){
-    return 1 -
-        Math.pow(
-            1-t,
-            3
-        );
-}
-
-function easeInOutCubic(t){
-
-    return t < .5
-
-        ? 4*t*t*t
-
-        : 1 -
-          Math.pow(
-              -2*t+2,
-              3
-          ) / 2;
-}
-
-function easeOutQuint(t){
-
-    return 1 -
-        Math.pow(
-            1-t,
-            5
-        );
-}
-
-
-/* =========================================================
-   RESIZE
-========================================================= */
-
 function resize(){
 
-    W = innerWidth;
-    H = innerHeight;
+    W=window.innerWidth;
+    H=window.innerHeight;
 
+    DPR=getCanvasDPR();
+
+    canvas.width=
+        Math.floor(W*DPR);
+
+    canvas.height=
+        Math.floor(H*DPR);
+
+    canvas.style.width=W+"px";
+    canvas.style.height=H+"px";
+
+    ctx.setTransform(
+        DPR,
+        0,
+        0,
+        DPR,
+        0,
+        0
+    );
+
+    particleCanvas.width=
+        Math.floor(W*DPR);
+
+    particleCanvas.height=
+        Math.floor(H*DPR);
+
+    particleCanvas.style.width=
+        W+"px";
+
+    particleCanvas.style.height=
+        H+"px";
+
+    particleCtx.setTransform(
+        DPR,
+        0,
+        0,
+        DPR,
+        0,
+        0
+    );
+
+    createRealityTear();
+    createGoldenParticles();
 }
 
 window.addEventListener(
@@ -896,635 +502,2037 @@ window.addEventListener(
 
 
 /* =========================================================
-   CENTRE ABSOLU
+   MATH
 ========================================================= */
 
-function forceGodCenter(){
+function clamp(v,min,max){
 
-    godX = 0;
-    godY = 0;
-
-    velocityX = 0;
-    velocityY = 0;
-
-    targetX = 0;
-    targetY = 0;
+    return Math.max(
+        min,
+        Math.min(max,v)
+    );
 }
 
+function lerp(a,b,t){
 
-/* =========================================================
-   MOUVEMENT
-========================================================= */
-
-function chooseTarget(){
-
-    const rangeX =
-        Math.min(
-            W*.26,
-            300
-        );
-
-    const rangeY =
-        Math.min(
-            H*.20,
-            220
-        );
-
-    targetX =
-        rand(
-            -rangeX,
-            rangeX
-        );
-
-    targetY =
-        rand(
-            -rangeY,
-            rangeY
-        );
-
-    nextTargetTime =
-        animationTime +
-        rand(
-            2.8,
-            5.8
-        );
+    return a+(b-a)*t;
 }
 
+function easeOut(t){
 
-function updateFreeMovement(dt){
+    t=clamp(t,0,1);
 
-    if(!spawnFinished){
-
-        forceGodCenter();
-
-        return;
-    }
-
-    if(!deityActive)
-        return;
-
-    if(animationTime >
-       nextTargetTime){
-
-        chooseTarget();
-    }
-
-    const dx =
-        targetX-godX;
-
-    const dy =
-        targetY-godY;
-
-    velocityX +=
-        dx*.0008*dt*60;
-
-    velocityY +=
-        dy*.0008*dt*60;
-
-    velocityX *=
+    return 1-
         Math.pow(
-            .925,
-            dt*60
+            1-t,
+            3
         );
+}
 
-    velocityY *=
-        Math.pow(
-            .925,
-            dt*60
-        );
+function easeInOut(t){
 
-    const speed =
-        Math.sqrt(
-            velocityX*velocityX +
-            velocityY*velocityY
-        );
+    t=clamp(t,0,1);
 
-    const maxSpeed = 2.2;
+    return t<.5
+        ? 2*t*t
+        : 1-
+          Math.pow(
+              -2*t+2,
+              2
+          )/2;
+}
 
-    if(speed > maxSpeed){
+function rand(min,max){
 
-        velocityX =
-            velocityX/speed*
-            maxSpeed;
+    return Math.random()*
+        (max-min)+min;
+}
 
-        velocityY =
-            velocityY/speed*
-            maxSpeed;
-    }
+function seededRandom(seed){
 
-    godX +=
-        velocityX*dt*60;
+    const x=
+        Math.sin(
+            seed*999.123
+        )*
+        43758.5453;
 
-    godY +=
-        velocityY*dt*60;
+    return x-
+        Math.floor(x);
 }
 
 
 /* =========================================================
-   VISUEL GOD
+   REALITY TEAR
 ========================================================= */
 
-function updateGodVisual(){
+let tearLeft=[];
+let tearRight=[];
+let tearCracks=[];
+let tearFragments=[];
+let tearEnergy=[];
 
-    if(!spawnFinished){
-
-        forceGodCenter();
-
-        return;
-    }
-
-    if(!deityActive)
-        return;
-
-    const bob =
-        Math.sin(
-            animationTime*1.15
-        )*7;
-
-    const sway =
-        Math.sin(
-            animationTime*.65
-        )*3;
-
-    const rotation =
-        Math.sin(
-            animationTime*.55
-        )*.010;
-
-    const scale =
-        1+
-        Math.sin(
-            animationTime*1.35
-        )*.014;
-
-    god.style.transform = `
-        translate3d(
-            ${godX+sway}px,
-            ${godY+bob}px,
-            0
-        )
-        scale(${scale})
-        rotate(${rotation}rad)
-    `;
-}
+let tearCreatedW=0;
+let tearCreatedH=0;
 
 
-/* =========================================================
-   PARTICULES DE LA BREACH
-========================================================= */
+/*
+    La breach est volontairement plus petite.
 
-const particleData = [];
+    Ancienne largeur :
+    ~44% de l'écran de chaque côté.
 
-function createBreachParticles(){
+    Nouvelle largeur :
+    ~26%.
 
-    breachParticles.innerHTML = "";
+    Cela permet à Nameless Deity de rester
+    visuellement plus grand que la breach.
+*/
 
-    particleData.length = 0;
+function createRealityTear(){
+
+    tearLeft=[];
+    tearRight=[];
+    tearCracks=[];
+    tearFragments=[];
+    tearEnergy=[];
+
+    tearCreatedW=W;
+    tearCreatedH=H;
+
+    const centerX=W*.5;
+
+    const points=29;
 
     /*
-        Quantité volontairement limitée
-        pour éviter le lag.
+        Largeur maximale réduite.
     */
 
-    for(
-        let i=0;
-        i<65;
-        i++
-    ){
+    const baseWidth=
+        Math.min(
+            W*.265,
+            330
+        );
 
-        const p =
-            document.createElement("div");
+    for(let i=0;i<points;i++){
 
-        p.className =
-            "bParticle";
+        const p=
+            i/(points-1);
 
-        breachParticles.appendChild(p);
+        const y=
+            H*.08+
+            p*H*.84;
 
-        particleData.push({
-            el:p,
-            angle:rand(0,Math.PI*2),
-            radius:rand(.35,.95),
-            speed:rand(.15,.55),
-            size:rand(.7,2.3),
-            phase:rand(0,Math.PI*2)
+        /*
+            Déformation irrégulière.
+        */
+
+        const waveL=
+            Math.sin(
+                p*11.3+1.8
+            )*13+
+            Math.sin(
+                p*27.4
+            )*5;
+
+        const waveR=
+            Math.sin(
+                p*9.7+2.1
+            )*15+
+            Math.sin(
+                p*22.8+1.7
+            )*6;
+
+        /*
+            Centre plus ouvert.
+        */
+
+        const envelope=
+            Math.pow(
+                Math.sin(
+                    Math.PI*p
+                ),
+                .58
+            );
+
+        const leftX=
+            centerX-
+            envelope*
+            baseWidth+
+            waveL;
+
+        const rightX=
+            centerX+
+            envelope*
+            baseWidth+
+            waveR;
+
+        tearLeft.push({
+            x:leftX,
+            y:y
+        });
+
+        tearRight.push({
+            x:rightX,
+            y:y
+        });
+    }
+
+
+    /* =====================================================
+       SECONDARY CRACKS
+    ===================================================== */
+
+    for(let i=0;i<38;i++){
+
+        const side=
+            i%2===0
+            ? -1
+            : 1;
+
+        const p=
+            .06+
+            seededRandom(
+                i*13.71
+            )*.88;
+
+        const index=
+            Math.floor(
+                p*(points-1)
+            );
+
+        const source=
+            side<0
+            ? tearLeft[index]
+            : tearRight[index];
+
+        const length=
+            22+
+            seededRandom(
+                i*9.17
+            )*
+            Math.min(
+                W,H
+            )*.14;
+
+        const angle=
+            side<0
+            ?
+                Math.PI+
+                (
+                    -.75+
+                    seededRandom(
+                        i*3.7
+                    )*1.5
+                )
+            :
+                seededRandom(
+                    i*3.7
+                )*1.5-
+                .75;
+
+        const crack=[];
+
+        const segments=6;
+
+        for(
+            let j=0;
+            j<=segments;
+            j++
+        ){
+
+            const q=
+                j/segments;
+
+            const bend=
+                Math.sin(
+                    q*8+i
+                )*
+                10*
+                q;
+
+            crack.push({
+
+                x:
+                    source.x+
+                    Math.cos(angle)*
+                    length*q+
+                    bend*
+                    Math.cos(
+                        angle+
+                        Math.PI/2
+                    ),
+
+                y:
+                    source.y+
+                    Math.sin(angle)*
+                    length*q+
+                    bend*
+                    Math.sin(
+                        angle+
+                        Math.PI/2
+                    )
+            });
+        }
+
+        tearCracks.push({
+            points:crack,
+            side:side,
+            delay:
+                .08+
+                seededRandom(
+                    i*7.4
+                )*.5
+        });
+    }
+
+
+    /* =====================================================
+       FRAGMENTS
+    ===================================================== */
+
+    for(let i=0;i<55;i++){
+
+        const side=
+            i%2===0
+            ? -1
+            : 1;
+
+        const p=
+            .04+
+            seededRandom(
+                i*31.4
+            )*.92;
+
+        const index=
+            Math.floor(
+                p*(points-1)
+            );
+
+        const edge=
+            side<0
+            ? tearLeft[index]
+            : tearRight[index];
+
+        tearFragments.push({
+
+            x:edge.x,
+            y:edge.y,
+
+            dx:
+                side*
+                (
+                    12+
+                    seededRandom(
+                        i+4
+                    )*75
+                ),
+
+            dy:
+                -40+
+                seededRandom(
+                    i+8
+                )*80,
+
+            size:
+                .8+
+                seededRandom(
+                    i+15
+                )*3.5,
+
+            rotation:
+                seededRandom(
+                    i+21
+                )*
+                Math.PI,
+
+            speed:
+                .5+
+                seededRandom(
+                    i+25
+                )*1.5
+        });
+    }
+
+
+    /* =====================================================
+       ENERGY LINES
+    ===================================================== */
+
+    for(let i=0;i<24;i++){
+
+        const side=
+            i%2===0
+            ? -1
+            : 1;
+
+        const p=
+            .08+
+            seededRandom(
+                i*17.8
+            )*.84;
+
+        tearEnergy.push({
+
+            side:side,
+
+            p:p,
+
+            length:
+                15+
+                seededRandom(
+                    i*19.3
+                )*55,
+
+            delay:
+                seededRandom(
+                    i*23.2
+                )*.8,
+
+            phase:
+                seededRandom(
+                    i*7.2
+                )*
+                Math.PI*2
         });
     }
 }
 
-createBreachParticles();
+
+/* =========================================================
+   GET EDGE POINT
+========================================================= */
+
+function getTearPoint(
+    points,
+    p
+){
+
+    p=clamp(
+        p,
+        0,
+        1
+    );
+
+    const f=
+        p*
+        (points.length-1);
+
+    const i=
+        Math.floor(f);
+
+    const n=
+        Math.min(
+            i+1,
+            points.length-1
+        );
+
+    const t=
+        f-i;
+
+    return {
+
+        x:
+            lerp(
+                points[i].x,
+                points[n].x,
+                t
+            ),
+
+        y:
+            lerp(
+                points[i].y,
+                points[n].y,
+                t
+            )
+    };
+}
 
 
-function updateBreachParticles(t){
+/* =========================================================
+   TEAR OPENING
+========================================================= */
 
-    const open =
+function getOpening(progress){
+
+    /*
+        Ouverture très rapide.
+
+        0.00 = fermée
+        0.10 = commence
+        0.25 = déjà très ouverte
+        0.40 = presque maximum
+    */
+
+    return easeOut(
         clamp(
-            t,
+            progress/.38,
+            0,
+            1
+        )
+    );
+}
+
+
+/* =========================================================
+   DRAW TEAR VOID
+========================================================= */
+
+function drawTearVoid(progress){
+
+    const open=
+        getOpening(progress);
+
+    if(open<=0)
+        return;
+
+    const left=[];
+    const right=[];
+
+
+    for(
+        let i=0;
+        i<tearLeft.length;
+        i++
+    ){
+
+        const p=
+            i/
+            (tearLeft.length-1);
+
+        /*
+            Petite irrégularité supplémentaire.
+        */
+
+        const distortion=
+            Math.sin(
+                animationTime*8+
+                p*18
+            )*
+            progress*
+            2;
+
+        const lx=
+            lerp(
+                W*.5,
+                tearLeft[i].x,
+                open
+            )+
+            distortion;
+
+        const rx=
+            lerp(
+                W*.5,
+                tearRight[i].x,
+                open
+            )-
+            distortion;
+
+        left.push({
+            x:lx,
+            y:tearLeft[i].y
+        });
+
+        right.push({
+            x:rx,
+            y:tearRight[i].y
+        });
+    }
+
+
+    /*
+        Vide central.
+    */
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        left[0].x,
+        left[0].y
+    );
+
+    for(
+        let i=1;
+        i<left.length;
+        i++
+    ){
+
+        ctx.lineTo(
+            left[i].x,
+            left[i].y
+        );
+    }
+
+    for(
+        let i=right.length-1;
+        i>=0;
+        i--
+    ){
+
+        ctx.lineTo(
+            right[i].x,
+            right[i].y
+        );
+    }
+
+    ctx.closePath();
+
+    ctx.fillStyle="#000";
+
+    ctx.fill();
+
+
+    /*
+        Lumière très faible à l'intérieur.
+    */
+
+    if(progress>.08){
+
+        const innerAlpha=
+            .025+
+            progress*.07;
+
+        const gradient=
+            ctx.createLinearGradient(
+                W*.5-
+                W*.12,
+                H*.5,
+                W*.5+
+                W*.12,
+                H*.5
+            );
+
+        gradient.addColorStop(
+            0,
+            "rgba(35,20,100,0)"
+        );
+
+        gradient.addColorStop(
+            .5,
+            `rgba(120,100,255,${
+                innerAlpha
+            })`
+        );
+
+        gradient.addColorStop(
+            1,
+            "rgba(35,20,100,0)"
+        );
+
+        ctx.save();
+
+        ctx.globalCompositeOperation=
+            "screen";
+
+        ctx.fillStyle=gradient;
+
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+
+/* =========================================================
+   DRAW GLOW EDGE
+========================================================= */
+
+function drawTearEdge(
+    points,
+    progress,
+    side
+){
+
+    const open=
+        getOpening(progress);
+
+    if(open<=0)
+        return;
+
+    const centerX=
+        W*.5;
+
+    /*
+        Intensité du glow.
+
+        Plus la breach est ouverte,
+        plus les bords brillent.
+    */
+
+    let glowPower=
+        .35+
+        progress*.65;
+
+    if(progress>.75){
+
+        glowPower+=
+            (
+                Math.sin(
+                    animationTime*17
+                )*.5+
+                .5
+            )*.35;
+    }
+
+
+    /*
+        PATH
+    */
+
+    function buildPath(){
+
+        ctx.beginPath();
+
+        for(
+            let i=0;
+            i<points.length;
+            i++
+        ){
+
+            const p=
+                i/
+                (points.length-1);
+
+            const edge=
+                points[i];
+
+            const noise=
+                Math.sin(
+                    animationTime*15+
+                    p*30+
+                    side
+                )*
+                (
+                    progress>
+                    .65
+                    ? 2.5
+                    : .8
+                );
+
+            const x=
+                centerX+
+                (
+                    edge.x-
+                    centerX
+                )*
+                open+
+                noise;
+
+            const y=
+                edge.y+
+                Math.sin(
+                    animationTime*11+
+                    p*21
+                )*
+                (
+                    progress*.8
+                );
+
+            if(i===0){
+
+                ctx.moveTo(
+                    x,
+                    y
+                );
+
+            }else{
+
+                const prev=
+                    points[i-1];
+
+                const prevX=
+                    centerX+
+                    (
+                        prev.x-
+                        centerX
+                    )*
+                    open;
+
+                const prevY=
+                    prev.y;
+
+                const midX=
+                    (
+                        prevX+
+                        x
+                    )/2;
+
+                const midY=
+                    (
+                        prevY+
+                        y
+                    )/2;
+
+                ctx.quadraticCurveTo(
+                    prevX,
+                    prevY,
+                    midX,
+                    midY
+                );
+            }
+        }
+    }
+
+
+    /*
+        GROS HALO EXTERNE
+    */
+
+    buildPath();
+
+    ctx.save();
+
+    ctx.globalCompositeOperation=
+        "screen";
+
+    ctx.shadowColor=
+        `rgba(105,80,255,${
+            .9*
+            glowPower
+        })`;
+
+    ctx.shadowBlur=
+        20+
+        progress*16;
+
+    ctx.strokeStyle=
+        `rgba(85,65,255,${
+            .38*
+            glowPower
+        })`;
+
+    ctx.lineWidth=
+        13+
+        progress*5;
+
+    ctx.stroke();
+
+    ctx.restore();
+
+
+    /*
+        HALO BLANC/VIOLET
+    */
+
+    buildPath();
+
+    ctx.save();
+
+    ctx.globalCompositeOperation=
+        "screen";
+
+    ctx.shadowColor=
+        `rgba(180,170,255,${
+            .95*
+            glowPower
+        })`;
+
+    ctx.shadowBlur=
+        10+
+        progress*8;
+
+    ctx.strokeStyle=
+        `rgba(155,145,255,${
+            .62*
+            glowPower
+        })`;
+
+    ctx.lineWidth=
+        5;
+
+    ctx.stroke();
+
+    ctx.restore();
+
+
+    /*
+        COEUR BLANC
+    */
+
+    buildPath();
+
+    ctx.save();
+
+    ctx.globalCompositeOperation=
+        "screen";
+
+    ctx.shadowColor=
+        "rgba(255,255,255,.9)";
+
+    ctx.shadowBlur=5;
+
+    ctx.strokeStyle=
+        `rgba(235,232,255,${
+            .9*
+            glowPower
+        })`;
+
+    ctx.lineWidth=
+        1.15+
+        progress*.45;
+
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   ENERGY SPARKS
+========================================================= */
+
+function drawEnergySparks(progress){
+
+    if(progress<.15)
+        return;
+
+    for(
+        let i=0;
+        i<tearEnergy.length;
+        i++
+    ){
+
+        const e=
+            tearEnergy[i];
+
+        const life=
+            clamp(
+                (
+                    progress-
+                    e.delay*.35
+                )/.65,
+                0,
+                1
+            );
+
+        if(life<=0)
+            continue;
+
+        const edge=
+            e.side<0
+            ? getTearPoint(
+                tearLeft,
+                e.p
+            )
+            : getTearPoint(
+                tearRight,
+                e.p
+            );
+
+        const flicker=
+            Math.sin(
+                animationTime*24+
+                e.phase
+            )*.5+
+            .5;
+
+        const len=
+            e.length*
+            life*
+            (
+                .65+
+                flicker*.35
+            );
+
+        const direction=
+            e.side;
+
+        const angle=
+            (
+                -1.15+
+                Math.sin(
+                    animationTime*5+
+                    e.phase
+                )*.7
+            );
+
+        const x2=
+            edge.x+
+            direction*
+            Math.cos(angle)*
+            len;
+
+        const y2=
+            edge.y+
+            Math.sin(angle)*
+            len;
+
+        ctx.save();
+
+        ctx.globalCompositeOperation=
+            "screen";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            edge.x,
+            edge.y
+        );
+
+        ctx.lineTo(
+            x2,
+            y2
+        );
+
+        ctx.strokeStyle=
+            `rgba(190,180,255,${
+                .45*
+                flicker*
+                life
+            })`;
+
+        ctx.lineWidth=.8;
+
+        ctx.shadowColor=
+            "rgba(110,90,255,.8)";
+
+        ctx.shadowBlur=5;
+
+        ctx.stroke();
+
+        ctx.restore();
+    }
+}
+
+
+/* =========================================================
+   SECONDARY CRACKS
+========================================================= */
+
+function drawTearCracks(progress){
+
+    if(progress<.1)
+        return;
+
+    for(
+        let i=0;
+        i<tearCracks.length;
+        i++
+    ){
+
+        const crack=
+            tearCracks[i];
+
+        const local=
+            clamp(
+                (
+                    progress-
+                    crack.delay
+                )/.62,
+                0,
+                1
+            );
+
+        if(local<=0)
+            continue;
+
+        const points=
+            crack.points;
+
+        const exact=
+            local*
+            (points.length-1);
+
+        const end=
+            Math.floor(exact);
+
+        ctx.beginPath();
+
+        for(
+            let j=0;
+            j<=end &&
+            j<points.length;
+            j++
+        ){
+
+            const pt=
+                points[j];
+
+            if(j===0){
+
+                ctx.moveTo(
+                    pt.x,
+                    pt.y
+                );
+
+            }else{
+
+                ctx.lineTo(
+                    pt.x,
+                    pt.y
+                );
+            }
+        }
+
+        if(
+            end<
+            points.length-1
+        ){
+
+            const a=
+                points[end];
+
+            const b=
+                points[end+1];
+
+            const f=
+                exact-end;
+
+            ctx.lineTo(
+                lerp(
+                    a.x,
+                    b.x,
+                    f
+                ),
+                lerp(
+                    a.y,
+                    b.y,
+                    f
+                )
+            );
+        }
+
+
+        /*
+            Glow de fissure.
+        */
+
+        ctx.save();
+
+        ctx.globalCompositeOperation=
+            "screen";
+
+        ctx.shadowColor=
+            "rgba(110,90,255,.75)";
+
+        ctx.shadowBlur=6;
+
+        ctx.strokeStyle=
+            `rgba(125,110,255,${
+                .35*local
+            })`;
+
+        ctx.lineWidth=2.5;
+
+        ctx.stroke();
+
+        ctx.restore();
+
+
+        /*
+            Coeur.
+        */
+
+        ctx.strokeStyle=
+            `rgba(235,230,255,${
+                .7*local
+            })`;
+
+        ctx.lineWidth=.65;
+
+        ctx.stroke();
+    }
+}
+
+
+/* =========================================================
+   FRAGMENTS
+========================================================= */
+
+function drawTearFragments(progress){
+
+    if(progress<.16)
+        return;
+
+    const amount=
+        clamp(
+            (progress-.16)/.84,
             0,
             1
         );
 
-    const cx =
-        breachLayer.offsetWidth/2;
-
-    const cy =
-        breachLayer.offsetHeight/2;
-
-    const maxRadius =
-        Math.min(
-            breachLayer.offsetWidth,
-            breachLayer.offsetHeight
-        )*.65;
-
     for(
         let i=0;
-        i<particleData.length;
+        i<tearFragments.length;
         i++
     ){
 
-        const p =
-            particleData[i];
+        const f=
+            tearFragments[i];
 
-        const a =
-            p.angle +
-            performance.now()*.00005*p.speed;
+        const life=
+            clamp(
+                (
+                    progress-
+                    .16
+                )/.84,
+                0,
+                1
+            );
 
-        const pulse =
+        if(life<=0)
+            continue;
+
+        const x=
+            f.x+
+            f.dx*
+            life;
+
+        const y=
+            f.y+
+            f.dy*
+            life+
             Math.sin(
-                performance.now()*.001+
-                p.phase
-            )*.04;
+                animationTime*4+i
+            )*3;
 
-        const radius =
-            maxRadius *
+        ctx.save();
+
+        ctx.translate(
+            x,
+            y
+        );
+
+        ctx.rotate(
+            f.rotation+
+            animationTime*
+            f.speed
+        );
+
+        ctx.globalCompositeOperation=
+            "screen";
+
+        ctx.shadowColor=
+            "rgba(120,100,255,.7)";
+
+        ctx.shadowBlur=4;
+
+        ctx.fillStyle=
+            `rgba(185,175,255,${
+                .55*
+                amount*
+                (1-life*.5)
+            })`;
+
+        ctx.fillRect(
+            -f.size,
+            -f.size,
+            f.size*2,
+            f.size*2
+        );
+
+        ctx.restore();
+    }
+}
+
+
+/* =========================================================
+   REALITY TEAR MAIN
+========================================================= */
+
+function drawRealityTear(progress){
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+    if(progress<=0)
+        return;
+
+    if(
+        tearCreatedW!==W ||
+        tearCreatedH!==H
+    ){
+
+        createRealityTear();
+    }
+
+
+    /*
+        VIDE
+    */
+
+    drawTearVoid(
+        progress
+    );
+
+
+    /*
+        BORD GAUCHE
+    */
+
+    drawTearEdge(
+        tearLeft,
+        progress,
+        -1
+    );
+
+
+    /*
+        BORD DROIT
+    */
+
+    drawTearEdge(
+        tearRight,
+        progress,
+        1
+    );
+
+
+    /*
+        FISSURES
+    */
+
+    drawTearCracks(
+        progress
+    );
+
+
+    /*
+        ÉNERGIE
+    */
+
+    drawEnergySparks(
+        progress
+    );
+
+
+    /*
+        FRAGMENTS
+    */
+
+    drawTearFragments(
+        progress
+    );
+
+
+    /*
+        PETITES DÉCHIRURES SUPPLÉMENTAIRES
+    */
+
+    if(progress>.4){
+
+        const alpha=
+            clamp(
+                (
+                    progress-
+                    .4
+                )/.6,
+                0,
+                1
+            );
+
+        for(let i=0;i<12;i++){
+
+            const p=
+                .12+
+                seededRandom(
+                    i*44.2
+                )*.76;
+
+            const side=
+                i%2===0
+                ? -1
+                : 1;
+
+            const edge=
+                side<0
+                ? getTearPoint(
+                    tearLeft,
+                    p
+                )
+                : getTearPoint(
+                    tearRight,
+                    p
+                );
+
+            const length=
+                12+
+                seededRandom(
+                    i*12.4
+                )*55;
+
+            const yOffset=
+                -length+
+                seededRandom(
+                    i*3.2
+                )*
+                length*2;
+
+            ctx.save();
+
+            ctx.globalCompositeOperation=
+                "screen";
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                edge.x,
+                edge.y
+            );
+
+            ctx.lineTo(
+                edge.x+
+                side*
+                length,
+                edge.y+
+                yOffset
+            );
+
+            ctx.strokeStyle=
+                `rgba(120,110,255,${
+                    .14*
+                    alpha
+                })`;
+
+            ctx.lineWidth=.55;
+
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    }
+
+
+    /*
+        INSTABILITÉ FINALE
+    */
+
+    if(progress>.72){
+
+        const instability=
+            (progress-.72)/.28;
+
+        const pulse=
+            Math.sin(
+                animationTime*18
+            )*.5+
+            .5;
+
+        ctx.fillStyle=
+            `rgba(120,110,255,${
+                .012*
+                instability*
+                pulse
+            })`;
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+    }
+}
+
+
+/* =========================================================
+   GOLDEN PARTICLES
+========================================================= */
+
+let goldenParticles=[];
+
+const GOLDEN_PARTICLE_COUNT=55;
+
+function createGoldenParticles(){
+
+    goldenParticles=[];
+
+    for(
+        let i=0;
+        i<GOLDEN_PARTICLE_COUNT;
+        i++
+    ){
+
+        goldenParticles.push({
+
+            angle:
+                Math.random()*
+                Math.PI*2,
+
+            radius:
+                40+
+                Math.pow(
+                    Math.random(),
+                    .55
+                )*
+                270,
+
+            speed:
+                rand(.1,.45),
+
+            size:
+                rand(.8,2.8),
+
+            alpha:
+                rand(.3,.85),
+
+            phase:
+                rand(
+                    0,
+                    Math.PI*2
+                ),
+
+            life:
+                Math.random()
+        });
+    }
+}
+
+function updateGoldenParticles(dt){
+
+    particleCtx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+    if(!deityActive)
+        return;
+
+    let spawnProgress=1;
+
+    if(!spawnFinished){
+
+        const elapsed=
             (
-                .25 +
-                p.radius*.75
-            ) *
-            open;
+                performance.now()-
+                spawnStartTime
+            )/1000;
 
-        const x =
+        spawnProgress=
+            clamp(
+                elapsed/
+                SPAWN_DURATION,
+                0,
+                1
+            );
+    }
+
+    const cx=
+        W/2+
+        godX;
+
+    const cy=
+        H/2+
+        godY;
+
+    for(
+        let i=0;
+        i<goldenParticles.length;
+        i++
+    ){
+
+        const p=
+            goldenParticles[i];
+
+        p.angle+=
+            p.speed*dt;
+
+        p.life+=
+            dt*.15;
+
+        if(p.life>1)
+            p.life=0;
+
+        const x=
             cx+
-            Math.cos(a)*
-            radius;
+            Math.cos(
+                p.angle
+            )*
+            p.radius;
 
-        const y =
+        const y=
             cy+
-            Math.sin(a)*
-            radius*.52;
+            Math.sin(
+                p.angle
+            )*
+            p.radius;
 
-        p.el.style.width =
-            p.size+"px";
+        const twinkle=
+            .65+
+            .35*
+            Math.sin(
+                animationTime*3+
+                p.phase
+            );
 
-        p.el.style.height =
-            p.size+"px";
+        const alpha=
+            p.alpha*
+            twinkle*
+            spawnProgress;
 
-        p.el.style.transform =
+        particleCtx.fillStyle=
+            `rgba(255,210,65,${
+                alpha
+            })`;
+
+        particleCtx.beginPath();
+
+        particleCtx.arc(
+            x,
+            y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+        particleCtx.fill();
+    }
+}
+
+
+/* =========================================================
+   GOLDEN AURA
+========================================================= */
+
+function updateGoldenAura(){
+
+    if(!deityActive)
+        return;
+
+    let progress=1;
+
+    if(!spawnFinished){
+
+        const elapsed=
+            (
+                performance.now()-
+                spawnStartTime
+            )/1000;
+
+        progress=
+            clamp(
+                elapsed/
+                SPAWN_DURATION,
+                0,
+                1
+            );
+    }
+
+    const pulse=
+        .94+
+        Math.sin(
+            animationTime*2.2
+        )*.06;
+
+    godGlow.style.opacity=
+        String(
+            progress*
+            .58*
+            pulse
+        );
+
+    godGlow.style.transform=
+        `translate(-50%,-50%)
+         scale(${
+             .65+
+             progress*.32
+         })`;
+
+    godAura.style.opacity=
+        String(
+            progress*.16
+        );
+
+    godAura.style.transform=
+        `translate(-50%,-50%)
+         scale(${
+             .75+
+             progress*.25
+         })`;
+}
+
+
+/* =========================================================
+   TARGET
+========================================================= */
+
+function chooseTarget(){
+
+    targetX=
+        rand(
+            -Math.min(
+                W*.25,
+                280
+            ),
+            Math.min(
+                W*.25,
+                280
+            )
+        );
+
+    targetY=
+        rand(
+            -Math.min(
+                H*.19,
+                200
+            ),
+            Math.min(
+                H*.19,
+                200
+            )
+        );
+
+    nextTargetTime=
+        animationTime+
+        rand(3,6);
+}
+
+
+/* =========================================================
+   GOD MOVEMENT
+========================================================= */
+
+function updateGodMovement(dt){
+
+    if(!deityActive)
+        return;
+
+    if(!spawnFinished){
+
+        godX=0;
+        godY=0;
+
+        velocityX=0;
+        velocityY=0;
+
+        return;
+    }
+
+    if(
+        animationTime>
+        nextTargetTime
+    ){
+
+        chooseTarget();
+    }
+
+    const dx=
+        targetX-godX;
+
+    const dy=
+        targetY-godY;
+
+    const distance=
+        Math.sqrt(
+            dx*dx+
+            dy*dy
+        );
+
+    if(distance>1){
+
+        const nx=
+            dx/distance;
+
+        const ny=
+            dy/distance;
+
+        velocityX+=
+            nx*
+            2.5*
+            dt;
+
+        velocityY+=
+            ny*
+            2.5*
+            dt;
+    }
+
+    const speed=
+        Math.sqrt(
+            velocityX*
+            velocityX+
+            velocityY*
+            velocityY
+        );
+
+    const maxSpeed=2.2;
+
+    if(speed>maxSpeed){
+
+        velocityX=
+            velocityX/speed*
+            maxSpeed;
+
+        velocityY=
+            velocityY/speed*
+            maxSpeed;
+    }
+
+    velocityX*=
+        Math.pow(
+            .92,
+            dt*60
+        );
+
+    velocityY*=
+        Math.pow(
+            .92,
+            dt*60
+        );
+
+    godX+=
+        velocityX*
+        dt*
+        60;
+
+    godY+=
+        velocityY*
+        dt*
+        60;
+}
+
+
+/* =========================================================
+   GOD VISUAL
+========================================================= */
+
+function updateGodVisual(){
+
+    if(!deityActive)
+        return;
+
+    if(!spawnFinished){
+
+        const elapsed=
+            (
+                performance.now()-
+                spawnStartTime
+            )/1000;
+
+        const p=
+            clamp(
+                elapsed/
+                SPAWN_DURATION,
+                0,
+                1
+            );
+
+        const scale=
+            .35+
+            easeOut(p)*
+            .65;
+
+        godLayer.style.transform=
+            `translate(
+                calc(-50% + ${godX}px),
+                calc(-50% + ${godY}px)
+            )`;
+
+        god.style.transform=
+            `translate(-50%,-50%)
+             scale(${scale})`;
+
+        god.style.opacity=
+            String(
+                clamp(
+                    p/.35,
+                    0,
+                    1
+                )
+            );
+
+        return;
+    }
+
+    const bob=
+        Math.sin(
+            animationTime*2
+        )*5;
+
+    const sway=
+        Math.sin(
+            animationTime*1.4
+        )*3;
+
+    const rotation=
+        Math.sin(
+            animationTime*1.1
+        )*1.2;
+
+    godLayer.style.transform=
+        `translate(
+            calc(-50% + ${godX+sway}px),
+            calc(-50% + ${godY+bob}px)
+        )`;
+
+    god.style.transform=
+        `translate(-50%,-50%)
+         rotate(${rotation}deg)
+         scale(1)`;
+}
+
+
+/* =========================================================
+   BEGIN SPAWN
+========================================================= */
+
+function beginSpawn(){
+
+    if(deityActive)
+        return;
+
+    deityActive=true;
+    spawnFinished=false;
+
+    spawnStartTime=
+        performance.now();
+
+    godX=0;
+    godY=0;
+
+    velocityX=0;
+    velocityY=0;
+
+    godLayer.style.transform=
+        "translate(-50%,-50%)";
+
+    god.style.opacity="0";
+
+    god.style.transform=
+        "translate(-50%,-50%) scale(.35)";
+
+    try{
+
+        spawnSound.currentTime=0;
+
+        spawnSound
+            .play()
+            .catch(
+                e=>
+                    console.warn(
+                        "spawn.mp3",
+                        e
+                    )
+            );
+
+    }catch(e){
+
+        console.warn(e);
+    }
+
+    spawnShakeActive=true;
+
+    flash.style.opacity=".12";
+
+    setTimeout(()=>{
+
+        flash.style.opacity="0";
+
+    },80);
+}
+
+
+/* =========================================================
+   SPAWN UPDATE
+========================================================= */
+
+function updateSpawn(){
+
+    if(
+        !deityActive ||
+        spawnFinished
+    )
+        return;
+
+    const elapsed=
+        (
+            performance.now()-
+            spawnStartTime
+        )/1000;
+
+    const p=
+        clamp(
+            elapsed/
+            SPAWN_DURATION,
+            0,
+            1
+        );
+
+    if(spawnShakeActive){
+
+        const strength=
+            2+
+            p*8;
+
+        const x=
+            (
+                Math.random()-
+                .5
+            )*
+            strength;
+
+        const y=
+            (
+                Math.random()-
+                .5
+            )*
+            strength;
+
+        camera.style.transform=
             `translate3d(
                 ${x}px,
                 ${y}px,
                 0
             )`;
+    }
 
-        p.el.style.opacity =
-            String(
-                open*.55+
-                pulse
-            );
+    if(p>=1){
+
+        finishSpawn();
     }
 }
 
 
 /* =========================================================
-   FLASH
+   FINISH SPAWN
 ========================================================= */
 
-function flashScreen(
-    strength,
-    duration
-){
+function finishSpawn(){
 
-    flash.style.transition =
-        `opacity ${duration*.22}ms ease-out`;
-
-    flash.style.opacity =
-        String(strength);
-
-    setTimeout(
-        ()=>{
-
-            flash.style.transition =
-                `opacity ${duration*.78}ms ease-out`;
-
-            flash.style.opacity =
-                "0";
-
-        },
-        duration*.22
-    );
-}
-
-
-/* =========================================================
-   SHAKE
-========================================================= */
-
-let shakePower = 0;
-
-function shake(power){
-
-    shakePower =
-        Math.max(
-            shakePower,
-            power
-        );
-}
-
-function updateShake(){
-
-    if(shakePower <= .1){
-
-        shakePower = 0;
-
+    if(spawnFinished)
         return;
-    }
 
-    const x =
-        rand(
-            -shakePower,
-            shakePower
-        );
+    spawnFinished=true;
+    spawnShakeActive=false;
 
-    const y =
-        rand(
-            -shakePower,
-            shakePower
-        );
+    camera.style.transform=
+        "translate3d(0,0,0)";
 
-    document.body.style.transform =
-        `translate3d(
-            ${x}px,
-            ${y}px,
-            0
-        )`;
+    godX=0;
+    godY=0;
 
-    shakePower *= .90;
-}
+    velocityX=0;
+    velocityY=0;
 
+    godGlow.style.opacity=".65";
+    godAura.style.opacity=".18";
 
-/* =========================================================
-   INTRO BREACH
-========================================================= */
+    chooseTarget();
 
-function updateBreachIntro(){
+    title.style.opacity="1";
 
-    if(!started ||
-       deityActive){
+    try{
 
-        breachLayer.style.opacity =
-            "0";
+        music.currentTime=0;
 
-        return;
-    }
-
-    const elapsed =
-        performance.now() -
-        introStartTime;
-
-    const t =
-        clamp(
-            elapsed/
-            (INTRO_DURATION*1000),
-            0,
-            1
-        );
-
-    /*
-        La breach reste presque invisible
-        au début.
-    */
-
-    let open = 0;
-
-    if(t < .18){
-
-        /*
-            0 → 2 secondes
-
-            Micro fissure.
-        */
-
-        open =
-            easeOutCubic(
-                t/.18
-            )*.035;
-    }
-
-    else if(t < .48){
-
-        /*
-            2 → 5.3 secondes
-
-            Ouverture très lente.
-        */
-
-        open =
-            .035+
-            easeInOutCubic(
-                (t-.18)/
-                .30
-            )*.24;
-    }
-
-    else if(t < .76){
-
-        /*
-            5.3 → 8.3 secondes
-
-            L'œil commence réellement
-            à s'ouvrir.
-        */
-
-        open =
-            .275+
-            easeInOutCubic(
-                (t-.48)/
-                .28
-            )*.34;
-    }
-
-    else if(t < .94){
-
-        /*
-            8.3 → 10.3 secondes
-
-            Grande ouverture.
-        */
-
-        open =
-            .615+
-            easeInOutCubic(
-                (t-.76)/
-                .18
-            )*.25;
-    }
-
-    else{
-
-        /*
-            10.3 → 11 secondes
-
-            Dernière ouverture.
-        */
-
-        open =
-            .865+
-            easeOutCubic(
-                (t-.94)/
-                .06
-            )*.135;
-    }
-
-    /*
-        Échelle générale.
-
-        La breach reste volontairement
-        plus petite que Nameless Deity.
-    */
-
-    const scale =
-        .62+
-        open*.38;
-
-    breachLayer.style.opacity =
-        String(
-            clamp(
-                .08+
-                open*.92,
-                0,
-                1
-            )
-        );
-
-    breachLayer.style.transform =
-        `translate(-50%,-50%)
-         scale(${scale})`;
-
-    /*
-        Le cœur noir s'étire.
-    */
-
-    breach.style.opacity =
-        String(
-            clamp(
-                open*1.2,
-                0,
-                1
-            )
-        );
-
-    breach.style.transform =
-        `translate(-50%,-50%)
-         scaleX(${.08+open*.92})
-         scaleY(${.72+open*.28})`;
-
-    /*
-        Le centre reste très sombre.
-    */
-
-    breachCore.style.transform =
-        `translate(-50%,-50%)
-         scaleY(${.32+open*.68})`;
-
-    /*
-        Halo.
-    */
-
-    breachHalo.style.opacity =
-        String(
-            .12+
-            open*.62
-        );
-
-    breachHalo.style.transform =
-        `scale(${.65+open*.38})`;
-
-    /*
-        Aura.
-    */
-
-    breachAura.style.opacity =
-        String(
-            .05+
-            open*.55
-        );
-
-    breachAura.style.transform =
-        `scale(${.5+open*.72})`;
-
-    /*
-        Fissures.
-
-        Elles deviennent visibles
-        seulement lorsque la déchirure
-        commence à s'ouvrir.
-    */
-
-    for(
-        let i=0;
-        i<fissures.length;
-        i++
-    ){
-
-        const f =
-            fissures[i];
-
-        const delay =
-            i*.045;
-
-        const fp =
-            clamp(
-                (open-delay)/
-                .65,
-                0,
-                1
+        music
+            .play()
+            .catch(
+                e=>
+                    console.warn(
+                        "song.mp3",
+                        e
+                    )
             );
 
-        f.style.opacity =
-            String(
-                fp*.85
-            );
+    }catch(e){
 
-        f.style.transform +=
-            ` scaleX(${Math.max(.05,fp)})`;
-    }
-
-    updateBreachParticles(
-        open
-    );
-
-    /*
-        Petit flash très tardif.
-    */
-
-    if(
-        t>.955 &&
-        t<.97
-    ){
-
-        const fp =
-            (t-.955)/
-            .015;
-
-        flash.style.opacity =
-            String(
-                fp*.30
-            );
-    }
-
-    else if(t>=.97){
-
-        flash.style.opacity =
-            "0";
+        console.warn(e);
     }
 }
 
@@ -1533,380 +2541,297 @@ function updateBreachIntro(){
    INTRO
 ========================================================= */
 
+function updateIntro(t){
+
+    const progress=
+        clamp(
+            t/
+            INTRO_DURATION,
+            0,
+            1
+        );
+
+
+    /*
+        BREACH
+    */
+
+    drawRealityTear(
+        progress
+    );
+
+
+    /*
+        INTENSIFICATION
+    */
+
+    let intensity=0;
+
+    if(t>7){
+
+        intensity=
+            clamp(
+                (t-7)/4,
+                0,
+                1
+            );
+    }
+
+    if(intensity>0){
+
+        const pulse=
+            Math.sin(
+                t*12
+            )*.5+
+            .5;
+
+        space.style.filter=
+            `brightness(${
+                1+
+                intensity*.25+
+                pulse*
+                intensity*.06
+            })`;
+    }
+
+
+    /*
+        FLASH FINAL
+    */
+
+    if(t>=10.55){
+
+        const p=
+            clamp(
+                (
+                    t-
+                    10.55
+                )/.45,
+                0,
+                1
+            );
+
+        flash.style.opacity=
+            String(
+                Math.pow(
+                    p,
+                    2.5
+                )
+            );
+
+    }else{
+
+        flash.style.opacity="0";
+    }
+}
+
+
+/* =========================================================
+   START INTRO
+========================================================= */
+
 function startIntro(){
 
     if(started)
         return;
 
-    started = true;
+    started=true;
 
-    deityActive = false;
+    startMessage.style.display=
+        "none";
 
-    spawnFinished = false;
-
-    forceGodCenter();
-
-    introStartTime =
+    introStartTime=
         performance.now();
 
-    startMessage.classList.add(
-        "hidden"
-    );
+    animationTime=0;
 
-    /*
-        Audio GLITCH 11 secondes.
-    */
+    deityActive=false;
+    spawnFinished=false;
+    spawnShakeActive=false;
 
-    introSound.currentTime = 0;
+    god.style.opacity="0";
+    godGlow.style.opacity="0";
+    godAura.style.opacity="0";
 
-    introSound.volume = .9;
+    flash.style.opacity="0";
 
-    const p =
-        introSound.play();
+    camera.style.transform=
+        "translate3d(0,0,0)";
 
-    if(p){
+    space.style.filter="none";
 
-        p.catch(
-            e =>
-                console.warn(
-                    "glicht.mp3 :",
-                    e
-                )
-        );
+    createRealityTear();
+
+    try{
+
+        introSound.currentTime=0;
+
+        introSound
+            .play()
+            .catch(
+                e=>
+                    console.warn(
+                        "glicht.mp3",
+                        e
+                    )
+            );
+
+    }catch(e){
+
+        console.warn(e);
     }
 
-    /*
-        Nameless reste invisible
-        pendant toute l'intro.
-    */
-
-    god.style.opacity =
-        "0";
-
-    godGlow.style.opacity =
-        "0";
 
     /*
-        Breach commence minuscule.
+        11 secondes.
     */
 
-    breachLayer.style.opacity =
-        "0";
+    setTimeout(()=>{
 
-    breachLayer.style.transform =
-        "translate(-50%,-50%) scale(.08)";
+        if(
+            started &&
+            !deityActive
+        ){
 
-    /*
-        Spawn exactement après 11 secondes.
-    */
-
-    setTimeout(
-        ()=>{
-            if(!deityActive)
-                beginTrueSpawn();
-        },
-        INTRO_DURATION*1000
-    );
-}
-
-
-/* =========================================================
-   SPAWN
-========================================================= */
-
-function beginTrueSpawn(){
-
-    if(deityActive)
-        return;
-
-    forceGodCenter();
-
-    deityActive = true;
-
-    /*
-        La breach disparaît
-        juste avant l'apparition.
-    */
-
-    breachLayer.style.transition =
-        "opacity .12s ease-out";
-
-    breachLayer.style.opacity =
-        "0";
-
-    /*
-        GOD
-    */
-
-    god.style.opacity =
-        "1";
-
-    god.style.transform = `
-        translate3d(
-            0px,
-            0px,
-            0
-        )
-        scale(.58)
-    `;
-
-    godGlow.style.opacity =
-        ".95";
-
-    godGlow.style.transform =
-        "scale(.72)";
-
-    /*
-        SON DE SPAWN 3s
-    */
-
-    spawnSound.currentTime = 0;
-
-    spawnSound.volume = 1;
-
-    const p =
-        spawnSound.play();
-
-    if(p){
-
-        p.catch(
-            e =>
-                console.warn(
-                    "spawn.mp3 :",
-                    e
-                )
-        );
-    }
-
-    /*
-        Flash blanc.
-    */
-
-    flashScreen(
-        1,
-        500
-    );
-
-    shake(28);
-
-    /*
-        SPAWN 3 secondes.
-    */
-
-    const spawnStart =
-        performance.now();
-
-    function animateSpawn(now){
-
-        const elapsed =
-            now-spawnStart;
-
-        const p =
-            clamp(
-                elapsed/
-                (SPAWN_DURATION*1000),
-                0,
-                1
-            );
-
-        const e =
-            easeOutQuint(p);
-
-        const spawnScale =
-            .58+
-            .42*e;
-
-        const spawnY =
-            -12*(1-e);
-
-        /*
-            Centre absolu.
-        */
-
-        forceGodCenter();
-
-        god.style.transform = `
-            translate3d(
-                0px,
-                ${spawnY}px,
-                0
-            )
-            scale(${spawnScale})
-        `;
-
-        godGlow.style.opacity =
-            String(
-                .95-p*.20
-            );
-
-        godGlow.style.transform =
-            `scale(${.72+p*.28})`;
-
-        /*
-            Tremblement pendant tout
-            le cri de spawn.
-        */
-
-        shake(
-            5+
-            (1-p)*18
-        );
-
-        if(p<1){
-
-            requestAnimationFrame(
-                animateSpawn
-            );
-
-        }else{
-
-            forceGodCenter();
-
-            god.style.transform = `
-                translate3d(
-                    0px,
-                    0px,
-                    0
-                )
-                scale(1)
-            `;
-
-            finishSpawn();
+            beginSpawn();
         }
-    }
 
-    requestAnimationFrame(
-        animateSpawn
-    );
-
-    setTimeout(
-        ()=>{
-            title.classList.add(
-                "show"
-            );
-        },
-        650
-    );
+    },INTRO_DURATION*1000);
 }
-
-
-/* =========================================================
-   FIN SPAWN
-========================================================= */
-
-function finishSpawn(){
-
-    if(spawnFinished)
-        return;
-
-    spawnFinished = true;
-
-    chooseTarget();
-
-    /*
-        Musique.
-    */
-
-    music.currentTime = 0;
-
-    const p =
-        music.play();
-
-    if(p){
-
-        p.catch(
-            e =>
-                console.warn(
-                    "song.mp3 :",
-                    e
-                )
-        );
-    }
-
-    setTimeout(
-        ()=>{
-            title.classList.remove(
-                "show"
-            );
-
-            title.classList.add(
-                "hide"
-            );
-        },
-        7000
-    );
-}
-
-
-/* =========================================================
-   BOUCLE
-========================================================= */
-
-let lastTime =
-    performance.now();
-
-function loop(now){
-
-    const dt =
-        Math.min(
-            (now-lastTime)/1000,
-            .033
-        );
-
-    lastTime = now;
-
-    animationTime += dt;
-
-    updateBreachIntro();
-
-    updateFreeMovement(dt);
-
-    updateGodVisual();
-
-    updateShake();
-
-    requestAnimationFrame(
-        loop
-    );
-}
-
-requestAnimationFrame(
-    loop
-);
 
 
 /* =========================================================
    CLICK
 ========================================================= */
 
-document.addEventListener(
+startMessage.addEventListener(
     "click",
-    ()=>{
-        startIntro();
-    },
-    {
-        once:false
-    }
+    startIntro
 );
 
-
-/* =========================================================
-   CLAVIER
-========================================================= */
-
 document.addEventListener(
-    "keydown",
+    "click",
     e=>{
 
         if(
-            e.code === "Space" &&
-            !started
+            !started &&
+            e.target!==startMessage
         ){
 
             startIntro();
         }
     }
 );
+
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+
+let lastTime=
+    performance.now();
+
+function loop(now){
+
+    const dt=
+        Math.min(
+            (
+                now-
+                lastTime
+            )/1000,
+            .05
+        );
+
+    lastTime=now;
+
+    if(started){
+
+        animationTime+=dt;
+
+
+        /*
+            INTRO
+        */
+
+        if(!deityActive){
+
+            const elapsed=
+                (
+                    now-
+                    introStartTime
+                )/1000;
+
+            if(
+                elapsed<
+                INTRO_DURATION
+            ){
+
+                updateIntro(
+                    elapsed
+                );
+
+            }else{
+
+                updateIntro(
+                    INTRO_DURATION
+                );
+
+                beginSpawn();
+            }
+        }
+
+
+        /*
+            SPAWN
+        */
+
+        updateSpawn();
+
+
+        /*
+            PARTICULES
+        */
+
+        updateGoldenParticles(dt);
+
+
+        /*
+            AURA
+        */
+
+        updateGoldenAura();
+
+
+        /*
+            MOUVEMENT
+        */
+
+        updateGodMovement(dt);
+
+
+        /*
+            VISUEL
+        */
+
+        updateGodVisual();
+    }
+
+    requestAnimationFrame(
+        loop
+    );
+}
+
+
+/* =========================================================
+   INIT
+========================================================= */
+
+resize();
+
+requestAnimationFrame(
+    loop
+);
+
 </script>
 
 </body>
