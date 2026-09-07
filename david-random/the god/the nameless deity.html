@@ -1,0 +1,3659 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>THE NAMELESS DEITY // THE GOD</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html,
+body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+}
+
+body{
+    position:relative;
+    background:#000;
+    cursor:crosshair;
+    font-family:Georgia,"Times New Roman",serif;
+}
+
+/* =========================================================
+   ESPACE
+========================================================= */
+
+#space{
+    position:fixed;
+    inset:0;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            #090914 0%,
+            #040408 42%,
+            #000 100%
+        );
+}
+
+/* =========================================================
+   CANVAS FX
+========================================================= */
+
+#fx{
+    position:fixed;
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    z-index:10;
+    pointer-events:none;
+}
+
+/* =========================================================
+   GOD
+========================================================= */
+
+#godLayer{
+    position:fixed;
+
+    left:50%;
+    top:50%;
+
+    width:min(46vw,540px);
+    height:min(46vw,540px);
+
+    transform:translate(-50%,-50%);
+
+    z-index:20;
+
+    pointer-events:none;
+
+    will-change:transform;
+}
+
+#fragmentCanvas{
+    position:absolute;
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    opacity:0;
+
+    pointer-events:none;
+
+    will-change:opacity;
+}
+
+#godGlow{
+    position:absolute;
+    inset:-15%;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(150,160,255,.28) 0%,
+            rgba(100,100,255,.14) 25%,
+            rgba(70,70,255,.06) 48%,
+            transparent 74%
+        );
+
+    filter:blur(25px);
+
+    opacity:0;
+
+    transform:scale(.7);
+
+    pointer-events:none;
+
+    will-change:opacity,transform;
+}
+
+#god{
+    position:absolute;
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    object-fit:contain;
+
+    opacity:0;
+
+    transform:
+        translate3d(0,0,0)
+        scale(.65);
+
+    filter:
+        brightness(.86)
+        contrast(1.22)
+        saturate(1.08)
+        drop-shadow(0 0 12px rgba(130,140,255,.60))
+        drop-shadow(0 0 35px rgba(90,90,255,.34));
+
+    will-change:
+        transform,
+        opacity,
+        filter;
+}
+
+/* =========================================================
+   TITRE
+========================================================= */
+
+#title{
+    position:fixed;
+
+    left:50%;
+    bottom:8%;
+
+    transform:
+        translateX(-50%)
+        translateY(25px);
+
+    z-index:50;
+
+    color:#eeeeff;
+
+    text-align:center;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        clamp(20px,3vw,43px);
+
+    letter-spacing:
+        clamp(3px,.75vw,9px);
+
+    white-space:nowrap;
+
+    opacity:0;
+
+    text-shadow:
+        0 0 5px rgba(255,255,255,.95),
+        0 0 15px rgba(130,130,255,.95),
+        0 0 35px rgba(90,90,255,.60),
+        0 0 70px rgba(90,90,255,.25);
+
+    pointer-events:none;
+
+    transition:
+        opacity 1s ease,
+        transform 1s ease;
+}
+
+#title.show{
+    opacity:1;
+
+    transform:
+        translateX(-50%)
+        translateY(0);
+}
+
+#title.hide{
+    opacity:0;
+
+    transform:
+        translateX(-50%)
+        translateY(-18px);
+}
+
+/* =========================================================
+   VIGNETTE
+========================================================= */
+
+#vignette{
+    position:fixed;
+    inset:0;
+
+    z-index:40;
+
+    pointer-events:none;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            transparent 38%,
+            rgba(0,0,0,.30) 67%,
+            rgba(0,0,0,.84) 100%
+        );
+}
+
+/* =========================================================
+   GRAIN
+========================================================= */
+
+#grain{
+    position:fixed;
+
+    inset:-50%;
+
+    z-index:45;
+
+    pointer-events:none;
+
+    opacity:.045;
+
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+
+    animation:
+        grainMove .2s steps(2) infinite;
+}
+
+@keyframes grainMove{
+
+    0%{
+        transform:translate(0,0);
+    }
+
+    25%{
+        transform:translate(-2%,3%);
+    }
+
+    50%{
+        transform:translate(3%,-2%);
+    }
+
+    75%{
+        transform:translate(-3%,-3%);
+    }
+
+    100%{
+        transform:translate(2%,2%);
+    }
+}
+
+/* =========================================================
+   FLASH
+========================================================= */
+
+#flash{
+    position:fixed;
+    inset:0;
+
+    z-index:100;
+
+    background:#fff;
+
+    opacity:0;
+
+    pointer-events:none;
+}
+
+/* =========================================================
+   INTRO MESSAGE
+========================================================= */
+
+#startMessage{
+    position:fixed;
+
+    left:50%;
+    top:50%;
+
+    transform:
+        translate(-50%,-50%);
+
+    z-index:60;
+
+    color:rgba(230,235,255,.72);
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        clamp(12px,1.2vw,17px);
+
+    letter-spacing:4px;
+
+    text-transform:uppercase;
+
+    text-align:center;
+
+    opacity:.75;
+
+    pointer-events:none;
+
+    transition:
+        opacity .8s ease,
+        transform .8s ease;
+}
+
+#startMessage.hidden{
+    opacity:0;
+
+    transform:
+        translate(-50%,-50%)
+        scale(.92);
+}
+</style>
+</head>
+
+<body>
+
+<div id="space"></div>
+
+<canvas id="fx"></canvas>
+
+<div id="godLayer">
+
+    <canvas id="fragmentCanvas"></canvas>
+
+    <div id="godGlow"></div>
+
+    <img
+        id="god"
+        crossorigin="anonymous"
+        src="https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@refs/heads/main/david-random/the%20god/Nameless_Deity.gif"
+        alt="THE NAMELESS DEITY"
+    >
+
+</div>
+
+<div id="title">
+    THE NAMELESS DEITY // THE GOD
+</div>
+
+<div id="startMessage">
+    CLICK TO AWAKEN
+</div>
+
+<div id="vignette"></div>
+
+<div id="grain"></div>
+
+<div id="flash"></div>
+
+
+<!-- ========================================================
+     AUDIO
+========================================================= -->
+
+<audio
+    id="introSound"
+    preload="auto"
+    src="https://github.com/davidtytytutu-lgtm/ramdom/raw/refs/heads/main/david-random/the%20god/intro.mp3">
+</audio>
+
+<audio
+    id="spawnSound"
+    preload="auto"
+    src="https://github.com/davidtytytutu-lgtm/ramdom/raw/refs/heads/main/david-random/the%20god/spawn.mp3">
+</audio>
+
+<audio
+    id="music"
+    preload="auto"
+    loop
+    src="https://github.com/davidtytytutu-lgtm/ramdom/raw/refs/heads/main/david-random/the%20god/song.mp3">
+</audio>
+
+
+<script>
+"use strict";
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const fx =
+    document.getElementById("fx");
+
+const ctx =
+    fx.getContext(
+        "2d",
+        {
+            alpha:true,
+            desynchronized:true
+        }
+    );
+
+const fragmentCanvas =
+    document.getElementById("fragmentCanvas");
+
+const fctx =
+    fragmentCanvas.getContext(
+        "2d",
+        {
+            alpha:true,
+            desynchronized:true
+        }
+    );
+
+const god =
+    document.getElementById("god");
+
+const godLayer =
+    document.getElementById("godLayer");
+
+const godGlow =
+    document.getElementById("godGlow");
+
+const title =
+    document.getElementById("title");
+
+const flash =
+    document.getElementById("flash");
+
+const startMessage =
+    document.getElementById("startMessage");
+
+const introSound =
+    document.getElementById("introSound");
+
+const spawnSound =
+    document.getElementById("spawnSound");
+
+const music =
+    document.getElementById("music");
+
+
+/* =========================================================
+   DIMENSIONS
+========================================================= */
+
+let DPR =
+    Math.min(
+        window.devicePixelRatio || 1,
+        1.20
+    );
+
+let W = 0;
+let H = 0;
+
+let CX = 0;
+let CY = 0;
+
+
+function resize(){
+
+    DPR =
+        Math.min(
+            window.devicePixelRatio || 1,
+            1.20
+        );
+
+    W =
+        window.innerWidth;
+
+    H =
+        window.innerHeight;
+
+    CX =
+        W * .5;
+
+    CY =
+        H * .5;
+
+
+    fx.width =
+        Math.floor(W * DPR);
+
+    fx.height =
+        Math.floor(H * DPR);
+
+    fx.style.width =
+        W + "px";
+
+    fx.style.height =
+        H + "px";
+
+    ctx.setTransform(
+        DPR,
+        0,
+        0,
+        DPR,
+        0,
+        0
+    );
+
+
+    fragmentCanvas.width =
+        Math.floor(W * DPR);
+
+    fragmentCanvas.height =
+        Math.floor(H * DPR);
+
+    fragmentCanvas.style.width =
+        W + "px";
+
+    fragmentCanvas.style.height =
+        H + "px";
+
+    fctx.setTransform(
+        DPR,
+        0,
+        0,
+        DPR,
+        0,
+        0
+    );
+}
+
+window.addEventListener(
+    "resize",
+    resize,
+    {passive:true}
+);
+
+resize();
+
+
+/* =========================================================
+   UTILITAIRES
+========================================================= */
+
+function rand(min,max){
+
+    return Math.random() *
+        (max-min) +
+        min;
+}
+
+
+function clamp(
+    value,
+    min,
+    max
+){
+
+    return Math.max(
+        min,
+        Math.min(max,value)
+    );
+}
+
+
+function easeOutCubic(t){
+
+    return 1 -
+        Math.pow(
+            1-t,
+            3
+        );
+}
+
+
+function easeInOutCubic(t){
+
+    return t < .5
+
+        ? 4*t*t*t
+
+        : 1 -
+          Math.pow(
+              -2*t+2,
+              3
+          ) / 2;
+}
+
+
+function easeOutQuint(t){
+
+    return 1 -
+        Math.pow(
+            1-t,
+            5
+        );
+}
+
+
+/* =========================================================
+   ÉTAT GLOBAL
+========================================================= */
+
+let started = false;
+
+let introStartTime = 0;
+
+let introFinished = false;
+
+let assembling = false;
+
+let assembled = false;
+
+let deityActive = false;
+
+let spawnFinished = false;
+
+let animationTime = 0;
+
+let lastTime =
+    performance.now();
+
+
+/* =========================================================
+   MOUVEMENT LIBRE
+========================================================= */
+
+let godX = 0;
+let godY = 0;
+
+let velocityX = 0;
+let velocityY = 0;
+
+let targetX = 0;
+let targetY = 0;
+
+let nextTargetTime = 0;
+
+
+/* =========================================================
+   SHAKE
+========================================================= */
+
+let shakePower = 0;
+
+
+function shake(amount){
+
+    shakePower =
+        Math.max(
+            shakePower,
+            amount
+        );
+}
+
+
+function updateShake(dt){
+
+    if(shakePower <= .01){
+
+        shakePower = 0;
+
+        godLayer.style.transform =
+            "translate(-50%,-50%)";
+
+        return;
+    }
+
+
+    shakePower *=
+        Math.pow(
+            .018,
+            dt
+        );
+
+
+    const x =
+        rand(
+            -shakePower,
+            shakePower
+        );
+
+    const y =
+        rand(
+            -shakePower,
+            shakePower
+        );
+
+
+    godLayer.style.transform =
+        `
+        translate(
+            calc(-50% + ${x}px),
+            calc(-50% + ${y}px)
+        )
+        `;
+}
+
+
+/* =========================================================
+   IMAGE SOURCE
+========================================================= */
+
+const imageSource =
+    new Image();
+
+imageSource.crossOrigin =
+    "anonymous";
+
+imageSource.src =
+    "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@refs/heads/main/david-random/the%20god/Nameless_Deity.gif";
+
+
+/* =========================================================
+   IMAGE STATIQUE
+========================================================= */
+
+let staticFrame = null;
+
+let staticFrameReady = false;
+
+
+function prepareStaticFrame(){
+
+    if(
+        !imageSource.complete ||
+        !imageSource.naturalWidth
+    ){
+
+        setTimeout(
+            prepareStaticFrame,
+            100
+        );
+
+        return;
+    }
+
+
+    try{
+
+        const canvas =
+            document.createElement(
+                "canvas"
+            );
+
+        canvas.width =
+            imageSource.naturalWidth;
+
+        canvas.height =
+            imageSource.naturalHeight;
+
+
+        const cctx =
+            canvas.getContext(
+                "2d"
+            );
+
+        cctx.drawImage(
+            imageSource,
+            0,
+            0
+        );
+
+
+        staticFrame =
+            canvas;
+
+        staticFrameReady =
+            true;
+
+        console.log(
+            "Image du Nameless Deity chargée."
+        );
+
+    }catch(error){
+
+        console.warn(
+            "Impossible de préparer l'image :",
+            error
+        );
+
+        staticFrameReady =
+            false;
+    }
+}
+
+
+imageSource.addEventListener(
+    "load",
+    ()=>{
+        setTimeout(
+            prepareStaticFrame,
+            100
+        );
+    },
+    {once:true}
+);
+
+
+/* =========================================================
+   MORCEAUX
+   IMPORTANT :
+   LES POSITIONS FINALES SONT LES VRAIES POSITIONS
+   DANS L'IMAGE 600x600.
+========================================================= */
+
+const fragments = [];
+
+
+/*
+   10 colonnes × 10 lignes.
+
+   Cela donne 100 morceaux maximum.
+
+   Pour garder de bonnes performances sur
+   un PC peu puissant, on utilise surtout
+   les morceaux qui contiennent réellement
+   une partie du personnage.
+*/
+
+const GRID_X = 10;
+const GRID_Y = 10;
+
+
+/* =========================================================
+   CONSTRUCTION DES MORCEAUX
+========================================================= */
+
+function createFragments(){
+
+    fragments.length = 0;
+
+
+    const imageWidth =
+        600;
+
+    const imageHeight =
+        600;
+
+
+    const tileWidth =
+        imageWidth / GRID_X;
+
+    const tileHeight =
+        imageHeight / GRID_Y;
+
+
+    for(
+        let gy=0;
+        gy<GRID_Y;
+        gy++
+    ){
+
+        for(
+            let gx=0;
+            gx<GRID_X;
+            gx++
+        ){
+
+            const sourceX =
+                gx * tileWidth;
+
+            const sourceY =
+                gy * tileHeight;
+
+
+            /*
+               Position réelle dans le personnage.
+
+               L'image est centrée dans #godLayer,
+               donc on convertit 600x600 vers
+               la taille actuelle du personnage.
+            */
+
+            const normalizedX =
+                (sourceX + tileWidth*.5) -
+                imageWidth*.5;
+
+            const normalizedY =
+                (sourceY + tileHeight*.5) -
+                imageHeight*.5;
+
+
+            /*
+               Petit déplacement initial.
+
+               IMPORTANT :
+               beaucoup plus petit que dans les anciennes versions.
+               Les morceaux commencent près de leur vraie position.
+            */
+
+            const angle =
+                Math.atan2(
+                    normalizedY,
+                    normalizedX
+                );
+
+
+            const distance =
+                rand(
+                    28,
+                    78
+                );
+
+
+            const startX =
+                normalizedX +
+                Math.cos(angle) *
+                distance +
+                rand(-12,12);
+
+
+            const startY =
+                normalizedY +
+                Math.sin(angle) *
+                distance +
+                rand(-12,12);
+
+
+            fragments.push({
+
+                gx,
+                gy,
+
+                sourceX,
+                sourceY,
+
+                width:
+                    tileWidth,
+
+                height:
+                    tileHeight,
+
+
+                /*
+                   POSITION FINALE EXACTE
+                */
+
+                finalX:
+                    normalizedX,
+
+                finalY:
+                    normalizedY,
+
+
+                /*
+                   POSITION DE DÉPART
+                */
+
+                startX,
+                startY,
+
+
+                x:startX,
+                y:startY,
+
+
+                rotationStart:
+                    rand(
+                        -0.30,
+                        0.30
+                    ),
+
+                rotationEnd:
+                    rand(
+                        -0.025,
+                        0.025
+                    ),
+
+
+                rotation:0,
+
+
+                scaleStart:
+                    rand(
+                        .94,
+                        1.05
+                    ),
+
+                scaleEnd:1,
+
+
+                delay:
+                    rand(
+                        0,
+                        .18
+                    ),
+
+
+                progress:0,
+
+                locked:false,
+
+                lockPulse:0,
+
+                phase:
+                    rand(
+                        0,
+                        Math.PI*2
+                    )
+            });
+        }
+    }
+
+
+    console.log(
+        "Fragments créés :",
+        fragments.length
+    );
+}
+
+
+createFragments();
+
+
+/* =========================================================
+   DESSIN DES MORCEAUX
+========================================================= */
+
+function drawFragments(
+    progress
+){
+
+    if(
+        !staticFrameReady ||
+        !staticFrame
+    ){
+
+        return;
+    }
+
+
+    fctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    const rect =
+        godLayer.getBoundingClientRect();
+
+
+    const centerX =
+        rect.left +
+        rect.width*.5;
+
+    const centerY =
+        rect.top +
+        rect.height*.5;
+
+
+    /*
+       L'image réelle fait 600x600.
+
+       Elle est affichée dans godLayer.
+       On utilise donc ce facteur pour conserver
+       les bonnes proportions.
+    */
+
+    const scale =
+        rect.width / 600;
+
+
+    fctx.save();
+
+    fctx.globalCompositeOperation =
+        "source-over";
+
+
+    for(
+        let i=0;
+        i<fragments.length;
+        i++
+    ){
+
+        const fragment =
+            fragments[i];
+
+
+        /*
+           Chaque morceau possède son propre retard.
+
+           Le retard reste faible afin que tout
+           le personnage ait réellement le temps
+           de se former pendant les 11 secondes.
+        */
+
+        const localStart =
+            fragment.delay;
+
+
+        const localDuration =
+            .78;
+
+
+        const local =
+            clamp(
+                (
+                    progress -
+                    localStart
+                ) /
+                localDuration,
+                0,
+                1
+            );
+
+
+        const eased =
+            easeInOutCubic(
+                local
+            );
+
+
+        const remaining =
+            1-eased;
+
+
+        /*
+           Trajectoire légèrement organique.
+
+           MAIS le point final reste EXACTEMENT
+           celui de l'image.
+        */
+
+        const curve =
+            Math.sin(
+                eased *
+                Math.PI
+            );
+
+
+        const curveX =
+            Math.cos(
+                fragment.phase +
+                eased*4
+            ) *
+            7 *
+            curve;
+
+
+        const curveY =
+            Math.sin(
+                fragment.phase +
+                eased*5
+            ) *
+            7 *
+            curve;
+
+
+        const x =
+            fragment.startX *
+            remaining +
+
+            fragment.finalX *
+            eased +
+
+            curveX;
+
+
+        const y =
+            fragment.startY *
+            remaining +
+
+            fragment.finalY *
+            eased +
+
+            curveY;
+
+
+        const rotation =
+            fragment.rotationStart *
+            remaining +
+
+            fragment.rotationEnd *
+            eased;
+
+
+        const scaleLocal =
+            fragment.scaleStart *
+            remaining +
+
+            fragment.scaleEnd *
+            eased;
+
+
+        const alpha =
+            clamp(
+                local * 3,
+                0,
+                1
+            );
+
+
+        /*
+           Verrouillage du morceau
+        */
+
+        if(
+            local >= 1 &&
+            !fragment.locked
+        ){
+
+            fragment.locked =
+                true;
+
+            fragment.lockPulse =
+                1;
+
+
+            createLockSpark(
+                centerX +
+                fragment.finalX *
+                scale,
+
+                centerY +
+                fragment.finalY *
+                scale
+            );
+        }
+
+
+        if(
+            fragment.lockPulse > 0
+        ){
+
+            fragment.lockPulse *=
+                .88;
+        }
+
+
+        /*
+           Position du morceau
+        */
+
+        fctx.save();
+
+
+        fctx.translate(
+            centerX +
+            x * scale,
+
+            centerY +
+            y * scale
+        );
+
+
+        fctx.rotate(
+            rotation
+        );
+
+
+        fctx.scale(
+            scaleLocal,
+            scaleLocal
+        );
+
+
+        /*
+           Taille du morceau à l'écran
+        */
+
+        const drawWidth =
+            fragment.width *
+            scale;
+
+        const drawHeight =
+            fragment.height *
+            scale;
+
+
+        /*
+           PETITE irrégularité dans les bordures.
+
+           Mais les coordonnées restent
+           celles des vraies cases de l'image.
+        */
+
+        const jitter =
+            2;
+
+
+        fctx.beginPath();
+
+
+        fctx.moveTo(
+            -drawWidth*.5 -
+            jitter,
+
+            -drawHeight*.5 +
+            rand(-1,1)
+        );
+
+
+        fctx.lineTo(
+            drawWidth*.5 +
+            rand(-1,1),
+
+            -drawHeight*.5 -
+            jitter
+        );
+
+
+        fctx.lineTo(
+            drawWidth*.5 +
+            jitter,
+
+            drawHeight*.5 +
+            rand(-1,1)
+        );
+
+
+        fctx.lineTo(
+            -drawWidth*.5 +
+            rand(-1,1),
+
+            drawHeight*.5 +
+            jitter
+        );
+
+
+        fctx.closePath();
+
+        fctx.clip();
+
+
+        /*
+           Source réelle de l'image.
+
+           On prend EXACTEMENT la zone correspondant
+           au morceau.
+        */
+
+        fctx.globalAlpha =
+            alpha;
+
+
+        fctx.drawImage(
+
+            staticFrame,
+
+            fragment.sourceX,
+            fragment.sourceY,
+
+            fragment.width,
+            fragment.height,
+
+            -drawWidth*.5,
+            -drawHeight*.5,
+
+            drawWidth,
+            drawHeight
+        );
+
+
+        /*
+           Petit flash quand le morceau se verrouille.
+        */
+
+        if(
+            fragment.locked &&
+            fragment.lockPulse > .03
+        ){
+
+            fctx.globalAlpha =
+                fragment.lockPulse *
+                .45;
+
+            fctx.globalCompositeOperation =
+                "screen";
+
+            fctx.strokeStyle =
+                "rgba(205,215,255,.95)";
+
+            fctx.lineWidth =
+                1.2;
+
+            fctx.shadowBlur =
+                10;
+
+            fctx.shadowColor =
+                "rgba(130,140,255,.9)";
+
+
+            fctx.stroke();
+        }
+
+
+        fctx.restore();
+    }
+
+
+    fctx.restore();
+}
+
+
+/* =========================================================
+   PARTICULES
+========================================================= */
+
+const particles = [];
+
+const PARTICLE_COUNT = 170;
+
+
+function createParticles(){
+
+    particles.length = 0;
+
+
+    for(
+        let i=0;
+        i<PARTICLE_COUNT;
+        i++
+    ){
+
+        const angle =
+            Math.random() *
+            Math.PI *
+            2;
+
+
+        const radius =
+            rand(
+                80,
+                Math.min(W,H)*.68
+            );
+
+
+        particles.push({
+
+            angle,
+
+            radius,
+
+            speed:
+                rand(
+                    .00018,
+                    .00075
+                ),
+
+            size:
+                rand(
+                    .5,
+                    1.8
+                ),
+
+            alpha:
+                rand(
+                    .12,
+                    .55
+                ),
+
+            drift:
+                rand(
+                    -.08,
+                    .08
+                ),
+
+            phase:
+                rand(
+                    0,
+                    Math.PI*2
+                )
+        });
+    }
+}
+
+
+createParticles();
+
+
+function updateParticles(dt){
+
+    for(
+        let i=0;
+        i<particles.length;
+        i++
+    ){
+
+        const p =
+            particles[i];
+
+
+        p.angle +=
+            p.speed *
+            dt *
+            60;
+
+
+        p.radius +=
+            p.drift *
+            dt *
+            60;
+
+
+        if(
+            p.radius >
+            Math.min(W,H)*.72
+        ){
+
+            p.radius =
+                70;
+        }
+    }
+}
+
+
+function drawParticles(){
+
+    ctx.save();
+
+    ctx.globalCompositeOperation =
+        "screen";
+
+
+    for(
+        let i=0;
+        i<particles.length;
+        i++
+    ){
+
+        const p =
+            particles[i];
+
+
+        const x =
+            CX +
+            Math.cos(p.angle) *
+            p.radius;
+
+
+        const y =
+            CY +
+            Math.sin(p.angle) *
+            p.radius;
+
+
+        const pulse =
+            .7 +
+            Math.sin(
+                animationTime*2 +
+                p.phase
+            )*.3;
+
+
+        ctx.globalAlpha =
+            p.alpha *
+            pulse;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+
+        ctx.fillStyle =
+            "rgba(155,165,255,1)";
+
+
+        ctx.fill();
+    }
+
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   FAILLE
+========================================================= */
+
+const rift = [];
+
+const RIFT_COUNT = 34;
+
+
+function createRift(){
+
+    rift.length = 0;
+
+
+    for(
+        let i=0;
+        i<RIFT_COUNT;
+        i++
+    ){
+
+        rift.push({
+
+            angle:
+                i *
+                Math.PI*2 /
+                RIFT_COUNT,
+
+            radius:
+                rand(
+                    Math.min(W,H)*.11,
+                    Math.min(W,H)*.30
+                ),
+
+            wobble:
+                rand(
+                    3,
+                    12
+                )
+        });
+    }
+}
+
+
+createRift();
+
+
+function drawRift(
+    progress
+){
+
+    if(
+        progress <= 0
+    ){
+
+        return;
+    }
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        CX,
+        CY
+    );
+
+
+    ctx.globalCompositeOperation =
+        "screen";
+
+
+    /*
+       Trou noir central
+    */
+
+    const glow =
+        ctx.createRadialGradient(
+            0,
+            0,
+            0,
+            0,
+            0,
+            Math.min(W,H)*.42
+        );
+
+
+    glow.addColorStop(
+        0,
+        "rgba(0,0,0,.99)"
+    );
+
+
+    glow.addColorStop(
+        .25,
+        "rgba(10,10,25,.82)"
+    );
+
+
+    glow.addColorStop(
+        .55,
+        "rgba(70,60,160,.10)"
+    );
+
+
+    glow.addColorStop(
+        1,
+        "rgba(0,0,0,0)"
+    );
+
+
+    ctx.globalAlpha =
+        clamp(
+            progress*1.5,
+            0,
+            1
+        );
+
+
+    ctx.fillStyle =
+        glow;
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        0,
+        0,
+        Math.min(W,H)*.42,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       Grande fissure
+    */
+
+    ctx.beginPath();
+
+
+    for(
+        let i=0;
+        i<rift.length;
+        i++
+    ){
+
+        const p =
+            rift[i];
+
+
+        const rr =
+            p.radius +
+            Math.sin(
+                animationTime*2 +
+                i*.7
+            ) *
+            p.wobble;
+
+
+        const x =
+            Math.cos(p.angle) *
+            rr;
+
+
+        const y =
+            Math.sin(p.angle) *
+            rr;
+
+
+        if(i===0){
+
+            ctx.moveTo(
+                x,
+                y
+            );
+
+        }else{
+
+            ctx.lineTo(
+                x,
+                y
+            );
+        }
+    }
+
+
+    ctx.closePath();
+
+
+    ctx.lineWidth =
+        1.4;
+
+
+    ctx.strokeStyle =
+        "rgba(145,155,255,.85)";
+
+
+    ctx.globalAlpha =
+        progress;
+
+
+    ctx.stroke();
+
+
+    /*
+       Petite fissure interne
+    */
+
+    ctx.beginPath();
+
+
+    for(
+        let i=0;
+        i<rift.length;
+        i+=2
+    ){
+
+        const p =
+            rift[i];
+
+
+        const rr =
+            p.radius*.70;
+
+
+        const x =
+            Math.cos(p.angle) *
+            rr;
+
+
+        const y =
+            Math.sin(p.angle) *
+            rr;
+
+
+        if(i===0){
+
+            ctx.moveTo(
+                x,
+                y
+            );
+
+        }else{
+
+            ctx.lineTo(
+                x,
+                y
+            );
+        }
+    }
+
+
+    ctx.strokeStyle =
+        "rgba(230,235,255,.8)";
+
+
+    ctx.lineWidth =
+        .55;
+
+
+    ctx.globalAlpha =
+        progress*.65;
+
+
+    ctx.stroke();
+
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   SPARKS
+========================================================= */
+
+const sparks = [];
+
+
+function createSparkBurst(
+    amount,
+    originX=CX,
+    originY=CY
+){
+
+    for(
+        let i=0;
+        i<amount;
+        i++
+    ){
+
+        const angle =
+            Math.random() *
+            Math.PI*2;
+
+
+        const speed =
+            rand(
+                1.5,
+                7
+            );
+
+
+        sparks.push({
+
+            x:originX,
+
+            y:originY,
+
+            vx:
+                Math.cos(angle) *
+                speed,
+
+            vy:
+                Math.sin(angle) *
+                speed,
+
+            life:1,
+
+            decay:
+                rand(
+                    .014,
+                    .032
+                ),
+
+            size:
+                rand(
+                    .7,
+                    2.5
+                )
+        });
+    }
+}
+
+
+function createLockSpark(
+    x,
+    y
+){
+
+    for(
+        let i=0;
+        i<8;
+        i++
+    ){
+
+        const angle =
+            Math.random() *
+            Math.PI*2;
+
+
+        const speed =
+            rand(
+                .5,
+                2.5
+            );
+
+
+        sparks.push({
+
+            x,
+            y,
+
+            vx:
+                Math.cos(angle) *
+                speed,
+
+            vy:
+                Math.sin(angle) *
+                speed,
+
+            life:1,
+
+            decay:.055,
+
+            size:
+                rand(
+                    .5,
+                    1.5
+                )
+        });
+    }
+}
+
+
+function updateSparks(dt){
+
+    for(
+        let i=sparks.length-1;
+        i>=0;
+        i--
+    ){
+
+        const s =
+            sparks[i];
+
+
+        s.x +=
+            s.vx *
+            dt *
+            60;
+
+
+        s.y +=
+            s.vy *
+            dt *
+            60;
+
+
+        s.vx *=
+            .985;
+
+
+        s.vy *=
+            .985;
+
+
+        s.life -=
+            s.decay *
+            dt *
+            60;
+
+
+        if(
+            s.life <= 0
+        ){
+
+            sparks.splice(
+                i,
+                1
+            );
+        }
+    }
+}
+
+
+function drawSparks(){
+
+    if(
+        !sparks.length
+    ){
+
+        return;
+    }
+
+
+    ctx.save();
+
+    ctx.globalCompositeOperation =
+        "screen";
+
+
+    for(
+        let i=0;
+        i<sparks.length;
+        i++
+    ){
+
+        const s =
+            sparks[i];
+
+
+        ctx.globalAlpha =
+            s.life;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            s.x,
+            s.y,
+            s.size,
+            0,
+            Math.PI*2
+        );
+
+
+        ctx.fillStyle =
+            "rgba(220,225,255,1)";
+
+
+        ctx.fill();
+    }
+
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   SHOCKWAVES
+========================================================= */
+
+const shockwaves = [];
+
+
+function createShockwave(
+    radius=20,
+    speed=18,
+    strength=1
+){
+
+    shockwaves.push({
+
+        radius,
+
+        speed,
+
+        alpha:
+            strength,
+
+        width:
+            3
+    });
+}
+
+
+function updateShockwaves(dt){
+
+    for(
+        let i=shockwaves.length-1;
+        i>=0;
+        i--
+    ){
+
+        const s =
+            shockwaves[i];
+
+
+        s.radius +=
+            s.speed *
+            dt *
+            60;
+
+
+        s.alpha -=
+            .014 *
+            dt *
+            60;
+
+
+        s.width *=
+            .991;
+
+
+        if(
+            s.alpha <= 0
+        ){
+
+            shockwaves.splice(
+                i,
+                1
+            );
+        }
+    }
+}
+
+
+function drawShockwaves(){
+
+    if(
+        !shockwaves.length
+    ){
+
+        return;
+    }
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        CX,
+        CY
+    );
+
+
+    ctx.globalCompositeOperation =
+        "screen";
+
+
+    for(
+        let i=0;
+        i<shockwaves.length;
+        i++
+    ){
+
+        const s =
+            shockwaves[i];
+
+
+        ctx.globalAlpha =
+            s.alpha;
+
+
+        ctx.lineWidth =
+            Math.max(
+                .5,
+                s.width
+            );
+
+
+        ctx.strokeStyle =
+            "rgba(155,165,255,1)";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            0,
+            0,
+            s.radius,
+            0,
+            Math.PI*2
+        );
+
+
+        ctx.stroke();
+    }
+
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   ÉCLAIRS
+========================================================= */
+
+let lightning =
+    0;
+
+
+function triggerLightning(){
+
+    lightning =
+        1;
+}
+
+
+function drawLightning(){
+
+    if(
+        lightning <= 0
+    ){
+
+        return;
+    }
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        CX,
+        CY
+    );
+
+
+    ctx.globalCompositeOperation =
+        "screen";
+
+
+    ctx.globalAlpha =
+        lightning;
+
+
+    for(
+        let b=0;
+        b<7;
+        b++
+    ){
+
+        const angle =
+            Math.random() *
+            Math.PI*2;
+
+
+        let x=0;
+        let y=0;
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            y
+        );
+
+
+        for(
+            let i=0;
+            i<8;
+            i++
+        ){
+
+            const distance =
+                20 +
+                i*48;
+
+
+            x =
+                Math.cos(angle) *
+                distance +
+                rand(-18,18);
+
+
+            y =
+                Math.sin(angle) *
+                distance +
+                rand(-18,18);
+
+
+            ctx.lineTo(
+                x,
+                y
+            );
+        }
+
+
+        ctx.strokeStyle =
+            "rgba(220,230,255,1)";
+
+
+        ctx.lineWidth =
+            rand(
+                .6,
+                1.7
+            );
+
+
+        ctx.stroke();
+    }
+
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   FLASH
+========================================================= */
+
+function flashScreen(
+    strength,
+    duration
+){
+
+    flash.style.transition =
+        "none";
+
+
+    flash.style.opacity =
+        strength;
+
+
+    requestAnimationFrame(
+        ()=>{
+
+            flash.style.transition =
+                `
+                opacity
+                ${duration}ms
+                ease-out
+                `;
+
+
+            flash.style.opacity =
+                "0";
+        }
+    );
+}
+
+
+/* =========================================================
+   MOUVEMENT LIBRE
+========================================================= */
+
+function chooseTarget(){
+
+    const rangeX =
+        Math.min(
+            W*.26,
+            300
+        );
+
+
+    const rangeY =
+        Math.min(
+            H*.20,
+            220
+        );
+
+
+    targetX =
+        rand(
+            -rangeX,
+            rangeX
+        );
+
+
+    targetY =
+        rand(
+            -rangeY,
+            rangeY
+        );
+
+
+    nextTargetTime =
+        animationTime +
+        rand(
+            2.8,
+            5.8
+        );
+}
+
+
+function updateFreeMovement(dt){
+
+    if(
+        !deityActive
+    ){
+
+        return;
+    }
+
+
+    if(
+        animationTime >
+        nextTargetTime
+    ){
+
+        chooseTarget();
+    }
+
+
+    const dx =
+        targetX -
+        godX;
+
+
+    const dy =
+        targetY -
+        godY;
+
+
+    velocityX +=
+        dx *
+        .0008 *
+        dt *
+        60;
+
+
+    velocityY +=
+        dy *
+        .0008 *
+        dt *
+        60;
+
+
+    velocityX *=
+        Math.pow(
+            .925,
+            dt*60
+        );
+
+
+    velocityY *=
+        Math.pow(
+            .925,
+            dt*60
+        );
+
+
+    const speed =
+        Math.sqrt(
+            velocityX *
+            velocityX +
+
+            velocityY *
+            velocityY
+        );
+
+
+    const maxSpeed =
+        2.2;
+
+
+    if(
+        speed >
+        maxSpeed
+    ){
+
+        velocityX =
+            velocityX /
+            speed *
+            maxSpeed;
+
+
+        velocityY =
+            velocityY /
+            speed *
+            maxSpeed;
+    }
+
+
+    godX +=
+        velocityX *
+        dt *
+        60;
+
+
+    godY +=
+        velocityY *
+        dt *
+        60;
+}
+
+
+/* =========================================================
+   VISUEL DU GOD
+========================================================= */
+
+function updateGodVisual(){
+
+    if(
+        !deityActive
+    ){
+
+        return;
+    }
+
+
+    const bob =
+        Math.sin(
+            animationTime *
+            1.15
+        ) *
+        7;
+
+
+    const sway =
+        Math.sin(
+            animationTime *
+            .65
+        ) *
+        3;
+
+
+    const rotation =
+        Math.sin(
+            animationTime *
+            .55
+        ) *
+        .010;
+
+
+    const scale =
+        1 +
+        Math.sin(
+            animationTime *
+            1.35
+        ) *
+        .014;
+
+
+    god.style.transform =
+        `
+        translate3d(
+            ${godX+sway}px,
+            ${godY+bob}px,
+            0
+        )
+        scale(${scale})
+        rotate(${rotation}rad)
+        `;
+}
+
+
+/* =========================================================
+   ASSEMBLAGE
+========================================================= */
+
+/*
+   L'intro fait EXACTEMENT 11 secondes.
+
+   Les fragments commencent après un petit
+   préambule mais terminent avant 11 secondes.
+*/
+
+const INTRO_DURATION =
+    11.0;
+
+const ASSEMBLY_START =
+    1.35;
+
+const ASSEMBLY_END =
+    10.55;
+
+
+function updateAssembly(){
+
+    if(
+        !assembling
+    ){
+
+        return;
+    }
+
+
+    /*
+       Progression basée directement sur
+       le temps de l'intro.
+    */
+
+    const elapsed =
+        performance.now() -
+        introStartTime;
+
+
+    const introSeconds =
+        elapsed /
+        1000;
+
+
+    if(
+        introSeconds <
+        ASSEMBLY_START
+    ){
+
+        /*
+           Pas encore d'assemblage.
+        */
+
+        return;
+    }
+
+
+    const progress =
+        clamp(
+            (
+                introSeconds -
+                ASSEMBLY_START
+            ) /
+            (
+                ASSEMBLY_END -
+                ASSEMBLY_START
+            ),
+            0,
+            1
+        );
+
+
+    drawFragments(
+        progress
+    );
+
+
+    /*
+       La lueur augmente avec
+       la formation.
+    */
+
+    godGlow.style.opacity =
+        String(
+            .06 +
+            progress*.22
+        );
+
+
+    /*
+       Petit tremblement organique
+       pendant la reconstruction.
+    */
+
+    if(
+        progress > .05 &&
+        progress < .97
+    ){
+
+        shake(
+            1.1 +
+            progress*1.5
+        );
+    }
+
+
+    /*
+       Fin de formation.
+    */
+
+    if(
+        progress >= 1
+    ){
+
+        finishAssembly();
+    }
+}
+
+
+function beginAssembly(){
+
+    if(
+        assembling ||
+        assembled
+    ){
+
+        return;
+    }
+
+
+    assembling =
+        true;
+
+
+    fragmentCanvas.style.opacity =
+        "1";
+
+
+    for(
+        let i=0;
+        i<fragments.length;
+        i++
+    ){
+
+        const fragment =
+            fragments[i];
+
+
+        fragment.locked =
+            false;
+
+
+        fragment.lockPulse =
+            0;
+    }
+
+
+    createSparkBurst(
+        35
+    );
+
+
+    shake(3);
+
+
+    console.log(
+        "Assemblage commencé."
+    );
+}
+
+
+function finishAssembly(){
+
+    if(
+        assembled
+    ){
+
+        return;
+    }
+
+
+    assembled =
+        true;
+
+
+    assembling =
+        false;
+
+
+    /*
+       Les morceaux restent visibles
+       jusqu'au moment exact du spawn.
+    */
+
+    createSparkBurst(
+        30
+    );
+
+
+    shake(4);
+
+
+    /*
+       Le vrai spawn est programmé
+       à EXACTEMENT 11 secondes.
+    */
+
+    const elapsed =
+        performance.now() -
+        introStartTime;
+
+
+    const remaining =
+        Math.max(
+            0,
+            INTRO_DURATION*1000 -
+            elapsed
+        );
+
+
+    setTimeout(
+        beginTrueSpawn,
+        remaining
+    );
+
+
+    console.log(
+        "Assemblage terminé — attente du spawn à 11s."
+    );
+}
+
+
+/* =========================================================
+   VRAI SPAWN
+========================================================= */
+
+const SPAWN_DURATION =
+    3.0;
+
+
+function beginTrueSpawn(){
+
+    if(
+        deityActive
+    ){
+
+        return;
+    }
+
+
+    deityActive =
+        true;
+
+
+    /*
+       Position de départ EXACTEMENT au centre.
+    */
+
+    godX = 0;
+    godY = 0;
+
+
+    velocityX = 0;
+    velocityY = 0;
+
+
+    /*
+       Les morceaux disparaissent
+       quand le véritable sprite apparaît.
+    */
+
+    fragmentCanvas.style.opacity =
+        "0";
+
+
+    /*
+       Le GIF devient visible.
+    */
+
+    god.style.opacity =
+        "1";
+
+
+    god.style.transform =
+        `
+        translate3d(
+            0,
+            0,
+            0
+        )
+        scale(.58)
+        `;
+
+
+    godGlow.style.opacity =
+        ".95";
+
+
+    godGlow.style.transform =
+        "scale(.72)";
+
+
+    /*
+       ==========================
+       SPAWN SOUND
+       ==========================
+    */
+
+    spawnSound.currentTime =
+        0;
+
+
+    const spawnPromise =
+        spawnSound.play();
+
+
+    if(
+        spawnPromise
+    ){
+
+        spawnPromise.catch(
+            error =>
+                console.warn(
+                    "spawn.mp3 :",
+                    error
+                )
+        );
+    }
+
+
+    /*
+       ==========================
+       GROS EFFETS
+       ==========================
+    */
+
+    createSparkBurst(
+        150
+    );
+
+
+    createShockwave(
+        15,
+        17,
+        1
+    );
+
+
+    createShockwave(
+        35,
+        25,
+        .9
+    );
+
+
+    createShockwave(
+        60,
+        31,
+        .55
+    );
+
+
+    triggerLightning();
+
+
+    shake(28);
+
+
+    flashScreen(
+        .95,
+        500
+    );
+
+
+    /*
+       ==========================
+       ANIMATION SPAWN 3 SECONDES
+       ==========================
+    */
+
+    const spawnStart =
+        performance.now();
+
+
+    function animateSpawn(now){
+
+        const elapsed =
+            now -
+            spawnStart;
+
+
+        const p =
+            clamp(
+                elapsed /
+                (
+                    SPAWN_DURATION *
+                    1000
+                ),
+                0,
+                1
+            );
+
+
+        const e =
+            easeOutQuint(
+                p
+            );
+
+
+        /*
+           0.58 → 1
+        */
+
+        const spawnScale =
+            .58 +
+            .42 *
+            e;
+
+
+        /*
+           Léger mouvement vertical
+           d'apparition.
+        */
+
+        const spawnY =
+            -12 *
+            (1-e);
+
+
+        god.style.transform =
+            `
+            translate3d(
+                ${godX}px,
+                ${godY+spawnY}px,
+                0
+            )
+            scale(${spawnScale})
+            `;
+
+
+        /*
+           Glow.
+        */
+
+        godGlow.style.opacity =
+            String(
+                .95 -
+                p*.20
+            );
+
+
+        godGlow.style.transform =
+            `
+            scale(
+                ${.72+p*.28}
+            )
+            `;
+
+
+        /*
+           Effets supplémentaires
+           pendant le spawn.
+        */
+
+        if(
+            p > .20 &&
+            p < .90
+        ){
+
+            if(
+                Math.random() <
+                .035
+            ){
+
+                createSparkBurst(
+                    4
+                );
+            }
+        }
+
+
+        if(
+            p < 1
+        ){
+
+            requestAnimationFrame(
+                animateSpawn
+            );
+
+        }else{
+
+            /*
+               FIN EXACTE DES 3 SECONDES
+            */
+
+            god.style.transform =
+                `
+                translate3d(
+                    ${godX}px,
+                    ${godY}px,
+                    0
+                )
+                scale(1)
+                `;
+
+
+            finishSpawn();
+        }
+    }
+
+
+    requestAnimationFrame(
+        animateSpawn
+    );
+
+
+    /*
+       TITRE
+    */
+
+    setTimeout(
+        ()=>{
+            title.classList.add(
+                "show"
+            );
+        },
+        650
+    );
+}
+
+
+/* =========================================================
+   FIN DU SPAWN
+========================================================= */
+
+function finishSpawn(){
+
+    if(
+        spawnFinished
+    ){
+
+        return;
+    }
+
+
+    spawnFinished =
+        true;
+
+
+    /*
+       Petite onde finale.
+    */
+
+    createShockwave(
+        20,
+        13,
+        .8
+    );
+
+
+    shake(6);
+
+
+    /*
+       Le déplacement libre commence
+       maintenant.
+    */
+
+    chooseTarget();
+
+
+    /*
+       ==========================
+       MUSIQUE
+       ==========================
+
+       spawn commence à 11s
+       spawn dure 3s
+       song commence donc à 14s.
+    */
+
+    music.currentTime =
+        0;
+
+
+    const musicPromise =
+        music.play();
+
+
+    if(
+        musicPromise
+    ){
+
+        musicPromise.catch(
+            error =>
+                console.warn(
+                    "song.mp3 :",
+                    error
+                )
+        );
+    }
+
+
+    /*
+       Le titre reste quelques secondes.
+    */
+
+    setTimeout(
+        ()=>{
+            title.classList.remove(
+                "show"
+            );
+
+            title.classList.add(
+                "hide"
+            );
+        },
+        7000
+    );
+
+
+    console.log(
+        "SPAWN terminé — musique lancée."
+    );
+}
+
+
+/* =========================================================
+   INTRO
+========================================================= */
+
+function startIntro(){
+
+    if(
+        started
+    ){
+
+        return;
+    }
+
+
+    started =
+        true;
+
+
+    introStartTime =
+        performance.now();
+
+
+    console.log(
+        "THE NAMELESS DEITY // INTRO 11s"
+    );
+
+
+    /*
+       Message disparaît.
+    */
+
+    startMessage.classList.add(
+        "hidden"
+    );
+
+
+    /*
+       Audio INTRO
+    */
+
+    introSound.currentTime =
+        0;
+
+
+    introSound.volume =
+        .9;
+
+
+    const introPromise =
+        introSound.play();
+
+
+    if(
+        introPromise
+    ){
+
+        introPromise.catch(
+            error =>
+                console.warn(
+                    "intro.mp3 :",
+                    error
+                )
+        );
+    }
+
+
+    /*
+       Assemblage visuel.
+    */
+
+    beginAssembly();
+
+
+    /*
+       Sécurité :
+
+       même si un morceau n'a pas été verrouillé
+       à cause d'un ralentissement, on considère
+       l'intro terminée à 11 secondes.
+    */
+
+    setTimeout(
+        ()=>{
+            if(
+                !assembled
+            ){
+
+                assembled =
+                    true;
+
+                assembling =
+                    false;
+
+                finishAssembly();
+            }
+        },
+        INTRO_DURATION *
+        1000
+    );
+}
+
+
+/* =========================================================
+   BOUCLE PRINCIPALE
+========================================================= */
+
+function loop(now){
+
+    const dt =
+        Math.min(
+            .033,
+            (
+                now -
+                lastTime
+            ) /
+            1000
+        );
+
+
+    lastTime =
+        now;
+
+
+    animationTime +=
+        dt;
+
+
+    /*
+       Canvas FX
+    */
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+       Particules
+    */
+
+    updateParticles(
+        dt
+    );
+
+
+    drawParticles();
+
+
+    /*
+       Faille
+    */
+
+    let riftProgress =
+        0;
+
+
+    if(
+        started
+    ){
+
+        const elapsed =
+            performance.now() -
+            introStartTime;
+
+
+        const seconds =
+            elapsed /
+            1000;
+
+
+        /*
+           Faille qui apparaît
+           rapidement au début.
+        */
+
+        riftProgress =
+            clamp(
+                seconds /
+                2.0,
+                0,
+                1
+            );
+    }
+
+
+    drawRift(
+        riftProgress
+    );
+
+
+    /*
+       Assemblage
+    */
+
+    updateAssembly();
+
+
+    /*
+       Sparks
+    */
+
+    updateSparks(
+        dt
+    );
+
+
+    drawSparks();
+
+
+    /*
+       Shockwaves
+    */
+
+    updateShockwaves(
+        dt
+    );
+
+
+    drawShockwaves();
+
+
+    /*
+       Lightning
+    */
+
+    if(
+        lightning > 0
+    ){
+
+        drawLightning();
+
+
+        lightning -=
+            dt *
+            3.5;
+
+
+        if(
+            lightning < 0
+        ){
+
+            lightning = 0;
+        }
+    }
+
+
+    /*
+       Déplacement libre
+    */
+
+    updateFreeMovement(
+        dt
+    );
+
+
+    updateGodVisual();
+
+
+    /*
+       Tremblement
+    */
+
+    updateShake(
+        dt
+    );
+
+
+    requestAnimationFrame(
+        loop
+    );
+}
+
+
+requestAnimationFrame(
+    loop
+);
+
+
+/* =========================================================
+   AUDIO UNLOCK
+========================================================= */
+
+let audioUnlocked =
+    false;
+
+
+async function unlockAudio(){
+
+    if(
+        audioUnlocked
+    ){
+
+        return;
+    }
+
+
+    audioUnlocked =
+        true;
+
+
+    /*
+       INTRO
+    */
+
+    try{
+
+        introSound.muted =
+            true;
+
+        await introSound.play();
+
+        introSound.pause();
+
+        introSound.currentTime =
+            0;
+
+        introSound.muted =
+            false;
+
+    }catch(error){
+
+        console.warn(
+            "Unlock intro :",
+            error
+        );
+    }
+
+
+    /*
+       SPAWN
+    */
+
+    try{
+
+        spawnSound.muted =
+            true;
+
+        await spawnSound.play();
+
+        spawnSound.pause();
+
+        spawnSound.currentTime =
+            0;
+
+        spawnSound.muted =
+            false;
+
+    }catch(error){
+
+        console.warn(
+            "Unlock spawn :",
+            error
+        );
+    }
+
+
+    /*
+       MUSIC
+    */
+
+    try{
+
+        music.muted =
+            true;
+
+        await music.play();
+
+        music.pause();
+
+        music.currentTime =
+            0;
+
+        music.muted =
+            false;
+
+    }catch(error){
+
+        console.warn(
+            "Unlock music :",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   DÉMARRAGE AU PREMIER CLIC
+========================================================= */
+
+window.addEventListener(
+    "pointerdown",
+    async ()=>{
+
+        await unlockAudio();
+
+        if(
+            !started
+        ){
+
+            startIntro();
+        }
+
+    },
+    {
+        once:true,
+        passive:true
+    }
+);
+
+
+/* =========================================================
+   DEBUG
+========================================================= */
+
+console.log(
+    "%cTHE NAMELESS DEITY // V8",
+    "font-size:22px;font-weight:bold;"
+);
+
+console.log(
+    "INTRO : 11 secondes"
+);
+
+console.log(
+    "SPAWN : 3 secondes"
+);
+
+console.log(
+    "SONG : 4 minutes 05"
+);
+
+console.log(
+    "Morceaux basés sur la vraie image 600x600"
+);
+
+console.log(
+    "Positions finales non aléatoires"
+);
+
+console.log(
+    "Déplacement libre activé"
+);
+
+console.log(
+    "Téléportation supprimée"
+);
+
+</script>
+
+</body>
+</html>
