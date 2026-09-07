@@ -2,62 +2,144 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-
-<title>THE NAMELESS DEITY // THE GOD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Nameless Deity</title>
 
 <style>
 *{
     box-sizing:border-box;
-    margin:0;
-    padding:0;
 }
 
-html,
-body{
+html,body{
     width:100%;
     height:100%;
+    margin:0;
     overflow:hidden;
     background:#000;
 }
 
 body{
-    position:relative;
-    background:#000;
-    cursor:crosshair;
-    font-family:Georgia,"Times New Roman",serif;
+    font-family:Arial,Helvetica,sans-serif;
 }
 
 /* =========================================================
-   ESPACE
+   CAMERA
+========================================================= */
+
+#camera{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    transform:translate3d(0,0,0);
+    transform-origin:center center;
+    will-change:transform;
+}
+
+/* =========================================================
+   SPACE
 ========================================================= */
 
 #space{
     position:fixed;
     inset:0;
+    overflow:hidden;
 
     background:
         radial-gradient(
-            ellipse at center,
-            #090914 0%,
-            #040408 42%,
+            circle at 50% 50%,
+            #18172f 0%,
+            #0b0a18 30%,
+            #05050a 65%,
             #000 100%
         );
 }
 
+#space::before{
+    content:"";
+    position:absolute;
+    inset:-15%;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            rgba(80,70,255,.11),
+            transparent 50%
+        );
+
+    animation:spacePulse 6s ease-in-out infinite;
+}
+
+@keyframes spacePulse{
+    0%,100%{
+        opacity:.45;
+        transform:scale(1);
+    }
+
+    50%{
+        opacity:.9;
+        transform:scale(1.05);
+    }
+}
+
 /* =========================================================
-   CANVAS FX
+   CANVAS
 ========================================================= */
 
-#fx{
+#fx,
+#particles{
     position:fixed;
     inset:0;
 
     width:100%;
     height:100%;
 
-    z-index:10;
     pointer-events:none;
+}
+
+#fx{
+    z-index:10;
+}
+
+#particles{
+    z-index:27;
+}
+
+/* =========================================================
+   CENTER GLOW
+========================================================= */
+
+#riftGlow{
+    position:fixed;
+
+    left:50%;
+    top:50%;
+
+    width:18px;
+    height:18px;
+
+    border-radius:50%;
+
+    transform:
+        translate(-50%,-50%)
+        scale(.1);
+
+    background:#fff;
+
+    opacity:0;
+
+    z-index:12;
+
+    pointer-events:none;
+
+    box-shadow:
+        0 0 12px rgba(255,255,255,.9),
+        0 0 35px rgba(120,110,255,.75),
+        0 0 75px rgba(70,55,255,.5);
+
+    will-change:
+        transform,
+        opacity;
 }
 
 /* =========================================================
@@ -73,58 +155,84 @@ body{
     width:min(46vw,540px);
     height:min(46vw,540px);
 
-    transform:translate(-50%,-50%);
+    transform:
+        translate(-50%,-50%);
 
-    z-index:20;
-
-    pointer-events:none;
-
-    will-change:transform;
-}
-
-#fragmentCanvas{
-    position:absolute;
-    inset:0;
-
-    width:100%;
-    height:100%;
-
-    opacity:0;
+    z-index:30;
 
     pointer-events:none;
-
-    will-change:opacity;
 }
 
 #godGlow{
     position:absolute;
-    inset:-15%;
+
+    left:50%;
+    top:50%;
+
+    width:125%;
+    height:125%;
+
+    transform:
+        translate(-50%,-50%)
+        scale(.4);
 
     border-radius:50%;
 
     background:
         radial-gradient(
             circle,
-            rgba(150,160,255,.28) 0%,
-            rgba(100,100,255,.14) 25%,
-            rgba(70,70,255,.06) 48%,
-            transparent 74%
+            rgba(255,235,120,.50) 0%,
+            rgba(255,200,40,.25) 20%,
+            rgba(255,170,20,.10) 38%,
+            transparent 70%
         );
-
-    filter:blur(25px);
 
     opacity:0;
 
-    transform:scale(.7);
+    filter:blur(14px);
 
-    pointer-events:none;
+    mix-blend-mode:screen;
 
-    will-change:opacity,transform;
+    will-change:
+        transform,
+        opacity;
+}
+
+#godAura{
+    position:absolute;
+
+    left:50%;
+    top:50%;
+
+    width:145%;
+    height:145%;
+
+    transform:
+        translate(-50%,-50%)
+        scale(.3);
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(255,215,70,.10),
+            rgba(255,180,20,.04) 30%,
+            transparent 65%
+        );
+
+    opacity:0;
+
+    filter:blur(20px);
+
+    mix-blend-mode:screen;
 }
 
 #god{
     position:absolute;
-    inset:0;
+
+    left:50%;
+    top:50%;
 
     width:100%;
     height:100%;
@@ -134,84 +242,74 @@ body{
     opacity:0;
 
     transform:
-        translate3d(0,0,0)
-        scale(.65);
+        translate(-50%,-50%)
+        scale(.45);
 
     filter:
-        brightness(.86)
-        contrast(1.22)
-        saturate(1.08)
-        drop-shadow(0 0 12px rgba(130,140,255,.60))
-        drop-shadow(0 0 35px rgba(90,90,255,.34));
+        brightness(.9)
+        contrast(1.25)
+        saturate(1.1)
+        drop-shadow(
+            0 0 12px
+            rgba(255,220,90,.75)
+        )
+        drop-shadow(
+            0 0 32px
+            rgba(255,190,40,.4)
+        );
 
     will-change:
         transform,
-        opacity,
-        filter;
+        opacity;
 }
 
 /* =========================================================
-   TITRE
+   TITLE
 ========================================================= */
 
 #title{
     position:fixed;
 
     left:50%;
-    bottom:8%;
+    bottom:7%;
 
-    transform:
-        translateX(-50%)
-        translateY(25px);
+    transform:translateX(-50%);
 
-    z-index:50;
+    z-index:40;
 
-    color:#eeeeff;
-
-    text-align:center;
-
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
+    color:#fff;
 
     font-size:
-        clamp(20px,3vw,43px);
+        clamp(
+            18px,
+            2.5vw,
+            32px
+        );
+
+    font-weight:bold;
 
     letter-spacing:
-        clamp(3px,.75vw,9px);
+        clamp(
+            4px,
+            1vw,
+            12px
+        );
 
-    white-space:nowrap;
+    text-align:center;
 
     opacity:0;
 
     text-shadow:
-        0 0 5px rgba(255,255,255,.95),
-        0 0 15px rgba(130,130,255,.95),
-        0 0 35px rgba(90,90,255,.60),
-        0 0 70px rgba(90,90,255,.25);
+        0 0 8px rgba(255,255,255,.8),
+        0 0 22px rgba(255,210,70,.7),
+        0 0 45px rgba(255,160,20,.4);
+
+    white-space:nowrap;
 
     pointer-events:none;
 
     transition:
-        opacity 1s ease,
-        transform 1s ease;
-}
-
-#title.show{
-    opacity:1;
-
-    transform:
-        translateX(-50%)
-        translateY(0);
-}
-
-#title.hide{
-    opacity:0;
-
-    transform:
-        translateX(-50%)
-        translateY(-18px);
+        opacity 1.5s ease;
 }
 
 /* =========================================================
@@ -222,16 +320,16 @@ body{
     position:fixed;
     inset:0;
 
-    z-index:40;
+    z-index:50;
 
     pointer-events:none;
 
     background:
         radial-gradient(
             ellipse at center,
-            transparent 38%,
-            rgba(0,0,0,.30) 67%,
-            rgba(0,0,0,.84) 100%
+            transparent 35%,
+            rgba(0,0,0,.22) 65%,
+            rgba(0,0,0,.82) 100%
         );
 }
 
@@ -244,39 +342,31 @@ body{
 
     inset:-50%;
 
-    z-index:45;
+    z-index:60;
 
     pointer-events:none;
 
     opacity:.045;
 
-    background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+    background-image:url(
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"
+    );
 
     animation:
         grainMove .2s steps(2) infinite;
 }
 
 @keyframes grainMove{
-
     0%{
         transform:translate(0,0);
     }
 
-    25%{
-        transform:translate(-2%,3%);
-    }
-
     50%{
-        transform:translate(3%,-2%);
-    }
-
-    75%{
-        transform:translate(-3%,-3%);
+        transform:translate(-1%,1%);
     }
 
     100%{
-        transform:translate(2%,2%);
+        transform:translate(1%,-1%);
     }
 }
 
@@ -298,7 +388,7 @@ body{
 }
 
 /* =========================================================
-   INTRO MESSAGE
+   START
 ========================================================= */
 
 #startMessage{
@@ -310,82 +400,98 @@ body{
     transform:
         translate(-50%,-50%);
 
-    z-index:60;
+    z-index:90;
 
-    color:rgba(230,235,255,.72);
+    color:#fff;
 
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
+    text-align:center;
 
     font-size:
-        clamp(12px,1.2vw,17px);
+        clamp(
+            14px,
+            1.5vw,
+            20px
+        );
 
     letter-spacing:4px;
 
     text-transform:uppercase;
 
-    text-align:center;
+    cursor:pointer;
 
-    opacity:.75;
+    user-select:none;
 
-    pointer-events:none;
+    padding:20px 30px;
 
-    transition:
-        opacity .8s ease,
-        transform .8s ease;
+    text-shadow:
+        0 0 10px #fff,
+        0 0 25px #6d65ff;
+
+    animation:
+        startPulse 2s ease-in-out infinite;
 }
 
-#startMessage.hidden{
-    opacity:0;
+@keyframes startPulse{
+    0%,100%{
+        opacity:.5;
+        transform:
+            translate(-50%,-50%)
+            scale(1);
+    }
 
-    transform:
-        translate(-50%,-50%)
-        scale(.92);
+    50%{
+        opacity:1;
+        transform:
+            translate(-50%,-50%)
+            scale(1.04);
+    }
 }
 </style>
 </head>
 
 <body>
 
-<div id="space"></div>
+<div id="camera">
 
-<canvas id="fx"></canvas>
+    <div id="space"></div>
 
-<div id="godLayer">
+    <canvas id="fx"></canvas>
 
-    <canvas id="fragmentCanvas"></canvas>
+    <canvas id="particles"></canvas>
 
-    <div id="godGlow"></div>
+    <div id="riftGlow"></div>
 
-    <img
-        id="god"
-        crossorigin="anonymous"
-        src="https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@refs/heads/main/david-random/the%20god/Nameless_Deity.gif"
-        alt="THE NAMELESS DEITY"
-    >
+    <div id="godLayer">
+
+        <div id="godAura"></div>
+
+        <div id="godGlow"></div>
+
+        <img
+            id="god"
+            src="https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@refs/heads/main/david-random/the%20god/Nameless_Deity.gif"
+            alt="Nameless Deity"
+            draggable="false"
+        >
+
+    </div>
+
+    <div id="title">
+        THE NAMELESS DEITY
+    </div>
+
+    <div id="vignette"></div>
+
+    <div id="grain"></div>
 
 </div>
-
-<div id="title">
-    THE NAMELESS DEITY // THE GOD
-</div>
-
-<div id="startMessage">
-    CLICK TO AWAKEN
-</div>
-
-<div id="vignette"></div>
-
-<div id="grain"></div>
 
 <div id="flash"></div>
 
+<div id="startMessage">
+    CLICK TO BEGIN
+</div>
 
-<!-- ========================================================
-     AUDIO
-========================================================= -->
 
 <audio
     id="introSound"
@@ -408,44 +514,47 @@ body{
 
 
 <script>
-"use strict";
 
 /* =========================================================
    ELEMENTS
 ========================================================= */
 
-const fx =
+const camera =
+    document.getElementById("camera");
+
+const canvas =
     document.getElementById("fx");
 
 const ctx =
-    fx.getContext(
-        "2d",
-        {
-            alpha:true,
-            desynchronized:true
-        }
-    );
+    canvas.getContext("2d", {
+        alpha:true
+    });
 
-const fragmentCanvas =
-    document.getElementById("fragmentCanvas");
+const particleCanvas =
+    document.getElementById("particles");
 
-const fctx =
-    fragmentCanvas.getContext(
-        "2d",
-        {
-            alpha:true,
-            desynchronized:true
-        }
-    );
+const particleCtx =
+    particleCanvas.getContext("2d", {
+        alpha:true
+    });
 
-const god =
-    document.getElementById("god");
+const space =
+    document.getElementById("space");
+
+const riftGlow =
+    document.getElementById("riftGlow");
 
 const godLayer =
     document.getElementById("godLayer");
 
+const god =
+    document.getElementById("god");
+
 const godGlow =
     document.getElementById("godGlow");
+
+const godAura =
+    document.getElementById("godAura");
 
 const title =
     document.getElementById("title");
@@ -467,54 +576,109 @@ const music =
 
 
 /* =========================================================
-   DIMENSIONS
+   TIMING
 ========================================================= */
 
-let DPR =
-    Math.min(
-        window.devicePixelRatio || 1,
-        1.20
+const INTRO_DURATION=11;
+
+const SPAWN_DURATION=3;
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let started=false;
+
+let deityActive=false;
+
+let spawnFinished=false;
+
+let spawnShakeActive=false;
+
+let introStartTime=0;
+
+let spawnStartTime=0;
+
+let animationTime=0;
+
+let godX=0;
+
+let godY=0;
+
+let velocityX=0;
+
+let velocityY=0;
+
+let targetX=0;
+
+let targetY=0;
+
+let nextTargetTime=0;
+
+
+/* =========================================================
+   CANVAS SIZE
+========================================================= */
+
+let W=window.innerWidth;
+
+let H=window.innerHeight;
+
+let DPR=1;
+
+
+/*
+    Limite de résolution pour éviter que le Canvas
+    travaille inutilement en 4K / écran haute densité.
+
+    1.0 = très léger
+    1.25 = meilleur rendu
+*/
+
+function getCanvasDPR(){
+
+    const device=
+        window.devicePixelRatio || 1;
+
+    /*
+        Sur une machine faible :
+        maximum 1.25.
+
+        Sur un écran normal :
+        généralement 1.
+    */
+
+    return Math.min(
+        device,
+        1.25
     );
-
-let W = 0;
-let H = 0;
-
-let CX = 0;
-let CY = 0;
+}
 
 
 function resize(){
 
-    DPR =
-        Math.min(
-            window.devicePixelRatio || 1,
-            1.20
+    W=window.innerWidth;
+
+    H=window.innerHeight;
+
+    DPR=getCanvasDPR();
+
+    canvas.width=
+        Math.floor(
+            W*DPR
         );
 
-    W =
-        window.innerWidth;
+    canvas.height=
+        Math.floor(
+            H*DPR
+        );
 
-    H =
-        window.innerHeight;
+    canvas.style.width=
+        W+"px";
 
-    CX =
-        W * .5;
-
-    CY =
-        H * .5;
-
-
-    fx.width =
-        Math.floor(W * DPR);
-
-    fx.height =
-        Math.floor(H * DPR);
-
-    fx.style.width =
-        W + "px";
-
-    fx.style.height =
-        H + "px";
+    canvas.style.height=
+        H+"px";
 
     ctx.setTransform(
         DPR,
@@ -526,19 +690,23 @@ function resize(){
     );
 
 
-    fragmentCanvas.width =
-        Math.floor(W * DPR);
+    particleCanvas.width=
+        Math.floor(
+            W*DPR
+        );
 
-    fragmentCanvas.height =
-        Math.floor(H * DPR);
+    particleCanvas.height=
+        Math.floor(
+            H*DPR
+        );
 
-    fragmentCanvas.style.width =
-        W + "px";
+    particleCanvas.style.width=
+        W+"px";
 
-    fragmentCanvas.style.height =
-        H + "px";
+    particleCanvas.style.height=
+        H+"px";
 
-    fctx.setTransform(
+    particleCtx.setTransform(
         DPR,
         0,
         0,
@@ -546,28 +714,24 @@ function resize(){
         0,
         0
     );
+
+
+    createRiftBranches();
+
+    createRiftSparks();
+
+    createGoldenParticles();
 }
 
 window.addEventListener(
     "resize",
-    resize,
-    {passive:true}
+    resize
 );
-
-resize();
 
 
 /* =========================================================
-   UTILITAIRES
+   MATH
 ========================================================= */
-
-function rand(min,max){
-
-    return Math.random() *
-        (max-min) +
-        min;
-}
-
 
 function clamp(
     value,
@@ -582,9 +746,44 @@ function clamp(
 }
 
 
-function easeOutCubic(t){
+function lerp(
+    a,
+    b,
+    t
+){
 
-    return 1 -
+    return a+
+        (b-a)*t;
+}
+
+
+function easeInOut(t){
+
+    t=clamp(
+        t,
+        0,
+        1
+    );
+
+    return t<.5
+        ? 2*t*t
+        : 1-
+          Math.pow(
+              -2*t+2,
+              2
+          )/2;
+}
+
+
+function easeOut(t){
+
+    t=clamp(
+        t,
+        0,
+        1
+    );
+
+    return 1-
         Math.pow(
             1-t,
             3
@@ -592,1134 +791,519 @@ function easeOutCubic(t){
 }
 
 
-function easeInOutCubic(t){
+function rand(
+    min,
+    max
+){
 
-    return t < .5
-
-        ? 4*t*t*t
-
-        : 1 -
-          Math.pow(
-              -2*t+2,
-              3
-          ) / 2;
-}
-
-
-function easeOutQuint(t){
-
-    return 1 -
-        Math.pow(
-            1-t,
-            5
-        );
+    return Math.random()*
+        (max-min)+min;
 }
 
 
 /* =========================================================
-   ÉTAT GLOBAL
+   DETERMINISTIC RANDOM
 ========================================================= */
 
-let started = false;
+function seededRandom(seed){
 
-let introStartTime = 0;
+    const x=
+        Math.sin(
+            seed*999.123
+        )*
+        43758.5453;
 
-let introFinished = false;
-
-let assembling = false;
-
-let assembled = false;
-
-let deityActive = false;
-
-let spawnFinished = false;
-
-let animationTime = 0;
-
-let lastTime =
-    performance.now();
-
-
-/* =========================================================
-   MOUVEMENT LIBRE
-========================================================= */
-
-let godX = 0;
-let godY = 0;
-
-let velocityX = 0;
-let velocityY = 0;
-
-let targetX = 0;
-let targetY = 0;
-
-let nextTargetTime = 0;
-
-
-/* =========================================================
-   SHAKE
-========================================================= */
-
-let shakePower = 0;
-
-
-function shake(amount){
-
-    shakePower =
-        Math.max(
-            shakePower,
-            amount
-        );
-}
-
-
-function updateShake(dt){
-
-    if(shakePower <= .01){
-
-        shakePower = 0;
-
-        godLayer.style.transform =
-            "translate(-50%,-50%)";
-
-        return;
-    }
-
-
-    shakePower *=
-        Math.pow(
-            .018,
-            dt
-        );
-
-
-    const x =
-        rand(
-            -shakePower,
-            shakePower
-        );
-
-    const y =
-        rand(
-            -shakePower,
-            shakePower
-        );
-
-
-    godLayer.style.transform =
-        `
-        translate(
-            calc(-50% + ${x}px),
-            calc(-50% + ${y}px)
-        )
-        `;
+    return x-
+        Math.floor(x);
 }
 
 
 /* =========================================================
-   IMAGE SOURCE
+   RIFT BRANCH DATA
 ========================================================= */
 
-const imageSource =
-    new Image();
-
-imageSource.crossOrigin =
-    "anonymous";
-
-imageSource.src =
-    "https://cdn.jsdelivr.net/gh/davidtytytutu-lgtm/ramdom@refs/heads/main/david-random/the%20god/Nameless_Deity.gif";
-
-
-/* =========================================================
-   IMAGE STATIQUE
-========================================================= */
-
-let staticFrame = null;
-
-let staticFrameReady = false;
-
-
-function prepareStaticFrame(){
-
-    if(
-        !imageSource.complete ||
-        !imageSource.naturalWidth
-    ){
-
-        setTimeout(
-            prepareStaticFrame,
-            100
-        );
-
-        return;
-    }
-
-
-    try{
-
-        const canvas =
-            document.createElement(
-                "canvas"
-            );
-
-        canvas.width =
-            imageSource.naturalWidth;
-
-        canvas.height =
-            imageSource.naturalHeight;
-
-
-        const cctx =
-            canvas.getContext(
-                "2d"
-            );
-
-        cctx.drawImage(
-            imageSource,
-            0,
-            0
-        );
-
-
-        staticFrame =
-            canvas;
-
-        staticFrameReady =
-            true;
-
-        console.log(
-            "Image du Nameless Deity chargée."
-        );
-
-    }catch(error){
-
-        console.warn(
-            "Impossible de préparer l'image :",
-            error
-        );
-
-        staticFrameReady =
-            false;
-    }
-}
-
-
-imageSource.addEventListener(
-    "load",
-    ()=>{
-        setTimeout(
-            prepareStaticFrame,
-            100
-        );
-    },
-    {once:true}
-);
-
-
-/* =========================================================
-   MORCEAUX
-   IMPORTANT :
-   LES POSITIONS FINALES SONT LES VRAIES POSITIONS
-   DANS L'IMAGE 600x600.
-========================================================= */
-
-const fragments = [];
+let branches=[];
 
 
 /*
-   10 colonnes × 10 lignes.
+    Optimisation importante :
 
-   Cela donne 100 morceaux maximum.
-
-   Pour garder de bonnes performances sur
-   un PC peu puissant, on utilise surtout
-   les morceaux qui contiennent réellement
-   une partie du personnage.
+    Les chemins sont générés UNE SEULE FOIS
+    et non pas à chaque frame.
 */
 
-const GRID_X = 10;
-const GRID_Y = 10;
+function createRiftBranches(){
 
-
-/* =========================================================
-   CONSTRUCTION DES MORCEAUX
-========================================================= */
-
-function createFragments(){
-
-    fragments.length = 0;
-
-
-    const imageWidth =
-        600;
-
-    const imageHeight =
-        600;
-
-
-    const tileWidth =
-        imageWidth / GRID_X;
-
-    const tileHeight =
-        imageHeight / GRID_Y;
-
-
-    for(
-        let gy=0;
-        gy<GRID_Y;
-        gy++
-    ){
-
-        for(
-            let gx=0;
-            gx<GRID_X;
-            gx++
-        ){
-
-            const sourceX =
-                gx * tileWidth;
-
-            const sourceY =
-                gy * tileHeight;
-
-
-            /*
-               Position réelle dans le personnage.
-
-               L'image est centrée dans #godLayer,
-               donc on convertit 600x600 vers
-               la taille actuelle du personnage.
-            */
-
-            const normalizedX =
-                (sourceX + tileWidth*.5) -
-                imageWidth*.5;
-
-            const normalizedY =
-                (sourceY + tileHeight*.5) -
-                imageHeight*.5;
-
-
-            /*
-               Petit déplacement initial.
-
-               IMPORTANT :
-               beaucoup plus petit que dans les anciennes versions.
-               Les morceaux commencent près de leur vraie position.
-            */
-
-            const angle =
-                Math.atan2(
-                    normalizedY,
-                    normalizedX
-                );
-
-
-            const distance =
-                rand(
-                    28,
-                    78
-                );
-
-
-            const startX =
-                normalizedX +
-                Math.cos(angle) *
-                distance +
-                rand(-12,12);
-
-
-            const startY =
-                normalizedY +
-                Math.sin(angle) *
-                distance +
-                rand(-12,12);
-
-
-            fragments.push({
-
-                gx,
-                gy,
-
-                sourceX,
-                sourceY,
-
-                width:
-                    tileWidth,
-
-                height:
-                    tileHeight,
-
-
-                /*
-                   POSITION FINALE EXACTE
-                */
-
-                finalX:
-                    normalizedX,
-
-                finalY:
-                    normalizedY,
-
-
-                /*
-                   POSITION DE DÉPART
-                */
-
-                startX,
-                startY,
-
-
-                x:startX,
-                y:startY,
-
-
-                rotationStart:
-                    rand(
-                        -0.30,
-                        0.30
-                    ),
-
-                rotationEnd:
-                    rand(
-                        -0.025,
-                        0.025
-                    ),
-
-
-                rotation:0,
-
-
-                scaleStart:
-                    rand(
-                        .94,
-                        1.05
-                    ),
-
-                scaleEnd:1,
-
-
-                delay:
-                    rand(
-                        0,
-                        .18
-                    ),
-
-
-                progress:0,
-
-                locked:false,
-
-                lockPulse:0,
-
-                phase:
-                    rand(
-                        0,
-                        Math.PI*2
-                    )
-            });
-        }
-    }
-
-
-    console.log(
-        "Fragments créés :",
-        fragments.length
-    );
-}
-
-
-createFragments();
-
-
-/* =========================================================
-   DESSIN DES MORCEAUX
-========================================================= */
-
-function drawFragments(
-    progress
-){
-
-    if(
-        !staticFrameReady ||
-        !staticFrame
-    ){
-
-        return;
-    }
-
-
-    fctx.clearRect(
-        0,
-        0,
-        W,
-        H
-    );
-
-
-    const rect =
-        godLayer.getBoundingClientRect();
-
-
-    const centerX =
-        rect.left +
-        rect.width*.5;
-
-    const centerY =
-        rect.top +
-        rect.height*.5;
+    branches=[];
 
 
     /*
-       L'image réelle fait 600x600.
-
-       Elle est affichée dans godLayer.
-       On utilise donc ce facteur pour conserver
-       les bonnes proportions.
+        20 branches au lieu de 26.
+        Elles sont plus grosses et plus détaillées.
     */
 
-    const scale =
-        rect.width / 600;
+    const count=20;
+
+    const maxDistance=
+        Math.max(
+            W,
+            H
+        )*
+        1.15;
 
 
-    fctx.save();
+    for(let i=0;i<count;i++){
 
-    fctx.globalCompositeOperation =
-        "source-over";
+        const seed=
+            i*31.73+
+            7.19;
 
+        const angle=
+            i/count*
+            Math.PI*2+
+            (
+                seededRandom(seed)-
+                .5
+            )*.18;
 
-    for(
-        let i=0;
-        i<fragments.length;
-        i++
-    ){
+        const length=
+            maxDistance*
+            (
+                .72+
+                seededRandom(
+                    seed+1
+                )*.38
+            );
 
-        const fragment =
-            fragments[i];
+        const segments=18;
+
+        const points=[];
 
 
         /*
-           Chaque morceau possède son propre retard.
-
-           Le retard reste faible afin que tout
-           le personnage ait réellement le temps
-           de se former pendant les 11 secondes.
+            Création du chemin
         */
 
-        const localStart =
-            fragment.delay;
+        for(let j=0;j<=segments;j++){
 
+            const p=
+                j/segments;
 
-        const localDuration =
-            .78;
+            const distance=
+                length*p;
 
+            /*
+                Déformation douce.
+            */
 
-        const local =
-            clamp(
+            const wave1=
+                Math.sin(
+                    p*8+
+                    seed
+                );
+
+            const wave2=
+                Math.sin(
+                    p*17+
+                    seed*1.7
+                );
+
+            const bend=
                 (
-                    progress -
-                    localStart
-                ) /
-                localDuration,
-                0,
-                1
-            );
+                    wave1*34+
+                    wave2*9
+                )*
+                Math.pow(
+                    p,
+                    .85
+                );
 
 
-        const eased =
-            easeInOutCubic(
-                local
-            );
+            points.push({
 
+                x:
+                    Math.cos(angle)*
+                    distance-
 
-        const remaining =
-            1-eased;
+                    Math.sin(angle)*
+                    bend,
 
+                y:
+                    Math.sin(angle)*
+                    distance+
 
-        /*
-           Trajectoire légèrement organique.
-
-           MAIS le point final reste EXACTEMENT
-           celui de l'image.
-        */
-
-        const curve =
-            Math.sin(
-                eased *
-                Math.PI
-            );
-
-
-        const curveX =
-            Math.cos(
-                fragment.phase +
-                eased*4
-            ) *
-            7 *
-            curve;
-
-
-        const curveY =
-            Math.sin(
-                fragment.phase +
-                eased*5
-            ) *
-            7 *
-            curve;
-
-
-        const x =
-            fragment.startX *
-            remaining +
-
-            fragment.finalX *
-            eased +
-
-            curveX;
-
-
-        const y =
-            fragment.startY *
-            remaining +
-
-            fragment.finalY *
-            eased +
-
-            curveY;
-
-
-        const rotation =
-            fragment.rotationStart *
-            remaining +
-
-            fragment.rotationEnd *
-            eased;
-
-
-        const scaleLocal =
-            fragment.scaleStart *
-            remaining +
-
-            fragment.scaleEnd *
-            eased;
-
-
-        const alpha =
-            clamp(
-                local * 3,
-                0,
-                1
-            );
-
-
-        /*
-           Verrouillage du morceau
-        */
-
-        if(
-            local >= 1 &&
-            !fragment.locked
-        ){
-
-            fragment.locked =
-                true;
-
-            fragment.lockPulse =
-                1;
-
-
-            createLockSpark(
-                centerX +
-                fragment.finalX *
-                scale,
-
-                centerY +
-                fragment.finalY *
-                scale
-            );
-        }
-
-
-        if(
-            fragment.lockPulse > 0
-        ){
-
-            fragment.lockPulse *=
-                .88;
+                    Math.cos(angle)*
+                    bend
+            });
         }
 
 
         /*
-           Position du morceau
+            2 ramifications principales
         */
 
-        fctx.save();
+        const children=[];
 
 
-        fctx.translate(
-            centerX +
-            x * scale,
+        for(let c=0;c<2;c++){
 
-            centerY +
-            y * scale
-        );
+            const startIndex=
+                5+
+                Math.floor(
+                    seededRandom(
+                        seed+c*5
+                    )*
+                    8
+                );
 
+            const base=
+                points[
+                    startIndex
+                ];
 
-        fctx.rotate(
-            rotation
-        );
+            const side=
+                c===0
+                ? -1
+                : 1;
 
+            const childAngle=
+                angle+
+                side*
+                (
+                    .35+
+                    seededRandom(
+                        seed+c*8
+                    )*.65
+                );
 
-        fctx.scale(
-            scaleLocal,
-            scaleLocal
-        );
+            const childLength=
+                length*
+                (
+                    .18+
+                    seededRandom(
+                        seed+c*9
+                    )*.22
+                );
 
+            const childPoints=[];
 
-        /*
-           Taille du morceau à l'écran
-        */
-
-        const drawWidth =
-            fragment.width *
-            scale;
-
-        const drawHeight =
-            fragment.height *
-            scale;
-
-
-        /*
-           PETITE irrégularité dans les bordures.
-
-           Mais les coordonnées restent
-           celles des vraies cases de l'image.
-        */
-
-        const jitter =
-            2;
-
-
-        fctx.beginPath();
+            const childSegments=9;
 
 
-        fctx.moveTo(
-            -drawWidth*.5 -
-            jitter,
+            for(let j=0;j<=childSegments;j++){
 
-            -drawHeight*.5 +
-            rand(-1,1)
-        );
+                const p=
+                    j/childSegments;
 
+                const distance=
+                    childLength*p;
 
-        fctx.lineTo(
-            drawWidth*.5 +
-            rand(-1,1),
-
-            -drawHeight*.5 -
-            jitter
-        );
-
-
-        fctx.lineTo(
-            drawWidth*.5 +
-            jitter,
-
-            drawHeight*.5 +
-            rand(-1,1)
-        );
+                const bend=
+                    Math.sin(
+                        p*9+
+                        seed+
+                        c
+                    )*
+                    12*
+                    p;
 
 
-        fctx.lineTo(
-            -drawWidth*.5 +
-            rand(-1,1),
+                childPoints.push({
 
-            drawHeight*.5 +
-            jitter
-        );
+                    x:
+                        base.x+
+                        Math.cos(
+                            childAngle
+                        )*
+                        distance-
 
+                        Math.sin(
+                            childAngle
+                        )*
+                        bend,
 
-        fctx.closePath();
+                    y:
+                        base.y+
+                        Math.sin(
+                            childAngle
+                        )*
+                        distance+
 
-        fctx.clip();
-
-
-        /*
-           Source réelle de l'image.
-
-           On prend EXACTEMENT la zone correspondant
-           au morceau.
-        */
-
-        fctx.globalAlpha =
-            alpha;
-
-
-        fctx.drawImage(
-
-            staticFrame,
-
-            fragment.sourceX,
-            fragment.sourceY,
-
-            fragment.width,
-            fragment.height,
-
-            -drawWidth*.5,
-            -drawHeight*.5,
-
-            drawWidth,
-            drawHeight
-        );
+                        Math.cos(
+                            childAngle
+                        )*
+                        bend
+                });
+            }
 
 
-        /*
-           Petit flash quand le morceau se verrouille.
-        */
+            children.push({
+                points:
+                    childPoints,
 
-        if(
-            fragment.locked &&
-            fragment.lockPulse > .03
-        ){
-
-            fctx.globalAlpha =
-                fragment.lockPulse *
-                .45;
-
-            fctx.globalCompositeOperation =
-                "screen";
-
-            fctx.strokeStyle =
-                "rgba(205,215,255,.95)";
-
-            fctx.lineWidth =
-                1.2;
-
-            fctx.shadowBlur =
-                10;
-
-            fctx.shadowColor =
-                "rgba(130,140,255,.9)";
-
-
-            fctx.stroke();
+                start:
+                    startIndex
+            });
         }
 
 
-        fctx.restore();
-    }
+        branches.push({
 
+            points,
 
-    fctx.restore();
-}
+            children,
 
-
-/* =========================================================
-   PARTICULES
-========================================================= */
-
-const particles = [];
-
-const PARTICLE_COUNT = 170;
-
-
-function createParticles(){
-
-    particles.length = 0;
-
-
-    for(
-        let i=0;
-        i<PARTICLE_COUNT;
-        i++
-    ){
-
-        const angle =
-            Math.random() *
-            Math.PI *
-            2;
-
-
-        const radius =
-            rand(
-                80,
-                Math.min(W,H)*.68
-            );
-
-
-        particles.push({
+            seed,
 
             angle,
 
-            radius,
-
-            speed:
-                rand(
-                    .00018,
-                    .00075
-                ),
-
-            size:
-                rand(
-                    .5,
-                    1.8
-                ),
-
-            alpha:
-                rand(
-                    .12,
-                    .55
-                ),
-
-            drift:
-                rand(
-                    -.08,
-                    .08
-                ),
-
-            phase:
-                rand(
-                    0,
-                    Math.PI*2
-                )
+            length
         });
     }
-}
-
-
-createParticles();
-
-
-function updateParticles(dt){
-
-    for(
-        let i=0;
-        i<particles.length;
-        i++
-    ){
-
-        const p =
-            particles[i];
-
-
-        p.angle +=
-            p.speed *
-            dt *
-            60;
-
-
-        p.radius +=
-            p.drift *
-            dt *
-            60;
-
-
-        if(
-            p.radius >
-            Math.min(W,H)*.72
-        ){
-
-            p.radius =
-                70;
-        }
-    }
-}
-
-
-function drawParticles(){
-
-    ctx.save();
-
-    ctx.globalCompositeOperation =
-        "screen";
-
-
-    for(
-        let i=0;
-        i<particles.length;
-        i++
-    ){
-
-        const p =
-            particles[i];
-
-
-        const x =
-            CX +
-            Math.cos(p.angle) *
-            p.radius;
-
-
-        const y =
-            CY +
-            Math.sin(p.angle) *
-            p.radius;
-
-
-        const pulse =
-            .7 +
-            Math.sin(
-                animationTime*2 +
-                p.phase
-            )*.3;
-
-
-        ctx.globalAlpha =
-            p.alpha *
-            pulse;
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            x,
-            y,
-            p.size,
-            0,
-            Math.PI*2
-        );
-
-
-        ctx.fillStyle =
-            "rgba(155,165,255,1)";
-
-
-        ctx.fill();
-    }
-
-
-    ctx.restore();
 }
 
 
 /* =========================================================
-   FAILLE
+   DRAW SMOOTH PATH
 ========================================================= */
 
-const rift = [];
-
-const RIFT_COUNT = 34;
-
-
-function createRift(){
-
-    rift.length = 0;
-
-
-    for(
-        let i=0;
-        i<RIFT_COUNT;
-        i++
-    ){
-
-        rift.push({
-
-            angle:
-                i *
-                Math.PI*2 /
-                RIFT_COUNT,
-
-            radius:
-                rand(
-                    Math.min(W,H)*.11,
-                    Math.min(W,H)*.30
-                ),
-
-            wobble:
-                rand(
-                    3,
-                    12
-                )
-        });
-    }
-}
-
-
-createRift();
-
-
-function drawRift(
+function drawSmoothPath(
+    points,
     progress
 ){
 
-    if(
-        progress <= 0
-    ){
-
+    if(points.length<2)
         return;
-    }
 
 
-    ctx.save();
-
-
-    ctx.translate(
-        CX,
-        CY
-    );
-
-
-    ctx.globalCompositeOperation =
-        "screen";
-
-
-    /*
-       Trou noir central
-    */
-
-    const glow =
-        ctx.createRadialGradient(
-            0,
-            0,
-            0,
-            0,
-            0,
-            Math.min(W,H)*.42
-        );
-
-
-    glow.addColorStop(
-        0,
-        "rgba(0,0,0,.99)"
-    );
-
-
-    glow.addColorStop(
-        .25,
-        "rgba(10,10,25,.82)"
-    );
-
-
-    glow.addColorStop(
-        .55,
-        "rgba(70,60,160,.10)"
-    );
-
-
-    glow.addColorStop(
-        1,
-        "rgba(0,0,0,0)"
-    );
-
-
-    ctx.globalAlpha =
+    progress=
         clamp(
-            progress*1.5,
+            progress,
             0,
             1
         );
 
 
-    ctx.fillStyle =
-        glow;
+    const total=
+        points.length-1;
+
+    const exact=
+        total*progress;
+
+    const end=
+        Math.floor(exact);
+
+    const fraction=
+        exact-end;
 
 
     ctx.beginPath();
 
+
+    const first=
+        points[0];
+
+
+    ctx.moveTo(
+        W/2+
+        first.x,
+
+        H/2+
+        first.y
+    );
+
+
+    /*
+        Courbes quadratiques.
+        Beaucoup plus lisses que lineTo().
+    */
+
+    for(
+        let i=1;
+        i<end &&
+        i<points.length-1;
+        i++
+    ){
+
+        const a=
+            points[i];
+
+        const b=
+            points[i+1];
+
+        const midX=
+            (a.x+b.x)/2;
+
+        const midY=
+            (a.y+b.y)/2;
+
+
+        ctx.quadraticCurveTo(
+
+            W/2+a.x,
+            H/2+a.y,
+
+            W/2+midX,
+            H/2+midY
+        );
+    }
+
+
+    if(end<total){
+
+        const a=
+            points[
+                Math.min(
+                    end,
+                    points.length-1
+                )
+            ];
+
+        const b=
+            points[
+                Math.min(
+                    end+1,
+                    points.length-1
+                )
+            ];
+
+
+        ctx.lineTo(
+
+            W/2+
+            lerp(
+                a.x,
+                b.x,
+                fraction
+            ),
+
+            H/2+
+            lerp(
+                a.y,
+                b.y,
+                fraction
+            )
+        );
+    }
+}
+
+
+/* =========================================================
+   DRAW RIFT STROKE
+========================================================= */
+
+function strokeRift(
+    points,
+    progress,
+    width,
+    color,
+    alpha
+){
+
+    if(progress<=0)
+        return;
+
+
+    ctx.beginPath();
+
+
+    /*
+        On ne reconstruit pas de gradient.
+        C'est beaucoup moins lourd.
+    */
+
+    ctx.lineWidth=width;
+
+    ctx.lineCap="round";
+
+    ctx.lineJoin="round";
+
+    ctx.strokeStyle=
+        color.replace(
+            "A",
+            alpha
+        );
+
+
+    drawSmoothPath(
+        points,
+        progress
+    );
+
+    ctx.stroke();
+}
+
+
+/* =========================================================
+   RIFT CENTER
+========================================================= */
+
+function drawRiftCore(progress){
+
+    const intensity=
+        easeInOut(progress);
+
+
+    const radius=
+        lerp(
+            2,
+            Math.min(W,H)*.065,
+            intensity
+        );
+
+
+    /*
+        Halo central simple.
+    */
+
+    const gradient=
+        ctx.createRadialGradient(
+
+            W/2,
+            H/2,
+            0,
+
+            W/2,
+            H/2,
+            radius*3
+        );
+
+
+    gradient.addColorStop(
+        0,
+        `rgba(255,255,255,${
+            .9*intensity
+        })`
+    );
+
+    gradient.addColorStop(
+        .2,
+        `rgba(160,155,255,${
+            .5*intensity
+        })`
+    );
+
+    gradient.addColorStop(
+        .55,
+        `rgba(80,65,255,${
+            .12*intensity
+        })`
+    );
+
+    gradient.addColorStop(
+        1,
+        "rgba(0,0,0,0)"
+    );
+
+
+    ctx.fillStyle=gradient;
+
+    ctx.beginPath();
+
     ctx.arc(
-        0,
-        0,
-        Math.min(W,H)*.42,
+        W/2,
+        H/2,
+        radius*3,
         0,
         Math.PI*2
     );
@@ -1728,358 +1312,110 @@ function drawRift(
 
 
     /*
-       Grande fissure
+        Vide noir central.
     */
+
+    ctx.fillStyle=
+        `rgba(0,0,4,${
+            .75*
+            intensity
+        })`;
 
     ctx.beginPath();
 
+    ctx.arc(
+        W/2,
+        H/2,
+        radius,
+        0,
+        Math.PI*2
+    );
 
-    for(
-        let i=0;
-        i<rift.length;
-        i++
-    ){
-
-        const p =
-            rift[i];
-
-
-        const rr =
-            p.radius +
-            Math.sin(
-                animationTime*2 +
-                i*.7
-            ) *
-            p.wobble;
-
-
-        const x =
-            Math.cos(p.angle) *
-            rr;
-
-
-        const y =
-            Math.sin(p.angle) *
-            rr;
-
-
-        if(i===0){
-
-            ctx.moveTo(
-                x,
-                y
-            );
-
-        }else{
-
-            ctx.lineTo(
-                x,
-                y
-            );
-        }
-    }
-
-
-    ctx.closePath();
-
-
-    ctx.lineWidth =
-        1.4;
-
-
-    ctx.strokeStyle =
-        "rgba(145,155,255,.85)";
-
-
-    ctx.globalAlpha =
-        progress;
-
-
-    ctx.stroke();
+    ctx.fill();
 
 
     /*
-       Petite fissure interne
+        Bord blanc.
     */
+
+    ctx.lineWidth=
+        1+
+        intensity*1.5;
+
+    ctx.strokeStyle=
+        `rgba(235,235,255,${
+            .8*intensity
+        })`;
 
     ctx.beginPath();
 
-
-    for(
-        let i=0;
-        i<rift.length;
-        i+=2
-    ){
-
-        const p =
-            rift[i];
-
-
-        const rr =
-            p.radius*.70;
-
-
-        const x =
-            Math.cos(p.angle) *
-            rr;
-
-
-        const y =
-            Math.sin(p.angle) *
-            rr;
-
-
-        if(i===0){
-
-            ctx.moveTo(
-                x,
-                y
-            );
-
-        }else{
-
-            ctx.lineTo(
-                x,
-                y
-            );
-        }
-    }
-
-
-    ctx.strokeStyle =
-        "rgba(230,235,255,.8)";
-
-
-    ctx.lineWidth =
-        .55;
-
-
-    ctx.globalAlpha =
-        progress*.65;
-
+    ctx.arc(
+        W/2,
+        H/2,
+        radius,
+        0,
+        Math.PI*2
+    );
 
     ctx.stroke();
-
-
-    ctx.restore();
 }
 
 
 /* =========================================================
-   SPARKS
+   RIFT ARCS
 ========================================================= */
 
-const sparks = [];
+function drawEnergyArcs(progress){
+
+    const intensity=
+        easeInOut(progress);
+
+    const base=
+        Math.min(W,H)*.08;
 
 
-function createSparkBurst(
-    amount,
-    originX=CX,
-    originY=CY
-){
+    /*
+        Seulement 4 arcs.
+        Très peu coûteux.
+    */
 
-    for(
-        let i=0;
-        i<amount;
-        i++
-    ){
+    for(let i=0;i<4;i++){
 
-        const angle =
-            Math.random() *
-            Math.PI*2;
+        const radius=
+            base+
+            i*
+            Math.min(W,H)*.025;
 
-
-        const speed =
-            rand(
-                1.5,
-                7
-            );
+        const rotation=
+            animationTime*
+            (.12+i*.035)+
+            i*1.4;
 
 
-        sparks.push({
+        ctx.lineWidth=1;
 
-            x:originX,
-
-            y:originY,
-
-            vx:
-                Math.cos(angle) *
-                speed,
-
-            vy:
-                Math.sin(angle) *
-                speed,
-
-            life:1,
-
-            decay:
-                rand(
-                    .014,
-                    .032
-                ),
-
-            size:
-                rand(
-                    .7,
-                    2.5
-                )
-        });
-    }
-}
-
-
-function createLockSpark(
-    x,
-    y
-){
-
-    for(
-        let i=0;
-        i<8;
-        i++
-    ){
-
-        const angle =
-            Math.random() *
-            Math.PI*2;
-
-
-        const speed =
-            rand(
-                .5,
-                2.5
-            );
-
-
-        sparks.push({
-
-            x,
-            y,
-
-            vx:
-                Math.cos(angle) *
-                speed,
-
-            vy:
-                Math.sin(angle) *
-                speed,
-
-            life:1,
-
-            decay:.055,
-
-            size:
-                rand(
-                    .5,
-                    1.5
-                )
-        });
-    }
-}
-
-
-function updateSparks(dt){
-
-    for(
-        let i=sparks.length-1;
-        i>=0;
-        i--
-    ){
-
-        const s =
-            sparks[i];
-
-
-        s.x +=
-            s.vx *
-            dt *
-            60;
-
-
-        s.y +=
-            s.vy *
-            dt *
-            60;
-
-
-        s.vx *=
-            .985;
-
-
-        s.vy *=
-            .985;
-
-
-        s.life -=
-            s.decay *
-            dt *
-            60;
-
-
-        if(
-            s.life <= 0
-        ){
-
-            sparks.splice(
-                i,
-                1
-            );
-        }
-    }
-}
-
-
-function drawSparks(){
-
-    if(
-        !sparks.length
-    ){
-
-        return;
-    }
-
-
-    ctx.save();
-
-    ctx.globalCompositeOperation =
-        "screen";
-
-
-    for(
-        let i=0;
-        i<sparks.length;
-        i++
-    ){
-
-        const s =
-            sparks[i];
-
-
-        ctx.globalAlpha =
-            s.life;
-
+        ctx.strokeStyle=
+            `rgba(130,120,255,${
+                .12*
+                intensity
+            })`;
 
         ctx.beginPath();
 
-
         ctx.arc(
-            s.x,
-            s.y,
-            s.size,
-            0,
-            Math.PI*2
+
+            W/2,
+            H/2,
+
+            radius,
+
+            rotation,
+
+            rotation+.75
         );
 
-
-        ctx.fillStyle =
-            "rgba(220,225,255,1)";
-
-
-        ctx.fill();
+        ctx.stroke();
     }
-
-
-    ctx.restore();
 }
 
 
@@ -2087,1252 +1423,291 @@ function drawSparks(){
    SHOCKWAVES
 ========================================================= */
 
-const shockwaves = [];
+function drawShockwaves(progress){
+
+    const intensity=
+        easeInOut(progress);
 
 
-function createShockwave(
-    radius=20,
-    speed=18,
-    strength=1
-){
+    /*
+        Seulement 3 ondes.
+    */
 
-    shockwaves.push({
+    for(let i=0;i<3;i++){
 
-        radius,
+        const cycle=
+            (
+                animationTime*
+                (.10+i*.025)+
+                i*.31
+            )%1;
 
-        speed,
+        const radius=
+            (
+                25+
+                cycle*
+                Math.max(W,H)*
+                .72
+            )*
+            intensity;
 
-        alpha:
-            strength,
-
-        width:
-            3
-    });
-}
-
-
-function updateShockwaves(dt){
-
-    for(
-        let i=shockwaves.length-1;
-        i>=0;
-        i--
-    ){
-
-        const s =
-            shockwaves[i];
+        const alpha=
+            (
+                1-cycle
+            )*
+            .09*
+            intensity;
 
 
-        s.radius +=
-            s.speed *
-            dt *
-            60;
+        ctx.lineWidth=
+            .8+
+            (1-cycle)*1.3;
 
-
-        s.alpha -=
-            .014 *
-            dt *
-            60;
-
-
-        s.width *=
-            .991;
-
-
-        if(
-            s.alpha <= 0
-        ){
-
-            shockwaves.splice(
-                i,
-                1
-            );
-        }
-    }
-}
-
-
-function drawShockwaves(){
-
-    if(
-        !shockwaves.length
-    ){
-
-        return;
-    }
-
-
-    ctx.save();
-
-
-    ctx.translate(
-        CX,
-        CY
-    );
-
-
-    ctx.globalCompositeOperation =
-        "screen";
-
-
-    for(
-        let i=0;
-        i<shockwaves.length;
-        i++
-    ){
-
-        const s =
-            shockwaves[i];
-
-
-        ctx.globalAlpha =
-            s.alpha;
-
-
-        ctx.lineWidth =
-            Math.max(
-                .5,
-                s.width
-            );
-
-
-        ctx.strokeStyle =
-            "rgba(155,165,255,1)";
-
+        ctx.strokeStyle=
+            `rgba(100,90,255,${
+                alpha
+            })`;
 
         ctx.beginPath();
 
-
         ctx.arc(
-            0,
-            0,
-            s.radius,
+            W/2,
+            H/2,
+            radius,
             0,
             Math.PI*2
         );
 
-
         ctx.stroke();
     }
-
-
-    ctx.restore();
 }
 
 
 /* =========================================================
-   ÉCLAIRS
+   RIFT RAYS
 ========================================================= */
 
-let lightning =
-    0;
+function drawRiftRays(progress){
+
+    const intensity=
+        easeInOut(progress);
 
 
-function triggerLightning(){
+    /*
+        Seulement 10 rayons.
+    */
 
-    lightning =
-        1;
-}
+    for(let i=0;i<10;i++){
 
+        const angle=
+            i/10*
+            Math.PI*2+
+            animationTime*.025;
 
-function drawLightning(){
+        const inner=
+            Math.min(W,H)*.04;
 
-    if(
-        lightning <= 0
-    ){
-
-        return;
-    }
-
-
-    ctx.save();
-
-
-    ctx.translate(
-        CX,
-        CY
-    );
+        const outer=
+            Math.max(W,H)*
+            (
+                .35+
+                intensity*.55
+            );
 
 
-    ctx.globalCompositeOperation =
-        "screen";
+        const x1=
+            W/2+
+            Math.cos(angle)*
+            inner;
+
+        const y1=
+            H/2+
+            Math.sin(angle)*
+            inner;
+
+        const x2=
+            W/2+
+            Math.cos(angle)*
+            outer;
+
+        const y2=
+            H/2+
+            Math.sin(angle)*
+            outer;
 
 
-    ctx.globalAlpha =
-        lightning;
+        ctx.lineWidth=
+            .5+
+            intensity*.6;
 
-
-    for(
-        let b=0;
-        b<7;
-        b++
-    ){
-
-        const angle =
-            Math.random() *
-            Math.PI*2;
-
-
-        let x=0;
-        let y=0;
-
+        ctx.strokeStyle=
+            `rgba(100,90,255,${
+                .035*
+                intensity
+            })`;
 
         ctx.beginPath();
 
         ctx.moveTo(
-            x,
-            y
+            x1,
+            y1
         );
 
-
-        for(
-            let i=0;
-            i<8;
-            i++
-        ){
-
-            const distance =
-                20 +
-                i*48;
-
-
-            x =
-                Math.cos(angle) *
-                distance +
-                rand(-18,18);
-
-
-            y =
-                Math.sin(angle) *
-                distance +
-                rand(-18,18);
-
-
-            ctx.lineTo(
-                x,
-                y
-            );
-        }
-
-
-        ctx.strokeStyle =
-            "rgba(220,230,255,1)";
-
-
-        ctx.lineWidth =
-            rand(
-                .6,
-                1.7
-            );
-
+        ctx.lineTo(
+            x2,
+            y2
+        );
 
         ctx.stroke();
     }
-
-
-    ctx.restore();
 }
 
 
 /* =========================================================
-   FLASH
+   RIFT SPARKS
 ========================================================= */
 
-function flashScreen(
-    strength,
-    duration
-){
+let riftSparks=[];
 
-    flash.style.transition =
-        "none";
-
-
-    flash.style.opacity =
-        strength;
-
-
-    requestAnimationFrame(
-        ()=>{
-
-            flash.style.transition =
-                `
-                opacity
-                ${duration}ms
-                ease-out
-                `;
-
-
-            flash.style.opacity =
-                "0";
-        }
-    );
-}
-
-
-/* =========================================================
-   MOUVEMENT LIBRE
-========================================================= */
-
-function chooseTarget(){
-
-    const rangeX =
-        Math.min(
-            W*.26,
-            300
-        );
-
-
-    const rangeY =
-        Math.min(
-            H*.20,
-            220
-        );
-
-
-    targetX =
-        rand(
-            -rangeX,
-            rangeX
-        );
-
-
-    targetY =
-        rand(
-            -rangeY,
-            rangeY
-        );
-
-
-    nextTargetTime =
-        animationTime +
-        rand(
-            2.8,
-            5.8
-        );
-}
-
-
-function updateFreeMovement(dt){
-
-    if(
-        !deityActive
-    ){
-
-        return;
-    }
-
-
-    if(
-        animationTime >
-        nextTargetTime
-    ){
-
-        chooseTarget();
-    }
-
-
-    const dx =
-        targetX -
-        godX;
-
-
-    const dy =
-        targetY -
-        godY;
-
-
-    velocityX +=
-        dx *
-        .0008 *
-        dt *
-        60;
-
-
-    velocityY +=
-        dy *
-        .0008 *
-        dt *
-        60;
-
-
-    velocityX *=
-        Math.pow(
-            .925,
-            dt*60
-        );
-
-
-    velocityY *=
-        Math.pow(
-            .925,
-            dt*60
-        );
-
-
-    const speed =
-        Math.sqrt(
-            velocityX *
-            velocityX +
-
-            velocityY *
-            velocityY
-        );
-
-
-    const maxSpeed =
-        2.2;
-
-
-    if(
-        speed >
-        maxSpeed
-    ){
-
-        velocityX =
-            velocityX /
-            speed *
-            maxSpeed;
-
-
-        velocityY =
-            velocityY /
-            speed *
-            maxSpeed;
-    }
-
-
-    godX +=
-        velocityX *
-        dt *
-        60;
-
-
-    godY +=
-        velocityY *
-        dt *
-        60;
-}
-
-
-/* =========================================================
-   VISUEL DU GOD
-========================================================= */
-
-function updateGodVisual(){
-
-    if(
-        !deityActive
-    ){
-
-        return;
-    }
-
-
-    const bob =
-        Math.sin(
-            animationTime *
-            1.15
-        ) *
-        7;
-
-
-    const sway =
-        Math.sin(
-            animationTime *
-            .65
-        ) *
-        3;
-
-
-    const rotation =
-        Math.sin(
-            animationTime *
-            .55
-        ) *
-        .010;
-
-
-    const scale =
-        1 +
-        Math.sin(
-            animationTime *
-            1.35
-        ) *
-        .014;
-
-
-    god.style.transform =
-        `
-        translate3d(
-            ${godX+sway}px,
-            ${godY+bob}px,
-            0
-        )
-        scale(${scale})
-        rotate(${rotation}rad)
-        `;
-}
-
-
-/* =========================================================
-   ASSEMBLAGE
-========================================================= */
 
 /*
-   L'intro fait EXACTEMENT 11 secondes.
-
-   Les fragments commencent après un petit
-   préambule mais terminent avant 11 secondes.
+    70 au lieu de 150.
 */
 
-const INTRO_DURATION =
-    11.0;
+function createRiftSparks(){
 
-const ASSEMBLY_START =
-    1.35;
+    riftSparks=[];
 
-const ASSEMBLY_END =
-    10.55;
+    const count=70;
 
 
-function updateAssembly(){
+    for(let i=0;i<count;i++){
 
-    if(
-        !assembling
-    ){
+        riftSparks.push({
 
-        return;
-    }
+            angle:
+                Math.random()*
+                Math.PI*2,
 
+            radius:
+                Math.pow(
+                    Math.random(),
+                    .7
+                )*
+                Math.max(W,H)*
+                .75,
 
-    /*
-       Progression basée directement sur
-       le temps de l'intro.
-    */
+            speed:
+                rand(
+                    .15,
+                    .7
+                ),
 
-    const elapsed =
-        performance.now() -
-        introStartTime;
+            size:
+                rand(
+                    .5,
+                    2
+                ),
 
+            phase:
+                rand(
+                    0,
+                    Math.PI*2
+                ),
 
-    const introSeconds =
-        elapsed /
-        1000;
-
-
-    if(
-        introSeconds <
-        ASSEMBLY_START
-    ){
-
-        /*
-           Pas encore d'assemblage.
-        */
-
-        return;
-    }
-
-
-    const progress =
-        clamp(
-            (
-                introSeconds -
-                ASSEMBLY_START
-            ) /
-            (
-                ASSEMBLY_END -
-                ASSEMBLY_START
-            ),
-            0,
-            1
-        );
-
-
-    drawFragments(
-        progress
-    );
-
-
-    /*
-       La lueur augmente avec
-       la formation.
-    */
-
-    godGlow.style.opacity =
-        String(
-            .06 +
-            progress*.22
-        );
-
-
-    /*
-       Petit tremblement organique
-       pendant la reconstruction.
-    */
-
-    if(
-        progress > .05 &&
-        progress < .97
-    ){
-
-        shake(
-            1.1 +
-            progress*1.5
-        );
-    }
-
-
-    /*
-       Fin de formation.
-    */
-
-    if(
-        progress >= 1
-    ){
-
-        finishAssembly();
+            alpha:
+                rand(
+                    .25,
+                    .8
+                )
+        });
     }
 }
 
 
-function beginAssembly(){
+function drawRiftSparks(progress){
 
-    if(
-        assembling ||
-        assembled
-    ){
-
-        return;
-    }
-
-
-    assembling =
-        true;
-
-
-    fragmentCanvas.style.opacity =
-        "1";
+    const intensity=
+        easeInOut(progress);
 
 
     for(
         let i=0;
-        i<fragments.length;
+        i<riftSparks.length;
         i++
     ){
 
-        const fragment =
-            fragments[i];
+        const s=
+            riftSparks[i];
 
 
-        fragment.locked =
-            false;
+        const angle=
+            s.angle+
+            animationTime*
+            s.speed*
+            .04;
 
 
-        fragment.lockPulse =
-            0;
-    }
-
-
-    createSparkBurst(
-        35
-    );
-
-
-    shake(3);
-
-
-    console.log(
-        "Assemblage commencé."
-    );
-}
-
-
-function finishAssembly(){
-
-    if(
-        assembled
-    ){
-
-        return;
-    }
-
-
-    assembled =
-        true;
-
-
-    assembling =
-        false;
-
-
-    /*
-       Les morceaux restent visibles
-       jusqu'au moment exact du spawn.
-    */
-
-    createSparkBurst(
-        30
-    );
-
-
-    shake(4);
-
-
-    /*
-       Le vrai spawn est programmé
-       à EXACTEMENT 11 secondes.
-    */
-
-    const elapsed =
-        performance.now() -
-        introStartTime;
-
-
-    const remaining =
-        Math.max(
-            0,
-            INTRO_DURATION*1000 -
-            elapsed
-        );
-
-
-    setTimeout(
-        beginTrueSpawn,
-        remaining
-    );
-
-
-    console.log(
-        "Assemblage terminé — attente du spawn à 11s."
-    );
-}
-
-
-/* =========================================================
-   VRAI SPAWN
-========================================================= */
-
-const SPAWN_DURATION =
-    3.0;
-
-
-function beginTrueSpawn(){
-
-    if(
-        deityActive
-    ){
-
-        return;
-    }
-
-
-    deityActive =
-        true;
-
-
-    /*
-       Position de départ EXACTEMENT au centre.
-    */
-
-    godX = 0;
-    godY = 0;
-
-
-    velocityX = 0;
-    velocityY = 0;
-
-
-    /*
-       Les morceaux disparaissent
-       quand le véritable sprite apparaît.
-    */
-
-    fragmentCanvas.style.opacity =
-        "0";
-
-
-    /*
-       Le GIF devient visible.
-    */
-
-    god.style.opacity =
-        "1";
-
-
-    god.style.transform =
-        `
-        translate3d(
-            0,
-            0,
-            0
-        )
-        scale(.58)
-        `;
-
-
-    godGlow.style.opacity =
-        ".95";
-
-
-    godGlow.style.transform =
-        "scale(.72)";
-
-
-    /*
-       ==========================
-       SPAWN SOUND
-       ==========================
-    */
-
-    spawnSound.currentTime =
-        0;
-
-
-    const spawnPromise =
-        spawnSound.play();
-
-
-    if(
-        spawnPromise
-    ){
-
-        spawnPromise.catch(
-            error =>
-                console.warn(
-                    "spawn.mp3 :",
-                    error
-                )
-        );
-    }
-
-
-    /*
-       ==========================
-       GROS EFFETS
-       ==========================
-    */
-
-    createSparkBurst(
-        150
-    );
-
-
-    createShockwave(
-        15,
-        17,
-        1
-    );
-
-
-    createShockwave(
-        35,
-        25,
-        .9
-    );
-
-
-    createShockwave(
-        60,
-        31,
-        .55
-    );
-
-
-    triggerLightning();
-
-
-    shake(28);
-
-
-    flashScreen(
-        .95,
-        500
-    );
-
-
-    /*
-       ==========================
-       ANIMATION SPAWN 3 SECONDES
-       ==========================
-    */
-
-    const spawnStart =
-        performance.now();
-
-
-    function animateSpawn(now){
-
-        const elapsed =
-            now -
-            spawnStart;
-
-
-        const p =
-            clamp(
-                elapsed /
-                (
-                    SPAWN_DURATION *
-                    1000
-                ),
-                0,
-                1
-            );
-
-
-        const e =
-            easeOutQuint(
-                p
-            );
-
-
-        /*
-           0.58 → 1
-        */
-
-        const spawnScale =
-            .58 +
-            .42 *
-            e;
-
-
-        /*
-           Léger mouvement vertical
-           d'apparition.
-        */
-
-        const spawnY =
-            -12 *
-            (1-e);
-
-
-        god.style.transform =
-            `
-            translate3d(
-                ${godX}px,
-                ${godY+spawnY}px,
-                0
-            )
-            scale(${spawnScale})
-            `;
-
-
-        /*
-           Glow.
-        */
-
-        godGlow.style.opacity =
-            String(
-                .95 -
-                p*.20
-            );
-
-
-        godGlow.style.transform =
-            `
-            scale(
-                ${.72+p*.28}
-            )
-            `;
-
-
-        /*
-           Effets supplémentaires
-           pendant le spawn.
-        */
-
-        if(
-            p > .20 &&
-            p < .90
-        ){
-
-            if(
-                Math.random() <
-                .035
-            ){
-
-                createSparkBurst(
-                    4
-                );
-            }
-        }
-
-
-        if(
-            p < 1
-        ){
-
-            requestAnimationFrame(
-                animateSpawn
-            );
-
-        }else{
-
-            /*
-               FIN EXACTE DES 3 SECONDES
-            */
-
-            god.style.transform =
-                `
-                translate3d(
-                    ${godX}px,
-                    ${godY}px,
-                    0
-                )
-                scale(1)
-                `;
-
-
-            finishSpawn();
-        }
-    }
-
-
-    requestAnimationFrame(
-        animateSpawn
-    );
-
-
-    /*
-       TITRE
-    */
-
-    setTimeout(
-        ()=>{
-            title.classList.add(
-                "show"
-            );
-        },
-        650
-    );
-}
-
-
-/* =========================================================
-   FIN DU SPAWN
-========================================================= */
-
-function finishSpawn(){
-
-    if(
-        spawnFinished
-    ){
-
-        return;
-    }
-
-
-    spawnFinished =
-        true;
-
-
-    /*
-       Petite onde finale.
-    */
-
-    createShockwave(
-        20,
-        13,
-        .8
-    );
-
-
-    shake(6);
-
-
-    /*
-       Le déplacement libre commence
-       maintenant.
-    */
-
-    chooseTarget();
-
-
-    /*
-       ==========================
-       MUSIQUE
-       ==========================
-
-       spawn commence à 11s
-       spawn dure 3s
-       song commence donc à 14s.
-    */
-
-    music.currentTime =
-        0;
-
-
-    const musicPromise =
-        music.play();
-
-
-    if(
-        musicPromise
-    ){
-
-        musicPromise.catch(
-            error =>
-                console.warn(
-                    "song.mp3 :",
-                    error
-                )
-        );
-    }
-
-
-    /*
-       Le titre reste quelques secondes.
-    */
-
-    setTimeout(
-        ()=>{
-            title.classList.remove(
-                "show"
-            );
-
-            title.classList.add(
-                "hide"
-            );
-        },
-        7000
-    );
-
-
-    console.log(
-        "SPAWN terminé — musique lancée."
-    );
-}
-
-
-/* =========================================================
-   INTRO
-========================================================= */
-
-function startIntro(){
-
-    if(
-        started
-    ){
-
-        return;
-    }
-
-
-    started =
-        true;
-
-
-    introStartTime =
-        performance.now();
-
-
-    console.log(
-        "THE NAMELESS DEITY // INTRO 11s"
-    );
-
-
-    /*
-       Message disparaît.
-    */
-
-    startMessage.classList.add(
-        "hidden"
-    );
-
-
-    /*
-       Audio INTRO
-    */
-
-    introSound.currentTime =
-        0;
-
-
-    introSound.volume =
-        .9;
-
-
-    const introPromise =
-        introSound.play();
-
-
-    if(
-        introPromise
-    ){
-
-        introPromise.catch(
-            error =>
-                console.warn(
-                    "intro.mp3 :",
-                    error
-                )
-        );
-    }
-
-
-    /*
-       Assemblage visuel.
-    */
-
-    beginAssembly();
-
-
-    /*
-       Sécurité :
-
-       même si un morceau n'a pas été verrouillé
-       à cause d'un ralentissement, on considère
-       l'intro terminée à 11 secondes.
-    */
-
-    setTimeout(
-        ()=>{
-            if(
-                !assembled
-            ){
-
-                assembled =
-                    true;
-
-                assembling =
-                    false;
-
-                finishAssembly();
-            }
-        },
-        INTRO_DURATION *
-        1000
-    );
-}
-
-
-/* =========================================================
-   BOUCLE PRINCIPALE
-========================================================= */
-
-function loop(now){
-
-    const dt =
-        Math.min(
-            .033,
+        const radius=
+            s.radius*
             (
-                now -
-                lastTime
-            ) /
-            1000
+                .15+
+                intensity*.85
+            );
+
+
+        const x=
+            W/2+
+            Math.cos(angle)*
+            radius;
+
+        const y=
+            H/2+
+            Math.sin(angle)*
+            radius;
+
+
+        const twinkle=
+            .5+
+            .5*
+            Math.sin(
+                animationTime*4+
+                s.phase
+            );
+
+
+        const alpha=
+            s.alpha*
+            intensity*
+            twinkle;
+
+
+        ctx.fillStyle=
+            `rgba(185,180,255,${
+                alpha
+            })`;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            s.size,
+            0,
+            Math.PI*2
         );
 
-
-    lastTime =
-        now;
-
-
-    animationTime +=
-        dt;
+        ctx.fill();
+    }
+}
 
 
-    /*
-       Canvas FX
-    */
+/* =========================================================
+   MAIN RIFT
+========================================================= */
+
+function drawRift(progress){
 
     ctx.clearRect(
         0,
@@ -3342,135 +1717,1456 @@ function loop(now){
     );
 
 
+    if(progress<=0)
+        return;
+
+
+    const open=
+        easeInOut(progress);
+
+
     /*
-       Particules
+        Glow général.
     */
 
-    updateParticles(
-        dt
+    const glowRadius=
+        lerp(
+            5,
+            Math.max(W,H)*.20,
+            open
+        );
+
+
+    const centerGradient=
+        ctx.createRadialGradient(
+
+            W/2,
+            H/2,
+            0,
+
+            W/2,
+            H/2,
+            glowRadius
+        );
+
+
+    centerGradient.addColorStop(
+        0,
+        `rgba(255,255,255,${
+            .75*open
+        })`
+    );
+
+    centerGradient.addColorStop(
+        .12,
+        `rgba(170,165,255,${
+            .42*open
+        })`
+    );
+
+    centerGradient.addColorStop(
+        .4,
+        `rgba(80,70,255,${
+            .12*open
+        })`
+    );
+
+    centerGradient.addColorStop(
+        1,
+        "rgba(0,0,0,0)"
     );
 
 
-    drawParticles();
+    ctx.fillStyle=
+        centerGradient;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        W/2,
+        H/2,
+        glowRadius,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
 
 
     /*
-       Faille
+        Les branches sont agrandies progressivement.
     */
 
-    let riftProgress =
-        0;
+    const expansion=
+        lerp(
+            .04,
+            1,
+            easeOut(progress)
+        );
 
 
-    if(
-        started
+    ctx.save();
+
+    ctx.translate(
+        W/2,
+        H/2
+    );
+
+    ctx.scale(
+        expansion,
+        expansion
+    );
+
+    ctx.translate(
+        -W/2,
+        -H/2
+    );
+
+
+    /* =====================================================
+       BRANCHES PRINCIPALES
+    ===================================================== */
+
+    for(
+        let i=0;
+        i<branches.length;
+        i++
     ){
 
-        const elapsed =
-            performance.now() -
-            introStartTime;
+        const b=
+            branches[i];
 
 
-        const seconds =
-            elapsed /
-            1000;
+        const delay=
+            (i%5)*
+            .025;
+
+
+        const p=
+            clamp(
+                (
+                    progress-
+                    delay
+                )/
+                (
+                    1-delay
+                ),
+                0,
+                1
+            );
+
+
+        if(p<=0)
+            continue;
 
 
         /*
-           Faille qui apparaît
-           rapidement au début.
+            Légère variation lumineuse.
         */
 
-        riftProgress =
+        const flicker=
+            .9+
+            Math.sin(
+                animationTime*5+
+                b.seed
+            )*.08;
+
+
+        /*
+            GROS HALO
+            Pas de shadowBlur :
+            énorme gain de performances.
+        */
+
+        strokeRift(
+            b.points,
+            p,
+            12+
+                p*8,
+            "rgba(55,45,255,A)",
+            .12*
+                p*
+                flicker
+        );
+
+
+        /*
+            CORPS VIOLET
+        */
+
+        strokeRift(
+            b.points,
+            p,
+            6+
+                p*4,
+            "rgba(95,80,255,A)",
+            .42*
+                p*
+                flicker
+        );
+
+
+        /*
+            CŒUR BLEU/BLANC
+        */
+
+        strokeRift(
+            b.points,
+            p,
+            2.4+
+                p*1.5,
+            "rgba(180,175,255,A)",
+            .72*
+                p*
+                flicker
+        );
+
+
+        /*
+            PETIT TRAIT BLANC CENTRAL
+        */
+
+        strokeRift(
+            b.points,
+            p,
+            1,
+            "rgba(245,245,255,A)",
+            .85*
+                p*
+                flicker
+        );
+
+
+        /* =================================================
+           BRANCHES SECONDAIRES
+        ================================================= */
+
+        for(
+            let c=0;
+            c<b.children.length;
+            c++
+        ){
+
+            const child=
+                b.children[c];
+
+
+            const start=
+                child.start/
+                (
+                    b.points.length-1
+                );
+
+
+            const cp=
+                clamp(
+                    (
+                        progress-
+                        start*.55
+                    )/
+                    .45,
+                    0,
+                    1
+                );
+
+
+            if(cp<=0)
+                continue;
+
+
+            strokeRift(
+                child.points,
+                cp,
+                2.5,
+                "rgba(100,90,255,A)",
+                .5*
+                    cp
+            );
+
+
+            strokeRift(
+                child.points,
+                cp,
+                1,
+                "rgba(220,215,255,A)",
+                .7*
+                    cp
+            );
+        }
+    }
+
+
+    ctx.restore();
+
+
+    /*
+        Effets secondaires.
+    */
+
+    drawRiftRays(progress);
+
+    drawEnergyArcs(progress);
+
+    drawShockwaves(progress);
+
+    drawRiftCore(progress);
+
+    drawRiftSparks(progress);
+
+
+    /*
+        Glow HTML.
+    */
+
+    riftGlow.style.opacity=
+        String(
+            .18+
+            open*.72
+        );
+
+    riftGlow.style.transform=
+        `translate(-50%,-50%) scale(${
+            .1+
+            open*1.8
+        })`;
+}
+
+
+/* =========================================================
+   GOLDEN PARTICLES
+========================================================= */
+
+let goldenParticles=[];
+
+
+/*
+    55 particules seulement.
+*/
+
+const GOLDEN_PARTICLE_COUNT=55;
+
+
+function createGoldenParticles(){
+
+    goldenParticles=[];
+
+
+    for(
+        let i=0;
+        i<GOLDEN_PARTICLE_COUNT;
+        i++
+    ){
+
+        goldenParticles.push({
+
+            angle:
+                Math.random()*
+                Math.PI*2,
+
+            radius:
+                40+
+                Math.pow(
+                    Math.random(),
+                    .55
+                )*
+                270,
+
+            speed:
+                rand(
+                    .1,
+                    .45
+                ),
+
+            size:
+                rand(
+                    .8,
+                    2.8
+                ),
+
+            alpha:
+                rand(
+                    .3,
+                    .85
+                ),
+
+            phase:
+                rand(
+                    0,
+                    Math.PI*2
+                ),
+
+            life:
+                Math.random()
+        });
+    }
+}
+
+
+function updateGoldenParticles(dt){
+
+    particleCtx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    if(!deityActive)
+        return;
+
+
+    let spawnProgress=1;
+
+
+    if(!spawnFinished){
+
+        const elapsed=
+            (
+                performance.now()-
+                spawnStartTime
+            )/1000;
+
+        spawnProgress=
             clamp(
-                seconds /
-                2.0,
+                elapsed/
+                SPAWN_DURATION,
                 0,
                 1
             );
     }
 
 
-    drawRift(
-        riftProgress
-    );
+    const cx=
+        W/2+
+        godX;
+
+    const cy=
+        H/2+
+        godY;
 
 
-    /*
-       Assemblage
-    */
-
-    updateAssembly();
-
-
-    /*
-       Sparks
-    */
-
-    updateSparks(
-        dt
-    );
-
-
-    drawSparks();
-
-
-    /*
-       Shockwaves
-    */
-
-    updateShockwaves(
-        dt
-    );
-
-
-    drawShockwaves();
-
-
-    /*
-       Lightning
-    */
-
-    if(
-        lightning > 0
+    for(
+        let i=0;
+        i<goldenParticles.length;
+        i++
     ){
 
-        drawLightning();
+        const p=
+            goldenParticles[i];
 
 
-        lightning -=
-            dt *
-            3.5;
+        p.angle+=
+            p.speed*
+            dt;
 
 
-        if(
-            lightning < 0
-        ){
+        p.life+=
+            dt*.15;
 
-            lightning = 0;
-        }
+
+        if(p.life>1)
+            p.life=0;
+
+
+        const x=
+            cx+
+            Math.cos(
+                p.angle
+            )*
+            p.radius;
+
+
+        const y=
+            cy+
+            Math.sin(
+                p.angle
+            )*
+            p.radius;
+
+
+        const twinkle=
+            .65+
+            .35*
+            Math.sin(
+                animationTime*3+
+                p.phase
+            );
+
+
+        const alpha=
+            p.alpha*
+            twinkle*
+            spawnProgress;
+
+
+        particleCtx.fillStyle=
+            `rgba(255,210,65,${
+                alpha
+            })`;
+
+
+        /*
+            Pas de shadowBlur ici.
+            C'est beaucoup moins cher.
+        */
+
+        particleCtx.beginPath();
+
+        particleCtx.arc(
+            x,
+            y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+        particleCtx.fill();
+    }
+}
+
+
+/* =========================================================
+   GOLDEN AURA
+========================================================= */
+
+function updateGoldenAura(){
+
+    if(!deityActive)
+        return;
+
+
+    let progress=1;
+
+
+    if(!spawnFinished){
+
+        const elapsed=
+            (
+                performance.now()-
+                spawnStartTime
+            )/1000;
+
+        progress=
+            clamp(
+                elapsed/
+                SPAWN_DURATION,
+                0,
+                1
+            );
+    }
+
+
+    const pulse=
+        .94+
+        Math.sin(
+            animationTime*2.2
+        )*.06;
+
+
+    godGlow.style.opacity=
+        String(
+            progress*
+            .58*
+            pulse
+        );
+
+
+    godGlow.style.transform=
+        `translate(-50%,-50%) scale(${
+            .65+
+            progress*.32
+        })`;
+
+
+    godAura.style.opacity=
+        String(
+            progress*.16
+        );
+
+
+    godAura.style.transform=
+        `translate(-50%,-50%) scale(${
+            .75+
+            progress*.25
+        })`;
+}
+
+
+/* =========================================================
+   GOD CENTER
+========================================================= */
+
+function forceGodCenter(){
+
+    godLayer.style.transform=
+        "translate(-50%,-50%)";
+
+    godX=0;
+
+    godY=0;
+}
+
+
+/* =========================================================
+   TARGET
+========================================================= */
+
+function chooseTarget(){
+
+    targetX=
+        rand(
+            -Math.min(
+                W*.25,
+                280
+            ),
+            Math.min(
+                W*.25,
+                280
+            )
+        );
+
+
+    targetY=
+        rand(
+            -Math.min(
+                H*.19,
+                200
+            ),
+            Math.min(
+                H*.19,
+                200
+            )
+        );
+
+
+    nextTargetTime=
+        animationTime+
+        rand(
+            3,
+            6
+        );
+}
+
+
+/* =========================================================
+   GOD MOVEMENT
+========================================================= */
+
+function updateGodMovement(dt){
+
+    if(!deityActive)
+        return;
+
+
+    if(!spawnFinished){
+
+        godX=0;
+        godY=0;
+
+        velocityX=0;
+        velocityY=0;
+
+        return;
+    }
+
+
+    if(
+        animationTime>
+        nextTargetTime
+    ){
+
+        chooseTarget();
+    }
+
+
+    const dx=
+        targetX-godX;
+
+    const dy=
+        targetY-godY;
+
+
+    velocityX+=
+        dx*
+        .0008*
+        dt*
+        60;
+
+    velocityY+=
+        dy*
+        .0008*
+        dt*
+        60;
+
+
+    velocityX*=
+        Math.pow(
+            .925,
+            dt*60
+        );
+
+    velocityY*=
+        Math.pow(
+            .925,
+            dt*60
+        );
+
+
+    const speed=
+        Math.sqrt(
+            velocityX*
+            velocityX+
+            velocityY*
+            velocityY
+        );
+
+
+    const maxSpeed=2.2;
+
+
+    if(speed>maxSpeed){
+
+        velocityX=
+            velocityX/
+            speed*
+            maxSpeed;
+
+        velocityY=
+            velocityY/
+            speed*
+            maxSpeed;
+    }
+
+
+    godX+=
+        velocityX*
+        dt*
+        60;
+
+    godY+=
+        velocityY*
+        dt*
+        60;
+}
+
+
+/* =========================================================
+   GOD VISUAL
+========================================================= */
+
+function updateGodVisual(){
+
+    if(!deityActive)
+        return;
+
+
+    if(!spawnFinished)
+        return;
+
+
+    const bob=
+        Math.sin(
+            animationTime*1.15
+        )*7;
+
+
+    const sway=
+        Math.sin(
+            animationTime*.65
+        )*3;
+
+
+    const rotation=
+        Math.sin(
+            animationTime*.55
+        )*.01;
+
+
+    const scale=
+        1+
+        Math.sin(
+            animationTime*1.35
+        )*.014;
+
+
+    god.style.transform=
+        `translate(
+            calc(-50% + ${
+                godX+sway
+            }px),
+            calc(-50% + ${
+                godY+bob
+            }px)
+        )
+        scale(${scale})
+        rotate(${rotation}rad)`;
+}
+
+
+/* =========================================================
+   SPAWN SHAKE
+========================================================= */
+
+function updateSpawnShake(){
+
+    if(!spawnShakeActive){
+
+        camera.style.transform=
+            "translate3d(0,0,0)";
+
+        return;
     }
 
 
     /*
-       Déplacement libre
+        Shake réduit mais toujours visible.
     */
 
-    updateFreeMovement(
-        dt
-    );
+    const envelope=
+        6+
+        Math.sin(
+            animationTime*3
+        )*3;
 
 
-    updateGodVisual();
+    const x=
+        Math.sin(
+            animationTime*36
+        )*
+        envelope;
+
+
+    const y=
+        Math.cos(
+            animationTime*42
+        )*
+        envelope;
+
+
+    const rotation=
+        Math.sin(
+            animationTime*28
+        )*.004;
+
+
+    camera.style.transform=
+        `translate3d(
+            ${x}px,
+            ${y}px,
+            0
+        )
+        rotate(${rotation}rad)`;
+}
+
+
+/* =========================================================
+   SPAWN UPDATE
+========================================================= */
+
+function updateSpawn(){
+
+    if(!deityActive)
+        return;
+
+
+    if(spawnFinished)
+        return;
+
+
+    const elapsed=
+        (
+            performance.now()-
+            spawnStartTime
+        )/1000;
+
+
+    const p=
+        clamp(
+            elapsed/
+            SPAWN_DURATION,
+            0,
+            1
+        );
+
+
+    const appear=
+        clamp(
+            elapsed/
+            .18,
+            0,
+            1
+        );
+
+
+    god.style.opacity=
+        String(appear);
+
+
+    const scale=
+        lerp(
+            .35,
+            1,
+            easeOut(p)
+        );
+
+
+    const spawnY=
+        lerp(
+            25,
+            0,
+            easeOut(p)
+        );
+
+
+    god.style.transform=
+        `translate(
+            -50%,
+            calc(
+                -50% +
+                ${spawnY}px
+            )
+        )
+        scale(${scale})`;
+
+
+    godGlow.style.opacity=
+        String(
+            appear*
+            (
+                .4+
+                Math.sin(
+                    p*Math.PI
+                )*.65
+            )
+        );
+
+
+    godGlow.style.transform=
+        `translate(-50%,-50%) scale(${
+            lerp(
+                .35,
+                1.05,
+                easeOut(p)
+            )
+        })`;
+
+
+    godAura.style.opacity=
+        String(
+            appear*.2
+        );
+
+
+    godAura.style.transform=
+        `translate(-50%,-50%) scale(${
+            lerp(
+                .3,
+                .95,
+                easeOut(p)
+            )
+        })`;
+
+
+    updateSpawnShake();
 
 
     /*
-       Tremblement
+        Flash de spawn
     */
 
-    updateShake(
-        dt
-    );
+    if(elapsed<.25){
+
+        const fp=
+            1-
+            elapsed/.25;
+
+        flash.style.opacity=
+            String(
+                fp*.8
+            );
+
+    }else{
+
+        flash.style.opacity="0";
+    }
+
+
+    if(
+        elapsed>=
+        SPAWN_DURATION
+    ){
+
+        finishSpawn();
+    }
+}
+
+
+/* =========================================================
+   BEGIN SPAWN
+========================================================= */
+
+function beginSpawn(){
+
+    if(deityActive)
+        return;
+
+
+    deityActive=true;
+
+    spawnFinished=false;
+
+    spawnStartTime=
+        performance.now();
+
+
+    godX=0;
+
+    godY=0;
+
+    velocityX=0;
+
+    velocityY=0;
+
+
+    forceGodCenter();
+
+
+    god.style.opacity="0";
+
+
+    god.style.transform=
+        "translate(-50%,-50%) scale(.35)";
+
+
+    godGlow.style.opacity="0";
+
+    godAura.style.opacity="0";
+
+
+    try{
+
+        spawnSound.currentTime=0;
+
+        spawnSound
+            .play()
+            .catch(
+                e=>
+                    console.warn(
+                        "spawn.mp3",
+                        e
+                    )
+            );
+
+    }catch(e){
+        console.warn(e);
+    }
+
+
+    spawnShakeActive=true;
+
+
+    /*
+        Flash très court.
+    */
+
+    flash.style.transition="none";
+
+    flash.style.opacity="1";
+
+
+    setTimeout(()=>{
+
+        flash.style.transition=
+            "opacity .22s ease-out";
+
+        flash.style.opacity="0";
+
+    },40);
+}
+
+
+/* =========================================================
+   FINISH SPAWN
+========================================================= */
+
+function finishSpawn(){
+
+    if(spawnFinished)
+        return;
+
+
+    spawnFinished=true;
+
+    spawnShakeActive=false;
+
+
+    camera.style.transform=
+        "translate3d(0,0,0)";
+
+
+    godX=0;
+
+    godY=0;
+
+    velocityX=0;
+
+    velocityY=0;
+
+
+    godGlow.style.opacity=".65";
+
+    godAura.style.opacity=".18";
+
+
+    chooseTarget();
+
+
+    title.style.opacity="1";
+
+
+    try{
+
+        music.currentTime=0;
+
+        music
+            .play()
+            .catch(
+                e=>
+                    console.warn(
+                        "song.mp3",
+                        e
+                    )
+            );
+
+    }catch(e){
+
+        console.warn(e);
+    }
+}
+
+
+/* =========================================================
+   INTRO
+========================================================= */
+
+function updateIntro(t){
+
+    const progress=
+        clamp(
+            t/
+            INTRO_DURATION,
+            0,
+            1
+        );
+
+
+    /*
+        Brèche
+    */
+
+    drawRift(progress);
+
+
+    /*
+        À partir de 7 secondes,
+        tout devient progressivement plus intense.
+    */
+
+    let intensity=0;
+
+
+    if(t>7){
+
+        intensity=
+            clamp(
+                (t-7)/4,
+                0,
+                1
+            );
+    }
+
+
+    if(intensity>0){
+
+        const pulse=
+            Math.sin(
+                t*12
+            )*.5+.5;
+
+
+        /*
+            Évite de modifier filter trop souvent.
+            On utilise seulement brightness.
+        */
+
+        space.style.filter=
+            `brightness(${
+                1+
+                intensity*.25+
+                pulse*
+                intensity*.06
+            })`;
+    }
+
+
+    /*
+        Flash final de 10.55 à 11 secondes.
+    */
+
+    if(t>=10.55){
+
+        const p=
+            clamp(
+                (
+                    t-
+                    10.55
+                )/.45,
+                0,
+                1
+            );
+
+
+        flash.style.opacity=
+            String(
+                Math.pow(
+                    p,
+                    2.5
+                )
+            );
+
+
+        riftGlow.style.opacity=
+            String(
+                1+
+                p*2
+            );
+
+
+        riftGlow.style.transform=
+            `translate(
+                -50%,
+                -50%
+            )
+            scale(${
+                1.4+
+                p*7
+            })`;
+
+    }else{
+
+        flash.style.opacity="0";
+    }
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+function startIntro(){
+
+    if(started)
+        return;
+
+
+    started=true;
+
+
+    startMessage.style.display=
+        "none";
+
+
+    introStartTime=
+        performance.now();
+
+
+    animationTime=0;
+
+
+    deityActive=false;
+
+    spawnFinished=false;
+
+    spawnShakeActive=false;
+
+
+    god.style.opacity="0";
+
+    godGlow.style.opacity="0";
+
+    godAura.style.opacity="0";
+
+    flash.style.opacity="0";
+
+
+    camera.style.transform=
+        "translate3d(0,0,0)";
+
+
+    space.style.filter=
+        "none";
+
+
+    try{
+
+        introSound.currentTime=0;
+
+        introSound
+            .play()
+            .catch(
+                e=>
+                    console.warn(
+                        "intro.mp3",
+                        e
+                    )
+            );
+
+    }catch(e){
+
+        console.warn(e);
+    }
+
+
+    /*
+        11 secondes exactement.
+    */
+
+    setTimeout(()=>{
+
+        if(
+            started &&
+            !deityActive
+        ){
+
+            beginSpawn();
+        }
+
+    },INTRO_DURATION*1000);
+}
+
+
+/* =========================================================
+   CLICK
+========================================================= */
+
+startMessage.addEventListener(
+    "click",
+    startIntro
+);
+
+
+document.addEventListener(
+    "click",
+    e=>{
+
+        if(
+            !started &&
+            e.target!==startMessage
+        ){
+
+            startIntro();
+        }
+
+    }
+);
+
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+
+let lastTime=
+    performance.now();
+
+
+function loop(now){
+
+    const dt=
+        Math.min(
+            (
+                now-
+                lastTime
+            )/1000,
+            .05
+        );
+
+
+    lastTime=now;
+
+
+    if(started){
+
+        animationTime+=dt;
+
+
+        /*
+            INTRO
+        */
+
+        if(!deityActive){
+
+            const elapsed=
+                (
+                    now-
+                    introStartTime
+                )/1000;
+
+
+            if(
+                elapsed<
+                INTRO_DURATION
+            ){
+
+                updateIntro(
+                    elapsed
+                );
+
+            }else{
+
+                updateIntro(
+                    INTRO_DURATION
+                );
+
+                beginSpawn();
+            }
+        }
+
+
+        /*
+            SPAWN
+        */
+
+        updateSpawn();
+
+
+        /*
+            PARTICULES
+        */
+
+        updateGoldenParticles(dt);
+
+
+        /*
+            AURA
+        */
+
+        updateGoldenAura();
+
+
+        /*
+            MOUVEMENT
+        */
+
+        updateGodMovement(dt);
+
+
+        /*
+            VISUEL
+        */
+
+        updateGodVisual();
+    }
 
 
     requestAnimationFrame(
@@ -3479,178 +3175,74 @@ function loop(now){
 }
 
 
+/* =========================================================
+   INITIALISATION
+========================================================= */
+
+resize();
+
+createRiftBranches();
+
+createRiftSparks();
+
+createGoldenParticles();
+
+forceGodCenter();
+
 requestAnimationFrame(
     loop
 );
 
 
 /* =========================================================
-   AUDIO UNLOCK
+   AUDIO INFO
 ========================================================= */
 
-let audioUnlocked =
-    false;
-
-
-async function unlockAudio(){
-
-    if(
-        audioUnlocked
-    ){
-
-        return;
-    }
-
-
-    audioUnlocked =
-        true;
-
-
-    /*
-       INTRO
-    */
-
-    try{
-
-        introSound.muted =
-            true;
-
-        await introSound.play();
-
-        introSound.pause();
-
-        introSound.currentTime =
-            0;
-
-        introSound.muted =
-            false;
-
-    }catch(error){
-
-        console.warn(
-            "Unlock intro :",
-            error
+introSound.addEventListener(
+    "loadedmetadata",
+    ()=>{
+        console.log(
+            "Intro :",
+            introSound.duration,
+            "secondes"
         );
     }
+);
 
 
-    /*
-       SPAWN
-    */
-
-    try{
-
-        spawnSound.muted =
-            true;
-
-        await spawnSound.play();
-
-        spawnSound.pause();
-
-        spawnSound.currentTime =
-            0;
-
-        spawnSound.muted =
-            false;
-
-    }catch(error){
-
-        console.warn(
-            "Unlock spawn :",
-            error
+spawnSound.addEventListener(
+    "loadedmetadata",
+    ()=>{
+        console.log(
+            "Spawn :",
+            spawnSound.duration,
+            "secondes"
         );
     }
+);
 
 
-    /*
-       MUSIC
-    */
-
-    try{
-
-        music.muted =
-            true;
-
-        await music.play();
-
-        music.pause();
-
-        music.currentTime =
-            0;
-
-        music.muted =
-            false;
-
-    }catch(error){
-
-        console.warn(
-            "Unlock music :",
-            error
+music.addEventListener(
+    "loadedmetadata",
+    ()=>{
+        console.log(
+            "Song :",
+            music.duration,
+            "secondes"
         );
-    }
-}
-
-
-/* =========================================================
-   DÉMARRAGE AU PREMIER CLIC
-========================================================= */
-
-window.addEventListener(
-    "pointerdown",
-    async ()=>{
-
-        await unlockAudio();
-
-        if(
-            !started
-        ){
-
-            startIntro();
-        }
-
-    },
-    {
-        once:true,
-        passive:true
     }
 );
 
 
 /* =========================================================
-   DEBUG
+   IMAGE
 ========================================================= */
 
-console.log(
-    "%cTHE NAMELESS DEITY // V8",
-    "font-size:22px;font-weight:bold;"
-);
-
-console.log(
-    "INTRO : 11 secondes"
-);
-
-console.log(
-    "SPAWN : 3 secondes"
-);
-
-console.log(
-    "SONG : 4 minutes 05"
-);
-
-console.log(
-    "Morceaux basés sur la vraie image 600x600"
-);
-
-console.log(
-    "Positions finales non aléatoires"
-);
-
-console.log(
-    "Déplacement libre activé"
-);
-
-console.log(
-    "Téléportation supprimée"
+god.addEventListener(
+    "dragstart",
+    e=>{
+        e.preventDefault();
+    }
 );
 
 </script>
