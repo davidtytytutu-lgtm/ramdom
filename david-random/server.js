@@ -3505,51 +3505,57 @@ async function start() {
         );
     }
 
-   server.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
+    server.listen(
+        PORT,
+        "0.0.0.0",
+        () => {
 
-        console.log(
-            `SERVER LISTENING ON ${PORT}`
-        );
+            console.log(
+                `SERVER LISTENING ON ${PORT}`
+            );
 
-        console.log(
-            "API READY"
-        );
+            console.log(
+                "API READY"
+            );
 
-        console.log(
-            "WSS READY"
-        );
+            console.log(
+                "WSS READY"
+            );
 
-        console.log(
-            "CHAT LOG TXT READY"
-        );
+            console.log(
+                "CHAT LOG TXT READY"
+            );
 
-        console.log(
-            "HEARTBEAT READY"
-        );
+            console.log(
+                "HEARTBEAT READY"
+            );
 
-        console.log(
-            "================================"
-        );
+            console.log(
+                "================================"
+            );
 
-        console.log(
-            "💓 DAVID HEARTBEAT SYSTEM READY"
-        );
+            console.log(
+                "💓 DAVID HEARTBEAT SYSTEM READY"
+            );
 
-        console.log(
-            `🎯 Target: ${HEARTBEAT_SERVER_URL}`
-        );
+            console.log(
+                `🎯 Target: ${HEARTBEAT_SERVER_URL}`
+            );
 
-        console.log(
-            "⏱️ Premier heartbeat dans 5 secondes..."
-        );
+            console.log(
+                "⏱️ Premier heartbeat dans 5 secondes..."
+            );
 
-        setTimeout(
-            startHeartbeat,
-            5000
-        );
-    }
-);
+            setTimeout(
+                startHeartbeat,
+                5000
+            );
+        }
+    );
+}
+
+/* =========================================================
+   LANCEMENT
+========================================================= */
+
 start();
