@@ -2444,6 +2444,11 @@ function formatChatMessage(
             ""
         );
 
+    const nameEffect =
+        message.name_effect === "name_rgb"
+            ? "[RGB]"
+            : "[NORMAL]";
+
     const text =
         String(
             message.message ||
@@ -2461,7 +2466,8 @@ function formatChatMessage(
     return (
         `[${timestamp}] ` +
         `${username} ` +
-        `(${userId}) : ` +
+        `(${userId}) ` +
+        `${nameEffect} : ` +
         `${text}\n`
     );
 }
@@ -2473,29 +2479,68 @@ function parseChatLine(
 
     const match =
         line.match(
-            /^\[([^\]]+)\]\s(.+?)\s\(([^)]*)\)\s:\s([\s\S]*)$/
+            /^\[([^\]]+)\]\s(.+?)\s\(([^)]*)\)\s\[(RGB|NORMAL)\]\s:\s([\s\S]*)$/
         );
 
     if (
         !match
     ) {
 
+        /*
+        Ancien format sans information RGB.
+        On le considère comme NORMAL.
+        */
+
+        const oldMatch =
+            line.match(
+                /^\[([^\]]+)\]\s(.+?)\s\(([^)]*)\)\s:\s([\s\S]*)$/
+            );
+
+        if (
+            !oldMatch
+        ) {
+
+            return {
+
+                username:
+                    "Unknown",
+
+                user_id:
+                    "",
+
+                profile_picture:
+                    null,
+
+                name_effect:
+                    "none",
+
+                message:
+                    line,
+
+                timestamp:
+                    null
+            };
+        }
+
         return {
 
             username:
-                "Unknown",
+                oldMatch[2],
 
             user_id:
-                "",
+                oldMatch[3],
 
             profile_picture:
                 null,
 
+            name_effect:
+                "none",
+
             message:
-                line,
+                oldMatch[4],
 
             timestamp:
-                null
+                oldMatch[1]
         };
     }
 
@@ -2510,14 +2555,18 @@ function parseChatLine(
         profile_picture:
             null,
 
+        name_effect:
+            match[4] === "RGB"
+                ? "name_rgb"
+                : "none",
+
         message:
-            match[4],
+            match[5],
 
         timestamp:
             match[1]
     };
 }
-
 
 async function readChatLog(
     number
