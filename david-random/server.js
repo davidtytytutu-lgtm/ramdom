@@ -13,12 +13,51 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({
     server,
     path: "/ws"
+});
+
+/* =========================================================
+   CONFIG
+========================================================= */
+
 const PORT =
     process.env.PORT || 10000;
 
-// =========================================================
-// HEARTBEAT
-// =========================================================
+const ALLOWED_ORIGIN =
+    "https://david-officiel.neocities.org";
+
+const GITHUB_TOKEN =
+    process.env.GITHUB_TOKEN;
+
+const GITHUB_OWNER =
+    process.env.GITHUB_OWNER ||
+    "davidtytytutu-lgtm";
+
+const GITHUB_REPO =
+    process.env.GITHUB_REPO ||
+    "ramdom";
+
+const GITHUB_BRANCH =
+    process.env.GITHUB_BRANCH ||
+    "main";
+
+const ENCRYPTION_KEY =
+    process.env.ENCRYPTION_KEY;
+
+const CHAT_LOG_LIMIT =
+    15 * 1024 * 1024;
+
+const MAX_FILE_SIZE =
+    25 * 1024 * 1024;
+
+const MESSAGE_LIMIT =
+    500;
+
+const USERS_FILE =
+    "accounts/users.enc";
+
+/* =========================================================
+   HEARTBEAT
+========================================================= */
 
 const HEARTBEAT_SERVER_URL =
     "https://david-heartbeat.onrender.com";
@@ -34,9 +73,6 @@ let lastHeartbeatSent =
 
 let lastHeartbeatReturn =
     null;
-
-});
-
 /* =========================================================
    CONFIG
 ========================================================= */
