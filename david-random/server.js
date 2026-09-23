@@ -18,10 +18,6 @@ const wss = new WebSocket.Server({
 /* =========================================================
    CONFIG
 ========================================================= */
-
-const PORT =
-    process.env.PORT || 10000;
-
 const ALLOWED_ORIGIN =
     "https://david-officiel.neocities.org";
 
