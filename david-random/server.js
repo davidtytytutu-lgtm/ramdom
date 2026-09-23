@@ -13,6 +13,28 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({
     server,
     path: "/ws"
+const PORT =
+    process.env.PORT || 10000;
+
+// =========================================================
+// HEARTBEAT
+// =========================================================
+
+const HEARTBEAT_SERVER_URL =
+    "https://david-heartbeat.onrender.com";
+
+const HEARTBEAT_DELAY =
+    5000;
+
+let heartbeatCount =
+    0;
+
+let lastHeartbeatSent =
+    null;
+
+let lastHeartbeatReturn =
+    null;
+
 });
 
 /* =========================================================
@@ -1005,6 +1027,159 @@ app.get(
 
             chat_log_format:
                 "TXT"
+        });
+    }
+);
+
+/* =========================================================
+   HEARTBEAT → DAVID HEARTBEAT
+========================================================= */
+
+app.get(
+    "/heartbeat",
+    async (req, res) => {
+
+        heartbeatCount++;
+
+        lastHeartbeatSent =
+            new Date().toISOString();
+
+        console.log("");
+        console.log(
+            "💓 DAVID RANDOM → DAVID HEARTBEAT"
+        );
+
+        console.log(
+            "📤 Envoi du heartbeat..."
+        );
+
+        try {
+
+            const response =
+                await fetch(
+                    `${HEARTBEAT_SERVER_URL}/heartbeat`
+                );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
+            }
+
+            const data =
+                await response.json();
+
+            if (
+                data.received !== true
+            ) {
+
+                throw new Error(
+                    "DAVID HEARTBEAT n'a pas confirmé la réception"
+                );
+            }
+
+            console.log(
+                "📥 Confirmation reçue de DAVID HEARTBEAT"
+            );
+
+            console.log(
+                "✅ HEARTBEAT CONFIRMÉ"
+            );
+
+            console.log(
+                `🔢 Heartbeat : ${heartbeatCount}`
+            );
+
+            res.status(200).json({
+
+                status:
+                    "ok",
+
+                sent:
+                    true,
+
+                received:
+                    true,
+
+                message:
+                    "Heartbeat received and confirmed",
+
+                from:
+                    "DAVID-RANDOM",
+
+                heartbeat_number:
+                    heartbeatCount,
+
+                timestamp:
+                    lastHeartbeatSent
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ Erreur heartbeat → DAVID HEARTBEAT:",
+                error.message
+            );
+
+            res.status(503).json({
+
+                status:
+                    "error",
+
+                sent:
+                    false,
+
+                received:
+                    false,
+
+                message:
+                    error.message
+            });
+        }
+    }
+);
+
+/* =========================================================
+   HEARTBEAT RETOUR ← DAVID HEARTBEAT
+========================================================= */
+
+app.get(
+    "/heartbeat/return",
+    (req, res) => {
+
+        lastHeartbeatReturn =
+            new Date().toISOString();
+
+        console.log("");
+        console.log(
+            "💓 DAVID HEARTBEAT → DAVID RANDOM"
+        );
+
+        console.log(
+            "📥 HEARTBEAT RETOUR REÇU"
+        );
+
+        console.log(
+            "📤 Confirmation envoyée à DAVID HEARTBEAT"
+        );
+
+        res.status(200).json({
+
+            status:
+                "ok",
+
+            received:
+                true,
+
+            message:
+                "Return heartbeat received",
+
+            from:
+                "DAVID-RANDOM",
+
+            timestamp:
+                lastHeartbeatReturn
         });
     }
 );
@@ -3160,6 +3335,91 @@ app.use(
 );
 
 /* =========================================================
+   HEARTBEAT AUTOMATIQUE
+========================================================= */
+
+async function startHeartbeat() {
+
+    try {
+
+        console.log("");
+        console.log(
+            "💓 DAVID RANDOM → DAVID HEARTBEAT"
+        );
+
+        console.log(
+            "📡 Envoi du heartbeat automatique..."
+        );
+
+        const response =
+            await fetch(
+                `${HEARTBEAT_SERVER_URL}/heartbeat`
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+        }
+
+        const data =
+            await response.json();
+
+        if (
+            data.received !== true
+        ) {
+
+            throw new Error(
+                "Heartbeat non confirmé"
+            );
+        }
+
+        heartbeatCount++;
+
+        lastHeartbeatSent =
+            new Date().toISOString();
+
+        console.log(
+            "📥 Confirmation reçue de DAVID HEARTBEAT"
+        );
+
+        console.log(
+            "✅ HEARTBEAT CONFIRMÉ"
+        );
+
+        console.log(
+            `🔢 Heartbeat : ${heartbeatCount}`
+        );
+
+        console.log(
+            "⏱️ Prochain heartbeat dans 5 secondes"
+        );
+
+        setTimeout(
+            startHeartbeat,
+            HEARTBEAT_DELAY
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ HEARTBEAT ERROR:",
+            error.message
+        );
+
+        console.log(
+            "🔄 Nouvelle tentative dans 30 secondes..."
+        );
+
+        setTimeout(
+            startHeartbeat,
+            30000
+        );
+    }
+}
+
+/* =========================================================
    START
 ========================================================= */
 
@@ -3245,32 +3505,51 @@ async function start() {
         );
     }
 
-    server.listen(
-        PORT,
-        "0.0.0.0",
-        () => {
+   server.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
 
-            console.log(
-                `SERVER LISTENING ON ${PORT}`
-            );
+        console.log(
+            `SERVER LISTENING ON ${PORT}`
+        );
 
-            console.log(
-                "API READY"
-            );
+        console.log(
+            "API READY"
+        );
 
-            console.log(
-                "WSS READY"
-            );
+        console.log(
+            "WSS READY"
+        );
 
-            console.log(
-                "CHAT LOG TXT READY"
-            );
+        console.log(
+            "CHAT LOG TXT READY"
+        );
 
-            console.log(
-                "================================"
-            );
-        }
-    );
-}
+        console.log(
+            "HEARTBEAT READY"
+        );
 
+        console.log(
+            "================================"
+        );
+
+        console.log(
+            "💓 DAVID HEARTBEAT SYSTEM READY"
+        );
+
+        console.log(
+            `🎯 Target: ${HEARTBEAT_SERVER_URL}`
+        );
+
+        console.log(
+            "⏱️ Premier heartbeat dans 5 secondes..."
+        );
+
+        setTimeout(
+            startHeartbeat,
+            5000
+        );
+    }
+);
 start();
