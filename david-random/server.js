@@ -76,35 +76,6 @@ let lastHeartbeatReturn =
 const PORT =
     process.env.PORT || 10000;
 
-const GITHUB_TOKEN =
-    process.env.GITHUB_TOKEN;
-
-const GITHUB_OWNER =
-    process.env.GITHUB_OWNER ||
-    "davidtytytutu-lgtm";
-
-const GITHUB_REPO =
-    process.env.GITHUB_REPO ||
-    "ramdom";
-
-const GITHUB_BRANCH =
-    process.env.GITHUB_BRANCH ||
-    "main";
-
-const ENCRYPTION_KEY =
-    process.env.ENCRYPTION_KEY;
-
-const CHAT_LOG_LIMIT =
-    15 * 1024 * 1024;
-
-const MAX_FILE_SIZE =
-    25 * 1024 * 1024;
-
-const MESSAGE_LIMIT =
-    500;
-
-const USERS_FILE =
-    "accounts/users.enc";
 
 /* =========================================================
    VALIDATION
