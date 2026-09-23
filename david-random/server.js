@@ -76,9 +76,6 @@ let lastHeartbeatReturn =
 const PORT =
     process.env.PORT || 10000;
 
-const ALLOWED_ORIGIN =
-    "https://david-officiel.neocities.org";
-
 const GITHUB_TOKEN =
     process.env.GITHUB_TOKEN;
 
