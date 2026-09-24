@@ -975,14 +975,464 @@ font-size:12px
     color:var(--soft);
 }
 
+/* =========================================================
+   GLOBAL EVENTS // ASCII TERMINAL
+========================================================= */
+
 .event-page {
-    background: red !important;
+    width: 100%;
+    padding: 15px 0 30px;
 }
 
-.event-card {
-    background: blue !important;
-    width: 150px !important;
-    height: 170px !important;
+/* =========================================================
+   HEADER
+========================================================= */
+
+.event-header {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+
+    border: 1px solid var(--dark);
+    background: #080d08;
+}
+
+.event-title {
+    color: var(--green);
+
+    font-size: 18px;
+    font-weight: bold;
+
+    letter-spacing: 2px;
+}
+
+.event-subtitle {
+    margin-top: 4px;
+
+    color: var(--soft);
+
+    font-size: 10px;
+}
+
+/* =========================================================
+   DAVID COINS
+========================================================= */
+
+.event-balance {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 12px;
+    padding: 7px 10px;
+
+    border: 1px dashed var(--dark);
+
+    background: #050805;
+
+    color: var(--soft);
+
+    font-size: 11px;
+}
+
+.event-balance strong {
+    color: var(--yellow);
+    font-size: 13px;
+}
+
+/* =========================================================
+   EVENT GRID
+========================================================= */
+
+.event-grid {
+    display: flex;
+    flex-wrap: wrap;
+
+    align-items: flex-start;
+
+    gap: 10px;
+}
+
+/* =========================================================
+   EVENT ITEM
+========================================================= */
+
+.event-item {
+    position: relative;
+
+    width: 150px;
+    height: 170px;
+
+    min-width: 150px;
+    max-width: 150px;
+
+    min-height: 170px;
+    max-height: 170px;
+
+    box-sizing: border-box;
+
+    padding: 5px;
+
+    overflow: hidden;
+
+    border: 1px solid var(--dark);
+
+    background: #050805;
+
+    color: var(--text);
+
+    font-family: "Courier New", monospace;
+
+    text-align: center;
+}
+
+/* Effet terminal au survol */
+
+.event-item:hover {
+    border-color: var(--green);
+
+    box-shadow:
+        0 0 10px rgba(53,255,90,.12);
+
+    background: #071007;
+}
+
+/* =========================================================
+   ASCII TOP / SEPARATOR
+========================================================= */
+
+.event-ascii {
+    width: 100%;
+
+    height: 9px;
+
+    overflow: hidden;
+
+    color: var(--dark);
+
+    font-size: 7px;
+
+    line-height: 8px;
+
+    white-space: nowrap;
+
+    text-align: center;
+
+    user-select: none;
+}
+
+/* =========================================================
+   EVENT NAME
+========================================================= */
+
+.event-name {
+    width: 100%;
+
+    height: 17px;
+
+    margin: 2px 0;
+
+    overflow: hidden;
+
+    color: var(--green);
+
+    font-size: 9px;
+
+    font-weight: bold;
+
+    line-height: 17px;
+
+    white-space: nowrap;
+
+    text-align: center;
+}
+
+/* =========================================================
+   IMAGE FRAME
+========================================================= */
+
+.event-picture {
+    width: 70px;
+    height: 55px;
+
+    margin: 2px auto 3px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    border: 1px solid var(--dark);
+
+    background: #000;
+}
+
+/* =========================================================
+   ANGRY MUCCI IMAGE
+========================================================= */
+
+.event-picture img {
+    width: 50px;
+    height: 50px;
+
+    min-width: 50px;
+    max-width: 50px;
+
+    min-height: 50px;
+    max-height: 50px;
+
+    display: block;
+
+    margin: 0;
+    padding: 0;
+
+    object-fit: contain;
+    object-position: center;
+
+    transition:
+        transform .15s ease,
+        filter .15s ease;
+}
+
+/* Effet au survol */
+
+.event-item:hover .event-picture img {
+    transform: scale(1.08);
+
+    filter:
+        drop-shadow(
+            0 0 4px
+            var(--green)
+        );
+}
+
+/* =========================================================
+   PRICE
+========================================================= */
+
+.event-price {
+    width: 100%;
+
+    height: 18px;
+
+    margin: 2px 0;
+
+    color: var(--soft);
+
+    font-size: 8px;
+
+    line-height: 18px;
+
+    text-align: center;
+
+    white-space: nowrap;
+}
+
+.event-price strong {
+    color: var(--yellow);
+
+    font-size: 10px;
+}
+
+/* =========================================================
+   ACTIVATE BUTTON
+========================================================= */
+
+.event-button {
+    display: block;
+
+    width: 110px;
+    height: 23px;
+
+    margin: 3px auto 0;
+
+    padding: 2px 5px;
+
+    box-sizing: border-box;
+
+    border: 1px solid var(--green);
+
+    background: #061006;
+
+    color: var(--green);
+
+    font-family: "Courier New", monospace;
+
+    font-size: 8px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    text-align: center;
+
+    transition:
+        background .1s,
+        color .1s,
+        transform .1s,
+        box-shadow .1s;
+}
+
+.event-button:hover {
+    background: var(--green);
+
+    color: #001500;
+
+    box-shadow:
+        0 0 8px
+        rgba(53,255,90,.25);
+}
+
+.event-button:active {
+    transform: scale(.95);
+}
+
+.event-button:disabled {
+    opacity: .5;
+
+    cursor: not-allowed;
+
+    box-shadow: none;
+}
+
+/* =========================================================
+   NOT ENOUGH COINS
+========================================================= */
+
+.event-error {
+    display: none;
+
+    width: 100%;
+
+    margin-top: 2px;
+
+    color: var(--red);
+
+    font-size: 7px;
+
+    line-height: 9px;
+
+    text-align: center;
+
+    white-space: nowrap;
+}
+
+/* Si JS ajoute une classe visible */
+
+.event-error.show {
+    display: block;
+}
+
+/* =========================================================
+   EVENT FOOTER
+========================================================= */
+
+.event-footer {
+    width: 100%;
+
+    margin-top: 15px;
+
+    padding: 9px;
+
+    box-sizing: border-box;
+
+    border: 1px dashed var(--dark);
+
+    background: #050805;
+}
+
+.event-footer-title {
+    margin-bottom: 4px;
+
+    color: var(--yellow);
+
+    font-size: 10px;
+
+    font-weight: bold;
+}
+
+.event-footer-text {
+    color: var(--soft);
+
+    font-size: 9px;
+
+    line-height: 13px;
+}
+
+/* =========================================================
+   ASCII TERMINAL DECORATION
+========================================================= */
+
+.event-item::before {
+    content: "[ EVENT ]";
+
+    position: absolute;
+
+    top: 1px;
+    left: 5px;
+
+    color: #245b2c;
+
+    font-size: 6px;
+
+    pointer-events: none;
+}
+
+.event-item::after {
+    content: "◈";
+
+    position: absolute;
+
+    right: 5px;
+    bottom: 3px;
+
+    color: #245b2c;
+
+    font-size: 7px;
+
+    pointer-events: none;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:700px) {
+
+    .event-page {
+        padding: 10px 0 20px;
+    }
+
+    .event-grid {
+        justify-content: flex-start;
+    }
+
+    .event-item {
+        width: 150px;
+        height: 170px;
+
+        min-width: 150px;
+        max-width: 150px;
+
+        min-height: 170px;
+        max-height: 170px;
+    }
+
+}
+
+/* =========================================================
+   VERY SMALL SCREEN
+========================================================= */
+
+@media(max-width:360px) {
+
+    .event-grid {
+        justify-content: center;
+    }
+
 }
 
 /* =========================
