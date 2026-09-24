@@ -693,6 +693,32 @@ async function restoreSession(){
 
 }
 
+/* =========================================================
+   EVENT PAGE
+========================================================= */
+
+function updateEventCoins() {
+
+    const element =
+        document.getElementById("eventDavidCoins");
+
+    if (!element) return;
+
+    /*
+     * On réutilisera ici la variable/système
+     * DAVID COINS déjà présent dans ton serveur.
+     */
+
+    const coins =
+        Number(
+            window.currentDavidCoins ??
+            window.davidCoins ??
+            0
+        );
+
+    element.textContent =
+        `◈ ${coins}`;
+}
 
 /* =========================================================
    DAVID COINS // VIDEO AD
