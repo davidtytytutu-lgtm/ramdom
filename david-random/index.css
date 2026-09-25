@@ -976,824 +976,468 @@ font-size:12px
 }
 
 /* =========================================================
-   GLOBAL EVENTS — ANGRY MUCCI
-   ========================================================= */
+   GLOBAL EVENT — ANGRY MUCCI
+========================================================= */
 
-#event {
-    width: 100%;
-    min-height: 100%;
-    box-sizing: border-box;
-}
+#globalEventOverlay {
+    position: fixed !important;
+    inset: 0 !important;
 
-.event-page {
-    width: 100%;
-    min-height: 100%;
-    box-sizing: border-box;
+    width: 100vw !important;
+    height: 100vh !important;
 
-    padding: 12px;
+    margin: 0 !important;
+    padding: 0 !important;
 
-    font-family: "Courier New", monospace;
-    color: var(--text);
-}
-
-/* =========================================================
-   HEADER
-   ========================================================= */
-
-.event-header {
-    width: 100%;
-    box-sizing: border-box;
-
-    padding: 8px;
-    margin-bottom: 10px;
-
-    border: 1px solid var(--dark);
-
-    background: #020402;
-
-    text-align: center;
-}
-
-.event-title {
-    font-size: 14px;
-    line-height: 18px;
-
-    font-weight: bold;
-
-    letter-spacing: 1px;
-}
-
-.event-subtitle {
-    margin-top: 3px;
-
-    font-size: 8px;
-    line-height: 10px;
-
-    opacity: 0.7;
-
-    letter-spacing: 1px;
-}
-
-/* =========================================================
-   DAVID COINS
-   ========================================================= */
-
-.event-balance {
-    width: 100%;
-    height: 26px;
-
-    box-sizing: border-box;
-
-    padding: 3px 8px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    border: 1px solid var(--dark);
-
-    background: #050805;
-
-    font-size: 8px;
-}
-
-.event-balance span {
-    font-size: 8px;
-}
-
-.event-balance strong {
-    font-size: 10px;
-}
-
-/* =========================================================
-   EVENTS GRID
-   ========================================================= */
-
-.event-grid {
-    width: 100%;
-
-    box-sizing: border-box;
-
-    margin-top: 10px;
-
-    display: flex;
-    flex-wrap: wrap;
-
-    align-items: flex-start;
-    justify-content: flex-start;
-
-    gap: 7px;
-}
-
-/* =========================================================
-   EVENT CARD
-   ========================================================= */
-
-.event-item {
-    position: relative;
-
-    width: 150px;
-    height: 170px;
-
-    min-width: 150px;
-    max-width: 150px;
-
-    min-height: 170px;
-    max-height: 170px;
-
-    box-sizing: border-box;
-
-    padding: 6px;
-
-    overflow: hidden;
-
-    border: 1px solid var(--dark);
-
-    background: #050805;
-
-    color: var(--text);
-
-    font-family: "Courier New", monospace;
-
-    text-align: center;
-
-    transition:
-        transform 0.1s ease,
-        box-shadow 0.1s ease;
-}
-
-/* =========================================================
-   ASCII CORNERS
-   ========================================================= */
-
-.event-item::before {
-    content: "+";
-
-    position: absolute;
-
-    top: 1px;
-    left: 2px;
-
-    font-size: 8px;
-
-    line-height: 8px;
-
-    pointer-events: none;
-}
-
-.event-item::after {
-    content: "+";
-
-    position: absolute;
-
-    right: 2px;
-    bottom: 1px;
-
-    font-size: 8px;
-
-    line-height: 8px;
-
-    pointer-events: none;
-}
-
-/* =========================================================
-   EVENT ASCII TEXT
-   ========================================================= */
-
-.event-ascii {
-    display: none;
-}
-
-/* =========================================================
-   EVENT NAME
-   ========================================================= */
-
-.event-name {
-    width: 100%;
-    height: 15px;
-
-    margin: 0 0 3px 0;
-
-    overflow: hidden;
-
-    font-size: 9px;
-
-    line-height: 15px;
-
-    font-weight: bold;
-
-    letter-spacing: 0.5px;
-
-    white-space: nowrap;
-
-    text-overflow: ellipsis;
-}
-
-/* =========================================================
-   IMAGE FRAME
-   ========================================================= */
-
-.event-picture {
-    position: relative;
-
-    width: 82px;
-    height: 82px;
-
-    margin: 4px auto;
-
-    box-sizing: border-box;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    overflow: hidden;
-
-    border: 1px solid var(--dark);
-
-    background: #000;
-}
-
-/* ASCII TOP */
-
-.event-picture::before {
-    content: "+----------------+";
-
-    position: absolute;
-
-    top: -1px;
-    left: 50%;
-
-    transform: translateX(-50%);
-
-    width: max-content;
-
-    font-family: "Courier New", monospace;
-
-    font-size: 7px;
-
-    line-height: 8px;
+    z-index: 2147483647 !important;
 
     background: #000;
 
-    white-space: nowrap;
+    overflow: hidden !important;
 
-    pointer-events: none;
-
-    z-index: 3;
+    isolation: isolate;
 }
 
-/* ASCII BOTTOM */
-
-.event-picture::after {
-    content: "+----------------+";
-
-    position: absolute;
-
-    bottom: -1px;
-    left: 50%;
-
-    transform: translateX(-50%);
-
-    width: max-content;
-
-    font-family: "Courier New", monospace;
-
-    font-size: 7px;
-
-    line-height: 8px;
-
-    background: #000;
-
-    white-space: nowrap;
-
-    pointer-events: none;
-
-    z-index: 3;
-}
-
-/* =========================================================
-   MUCCI IMAGE
-   ========================================================= */
-
-.event-picture img {
-    display: block;
-
-    width: 70px;
-    height: 70px;
-
-    min-width: 70px;
-    max-width: 70px;
-
-    min-height: 70px;
-    max-height: 70px;
-
-    object-fit: contain;
-
-    position: relative;
-
-    z-index: 1;
-}
-
-/* =========================================================
-   PRICE
-   ========================================================= */
-
-.event-price {
-    width: 100%;
-
-    height: 18px;
-
-    margin: 3px 0;
-
-    font-size: 9px;
-
-    line-height: 18px;
-
-    white-space: nowrap;
-}
-
-.event-price strong {
-    font-size: 10px;
-}
-
-/* =========================================================
-   ACTIVATE BUTTON
-   ========================================================= */
-
-.event-button {
-    display: block;
-
-    width: 110px;
-    height: 24px;
-
-    margin: 4px auto 0;
-
-    padding: 0;
-
-    box-sizing: border-box;
-
-    border: 1px solid var(--dark);
-
-    background: #030503;
-
-    color: var(--text);
-
-    font-family: "Courier New", monospace;
-
-    font-size: 8px;
-
-    line-height: 22px;
-
-    cursor: pointer;
-
-    transition:
-        background 0.1s ease,
-        color 0.1s ease,
-        transform 0.1s ease;
-}
-
-.event-button:hover {
-    background: var(--text);
-    color: #000;
-}
-
-.event-button:active {
-    transform: translateY(1px);
-}
-
-/* =========================================================
-   NOT ENOUGH COINS
-   ========================================================= */
-
-.event-error {
-    display: none;
-
-    width: 100%;
-
-    margin-top: 3px;
-
-    font-size: 7px;
-
-    line-height: 8px;
-
-    text-align: center;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-}
-
-.event-error.show {
-    display: block;
-}
-
-/* =========================================================
-   EVENT FOOTER
-   ========================================================= */
-
-.event-footer {
-    width: 100%;
-
-    box-sizing: border-box;
-
-    margin-top: 12px;
-
-    padding: 7px;
-
-    border-top: 1px solid var(--dark);
-
-    background: #020402;
-}
-
-.event-footer-title {
-    font-size: 8px;
-
-    line-height: 10px;
-
-    font-weight: bold;
-}
-
-.event-footer-text {
-    margin-top: 3px;
-
-    font-size: 6px;
-
-    line-height: 8px;
-
-    opacity: 0.65;
-}
-
-/* =========================================================
-   ACTIVATED CARD
-   ========================================================= */
-
-.event-item.activated {
-    animation:
-        angryCardShake 0.08s linear infinite,
-        angryCardFlash 0.2s steps(2) infinite;
-}
-
-@keyframes angryCardShake {
-
-    0% {
-        transform: translate(0, 0);
-    }
-
-    25% {
-        transform: translate(-1px, 0);
-    }
-
-    50% {
-        transform: translate(1px, 0);
-    }
-
-    75% {
-        transform: translate(0, -1px);
-    }
-
-    100% {
-        transform: translate(0, 0);
-    }
-}
-
-@keyframes angryCardFlash {
-
-    0% {
-        filter: none;
-    }
-
-    50% {
-        filter: brightness(2);
-    }
-
-    100% {
-        filter: none;
-    }
-}
-
-/* =========================================================
-   GLOBAL EVENT OVERLAY
-   ========================================================= */
-
-.global-event-overlay {
-    position: fixed;
-
-    inset: 0;
-
-    width: 100vw;
-    height: 100vh;
-
-    z-index: 999999;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    overflow: hidden;
-
-    background: #000;
-
-    pointer-events: auto;
-}
 
 /* =========================================================
    INTRO GIF
-   ========================================================= */
+========================================================= */
 
-.global-event-intro {
-    position: absolute;
+#globalEventOverlay .global-event-intro {
 
-    inset: 0;
+    position: absolute !important;
 
-    width: 100%;
-    height: 100%;
+    top: 0 !important;
+    left: 0 !important;
 
-    display: block;
+    width: 100vw !important;
+    height: 100vh !important;
 
-    object-fit: cover;
-
-    z-index: 1;
-}
-
-/* =========================================================
-   WARNING
-   ========================================================= */
-
-.global-event-warning {
-    position: absolute;
-
-    inset: 0;
+    margin: 0 !important;
+    padding: 0 !important;
 
     display: flex;
 
     align-items: center;
     justify-content: center;
 
+    background: #000;
+
+    z-index: 10;
+
+}
+
+
+#globalEventOverlay
+.global-event-intro img {
+
+    position: absolute !important;
+
+    top: 0 !important;
+    left: 0 !important;
+
+    width: 100vw !important;
+    height: 100vh !important;
+
+    max-width: none !important;
+    max-height: none !important;
+
+    min-width: 100vw !important;
+    min-height: 100vh !important;
+
+    object-fit: cover !important;
+
+    display: block !important;
+
+}
+
+
+/* =========================================================
+   WARNING SCREEN
+========================================================= */
+
+#globalEventOverlay
+.global-event-warning {
+
+    position: absolute !important;
+
+    inset: 0 !important;
+
+    width: 100vw !important;
+    height: 100vh !important;
+
+    display: flex;
+
     flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
 
     background: #000;
 
     opacity: 0;
 
-    pointer-events: none;
+    z-index: 20;
 
-    z-index: 5;
+    overflow: hidden;
+
 }
 
-.global-event-warning.show {
-    opacity: 1;
-}
 
 /* =========================================================
-   WARNING TEXT
-   ========================================================= */
+   BANDES JAUNE / NOIR
+========================================================= */
 
-.global-event-warning-title {
-    position: relative;
+#globalEventOverlay
+.global-event-warning::before {
 
-    z-index: 10;
-
-    padding: 8px 18px;
-
-    border: 2px solid #000;
-
-    background: #ffd800;
-
-    color: #000;
-
-    font-family: "Courier New", monospace;
-
-    font-size: 18px;
-
-    font-weight: bold;
-
-    letter-spacing: 2px;
-
-    transform: rotate(-2deg);
-
-    animation: angryWarningGlitch 0.12s steps(2) infinite;
-}
-
-/* =========================================================
-   WARNING STRIPES
-   ========================================================= */
-
-.global-event-warning::before,
-.global-event-warning::after {
     content: "";
 
     position: absolute;
 
-    left: -10%;
-    right: -10%;
+    inset: -100%;
 
-    height: 35px;
+    width: 300%;
+    height: 300%;
 
     background:
         repeating-linear-gradient(
             135deg,
-            #ffd800 0px,
-            #ffd800 12px,
-            #000 12px,
-            #000 24px
+            #000 0px,
+            #000 35px,
+            #ffd800 35px,
+            #ffd800 70px
         );
 
-    transform: rotate(-4deg);
+    animation:
+        warningStripesMove
+        0.45s
+        linear
+        infinite;
+
+    z-index: 0;
+
 }
 
-.global-event-warning::before {
-    top: 35%;
-}
 
+/* couche noire par-dessus les bandes */
+
+#globalEventOverlay
 .global-event-warning::after {
-    bottom: 35%;
-}
 
-/* =========================================================
-   ANGRY MUCCI OVERLAY IMAGE
-   ========================================================= */
+    content: "";
 
-.global-event-mucci {
     position: absolute;
 
-    left: 50%;
-    top: 50%;
+    inset: 0;
 
-    width: 180px;
-    height: 180px;
+    background:
+        rgba(0,0,0,0.45);
 
-    object-fit: contain;
+    z-index: 1;
 
-    transform:
-        translate(-50%, -50%)
-        scale(0.1);
-
-    opacity: 0;
-
-    z-index: 10;
-
-    filter:
-        contrast(1.5)
-        brightness(1.2);
 }
 
-.global-event-mucci.show {
+
+/* =========================================================
+   ACTIVATION
+========================================================= */
+
+#globalEventOverlay.global-event-active
+.global-event-warning {
+
     opacity: 1;
 
     animation:
-        angryMucciAppear 0.45s steps(4) forwards;
+        warningAppear
+        0.35s
+        steps(4)
+        forwards;
+
 }
 
+
 /* =========================================================
-   MUCCI APPEAR ANIMATION
-   ========================================================= */
+   WARNING TEXT
+========================================================= */
+
+#globalEventOverlay
+.global-event-warning-title {
+
+    position: relative;
+
+    z-index: 5;
+
+    font-family:
+        "Press Start 2P",
+        monospace;
+
+    font-size: clamp(
+        18px,
+        4vw,
+        42px
+    );
+
+    color: #fff;
+
+    background: #000;
+
+    padding: 14px 20px;
+
+    border: 4px solid #ffd800;
+
+    box-shadow:
+        8px 8px 0 #000;
+
+    text-align: center;
+
+    animation:
+        warningTextGlitch
+        0.12s
+        infinite;
+
+}
+
+
+/* =========================================================
+   MUCCI
+========================================================= */
+
+#globalEventOverlay
+.global-event-mucci {
+
+    position: relative;
+
+    z-index: 5;
+
+    width: 180px !important;
+    height: 180px !important;
+
+    max-width: 40vw !important;
+    max-height: 40vh !important;
+
+    object-fit: contain !important;
+
+    margin-top: 30px;
+
+    image-rendering: auto;
+
+    filter:
+        contrast(1.3)
+        drop-shadow(
+            0 0 20px #000
+        );
+
+    animation:
+        angryMucciAppear
+        0.5s
+        steps(5)
+        forwards,
+        angryMucciGlitch
+        0.12s
+        infinite
+        0.5s;
+
+}
+
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+@keyframes warningStripesMove {
+
+    from {
+        transform:
+            translate(0,0);
+    }
+
+    to {
+        transform:
+            translate(
+                70px,
+                70px
+            );
+    }
+
+}
+
+
+@keyframes warningAppear {
+
+    0% {
+
+        opacity: 0;
+
+        transform:
+            scale(1.15);
+
+    }
+
+    30% {
+
+        opacity: 1;
+
+        transform:
+            scale(0.98);
+
+    }
+
+    60% {
+
+        transform:
+            scale(1.03);
+
+    }
+
+    100% {
+
+        opacity: 1;
+
+        transform:
+            scale(1);
+
+    }
+
+}
+
 
 @keyframes angryMucciAppear {
 
     0% {
+
         opacity: 0;
 
         transform:
-            translate(-50%, -50%)
             scale(0.1)
-            rotate(-10deg);
+            rotate(-15deg);
 
         filter:
-            blur(10px)
+            blur(20px)
             contrast(3);
+
     }
 
-    30% {
+    50% {
+
         opacity: 1;
 
         transform:
-            translate(-50%, -50%)
-            scale(1.3)
-            rotate(4deg);
-
-        filter:
-            blur(2px)
-            contrast(2);
-    }
-
-    60% {
-        transform:
-            translate(-50%, -50%)
-            scale(0.9)
-            rotate(-2deg);
-    }
-
-    100% {
-        opacity: 1;
-
-        transform:
-            translate(-50%, -50%)
-            scale(1)
-            rotate(0deg);
+            scale(1.25)
+            rotate(5deg);
 
         filter:
             blur(0)
-            contrast(1.5);
+            contrast(2);
+
     }
+
+    100% {
+
+        opacity: 1;
+
+        transform:
+            scale(1)
+            rotate(0);
+
+        filter:
+            none;
+
+    }
+
 }
 
-/* =========================================================
-   WARNING GLITCH
-   ========================================================= */
 
-@keyframes angryWarningGlitch {
+@keyframes angryMucciGlitch {
 
     0% {
         transform:
-            translate(0, 0)
-            rotate(-2deg);
+            translate(0,0)
+            scale(1);
     }
 
     25% {
         transform:
-            translate(-2px, 1px)
-            rotate(-1deg);
+            translate(-6px,2px)
+            scale(1.03);
     }
 
     50% {
         transform:
-            translate(2px, -1px)
-            rotate(-3deg);
+            translate(6px,-3px)
+            scale(0.97);
     }
 
     75% {
         transform:
-            translate(-1px, 0)
-            rotate(-2deg);
+            translate(-3px,4px)
+            scale(1.02);
     }
 
     100% {
         transform:
-            translate(0, 0)
-            rotate(-2deg);
+            translate(0,0)
+            scale(1);
     }
+
 }
+
+
+@keyframes warningTextGlitch {
+
+    0% {
+        transform:
+            translate(0,0);
+    }
+
+    25% {
+        transform:
+            translate(4px,-2px);
+    }
+
+    50% {
+        transform:
+            translate(-3px,2px);
+    }
+
+    75% {
+        transform:
+            translate(2px,1px);
+    }
+
+    100% {
+        transform:
+            translate(0,0);
+    }
+
+}
+
 
 /* =========================================================
    MOBILE
-   ========================================================= */
+========================================================= */
 
 @media (max-width: 600px) {
 
-    .event-page {
-        padding: 8px;
-    }
-
-    .event-title {
-        font-size: 11px;
-    }
-
-    .event-subtitle {
-        font-size: 7px;
-    }
-
-    .event-grid {
-        gap: 5px;
-    }
-
-    .event-item {
-        width: 150px;
-        height: 170px;
-
-        min-width: 150px;
-        max-width: 150px;
-
-        min-height: 170px;
-        max-height: 170px;
-    }
-
-    .event-picture {
-        width: 82px;
-        height: 82px;
-    }
-
-    .event-picture img {
-        width: 70px;
-        height: 70px;
-
-        min-width: 70px;
-        max-width: 70px;
-
-        min-height: 70px;
-        max-height: 70px;
-    }
-
+    #globalEventOverlay
     .global-event-mucci {
-        width: 140px;
-        height: 140px;
+
+        width: 140px !important;
+        height: 140px !important;
+
     }
 
+    #globalEventOverlay
     .global-event-warning-title {
-        font-size: 13px;
+
+        font-size: 18px;
+
+        padding: 12px;
+
+        border-width: 3px;
+
     }
+
 }
 
 /* =========================
