@@ -926,12 +926,93 @@ function initEventButtons(){
    EVENT COINS SYNC
 ========================================================= */
 
-function syncEventCoins(){
+async function syncEventCoins(){
 
-    updateEventCoins();
+    if(
+        !token ||
+        !currentUser
+    ){
+
+        updateEventCoins();
+
+        return;
+
+    }
+
+
+    try{
+
+        const data =
+            await apiRequest(
+                "/api/account/me",
+                {
+                    method:
+                        "GET"
+                }
+            );
+
+
+        if(
+            !data ||
+            !data.user
+        ){
+
+            throw new Error(
+                "INVALID ACCOUNT RESPONSE"
+            );
+
+        }
+
+
+        /*
+         * Le serveur est la source
+         * de vérité.
+         */
+
+        currentUser =
+            data.user;
+
+
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(
+                currentUser
+            )
+        );
+
+
+        updateCoinsUI();
+
+        updateEventCoins();
+        
+        await syncEventCoins();
+
+
+        console.log(
+            "[COINS SYNC]",
+            currentUser.coins,
+            "◈"
+        );
+
+
+    }catch(error){
+
+        console.error(
+            "[COINS SYNC]",
+            error
+        );
+
+
+        /*
+         * Si la synchronisation échoue,
+         * on garde la dernière valeur connue.
+         */
+
+        updateEventCoins();
+
+    }
 
 }
-
 
 /* =========================================================
    INIT EVENT
@@ -2499,6 +2580,183 @@ function connectSocket(){
 
     };
 
+/* =========================================================
+   GLOBAL EVENT — ANGRY MUCCI
+========================================================= */
+
+function launchGlobalEvent(eventId){
+
+    console.log(
+        "[GLOBAL EVENT]",
+        eventId
+    );
+
+
+    if(
+        eventId !== "angry_mucci"
+    ){
+
+        console.warn(
+            "[GLOBAL EVENT] Event inconnu:",
+            eventId
+        );
+
+        return;
+    }
+
+
+    /*
+     * Supprimer un ancien event
+     */
+
+    const oldOverlay =
+        document.getElementById(
+            "globalEventOverlay"
+        );
+
+    if(oldOverlay){
+
+        oldOverlay.remove();
+
+    }
+
+
+    /*
+     * Création de l'overlay
+     */
+
+    const overlay =
+        document.createElement(
+            "div"
+        );
+
+
+    overlay.id =
+        "globalEventOverlay";
+
+
+    overlay.className =
+        "global-event-overlay";
+
+
+    overlay.innerHTML = `
+
+        <div
+            class="global-event-intro"
+        >
+
+            <img
+                src="https://raw.githubusercontent.com/davidtytytutu-lgtm/ramdom/refs/heads/main/david-random/event/nicos-nextbots-nextbots.gif"
+                alt="ANGRY MUCCI"
+            >
+
+        </div>
+
+
+        <div
+            class="global-event-warning"
+        >
+
+            <div class="global-event-warning-title">
+
+                ⚠ WARNING ⚠
+
+            </div>
+
+
+            <img
+                class="global-event-mucci"
+                src="https://raw.githubusercontent.com/davidtytytutu-lgtm/ramdom/refs/heads/main/david-random/event/angry-mucci.png"
+                alt="ANGRY MUCCI"
+            >
+
+        </div>
+
+    `;
+
+
+    document.body.appendChild(
+        overlay
+    );
+
+
+    /*
+     * SON INTRO
+     */
+
+    const audio =
+        new Audio(
+            "https://github.com/davidtytytutu-lgtm/ramdom/raw/refs/heads/main/david-random/event/intro.mp3"
+        );
+
+
+    audio.volume =
+        1;
+
+
+    audio.currentTime =
+        0;
+
+
+    audio.play()
+        .then(() => {
+
+            console.log(
+                "[GLOBAL EVENT] Intro audio lancé"
+            );
+
+        })
+        .catch(error => {
+
+            console.warn(
+                "[GLOBAL EVENT] Audio bloqué:",
+                error
+            );
+
+        });
+
+
+    /*
+     * INTRO GIF : 3.5 secondes
+     */
+
+setTimeout(
+    () => {
+
+        overlay.classList.add(
+            "global-event-active"
+        );
+
+    },
+    3500
+);
+
+    /*
+     * Fin de l'event
+     */
+
+    setTimeout(
+        () => {
+
+            if(
+                overlay &&
+                overlay.parentNode
+            ){
+
+                overlay.remove();
+
+            }
+
+
+            console.log(
+                "[GLOBAL EVENT] Event terminé"
+            );
+
+        },
+        9000
+    );
+
+}
 
     socket.onmessage = event => {
 
@@ -2576,6 +2834,21 @@ function connectSocket(){
 
             }
 
+else if(
+    data.type === "global_event"
+){
+
+    console.log(
+        "[GLOBAL EVENT] Reçu:",
+        data.event
+    );
+
+
+    launchGlobalEvent(
+        data.event
+    );
+
+}
 
             else if(
                 data.type === "error"
