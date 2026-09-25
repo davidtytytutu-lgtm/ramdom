@@ -1236,6 +1236,166 @@ app.post(
         }
     }
 );
+
+/* =========================================================
+   GLOBAL EVENTS
+========================================================= */
+
+const EVENT_ITEMS = {
+
+    angry_mucci: {
+        id: "angry_mucci",
+        name: "ANGRY MUCCI",
+        price: 100
+    }
+
+};
+
+
+app.post(
+    "/api/event/buy",
+    requireAuth,
+    async (req, res) => {
+
+        try {
+
+            const eventId =
+                typeof req.body?.event === "string"
+                    ? req.body.event
+                    : "";
+
+            const event =
+                EVENT_ITEMS[eventId];
+
+
+            if(!event){
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    error:
+                        "EVENT NOT FOUND"
+
+                });
+
+            }
+
+
+            if(
+                typeof req.user.coins !== "number" ||
+                !Number.isFinite(req.user.coins) ||
+                req.user.coins < 0
+            ){
+
+                req.user.coins = 0;
+
+            }
+
+
+            if(
+                req.user.coins < event.price
+            ){
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "NOT ENOUGH COINS",
+
+                    required:
+                        event.price,
+
+                    coins:
+                        req.user.coins
+
+                });
+
+            }
+
+
+            /*
+             * RETIRER LES DAVID COINS
+             */
+
+            req.user.coins -=
+                event.price;
+
+
+            /*
+             * SAUVEGARDER
+             */
+
+            await saveUsers();
+
+
+            /*
+             * ENVOYER L'EVENT
+             * À TOUS LES UTILISATEURS CONNECTÉS
+             */
+
+            broadcast({
+
+                type:
+                    "global_event",
+
+                event:
+                    event.id
+
+            });
+
+
+            console.log(
+
+                `[EVENT] ` +
+                `${req.user.username} ` +
+                `a activé ${event.id} ` +
+                `(-${event.price} ◈)`
+
+            );
+
+
+            res.json({
+
+                success:
+                    true,
+
+                event:
+                    event.id,
+
+                coins:
+                    req.user.coins,
+
+                price:
+                    event.price
+
+            });
+
+
+        } catch(error) {
+
+            console.error(
+                "[EVENT] Erreur achat:",
+                error
+            );
+
+
+            res.status(500).json({
+
+                success:
+                    false,
+
+                error:
+                    "EVENT PURCHASE ERROR"
+
+            });
+
+        }
+
+    }
+);
+
 // ==========================================
 // DAVID SHOP
 // ==========================================
