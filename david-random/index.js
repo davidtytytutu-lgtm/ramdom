@@ -697,28 +697,248 @@ async function restoreSession(){
    EVENT PAGE
 ========================================================= */
 
-function updateEventCoins() {
+function updateEventCoins(){
 
     const element =
-        document.getElementById("eventDavidCoins");
+        document.getElementById(
+            "eventDavidCoins"
+        );
 
-    if (!element) return;
-
-    /*
-     * On réutilisera ici la variable/système
-     * DAVID COINS déjà présent dans ton serveur.
-     */
+    if(!element){
+        return;
+    }
 
     const coins =
-        Number(
-            window.currentDavidCoins ??
-            window.davidCoins ??
-            0
-        );
+        currentUser &&
+        Number.isFinite(
+            Number(currentUser.coins)
+        )
+        ? Math.max(
+            0,
+            Math.floor(
+                Number(currentUser.coins)
+            )
+        )
+        : 0;
 
     element.textContent =
         `◈ ${coins}`;
 }
+
+
+/* =========================================================
+   EVENT BUY
+========================================================= */
+
+async function buyGlobalEvent(eventId){
+
+    if(
+        !currentUser ||
+        !token
+    ){
+
+        alert(
+            "Tu dois être connecté pour utiliser un événement."
+        );
+
+        return;
+    }
+
+
+    const PRICE = 100;
+
+
+    const coins =
+        Number(currentUser.coins);
+
+
+    if(
+        !Number.isFinite(coins) ||
+        coins < PRICE
+    ){
+
+        const error =
+            document.getElementById(
+                "eventNotEnough"
+            );
+
+        if(error){
+
+            error.style.display =
+                "block";
+
+            error.textContent =
+                `NOT ENOUGH ◈ — ${PRICE} ◈ REQUIRED`;
+
+            setTimeout(
+                () => {
+                    error.style.display =
+                        "none";
+                },
+                2500
+            );
+
+        }else{
+
+            alert(
+                `Pas assez de DAVID COINS.\n\nPrix : ${PRICE} ◈\nSolde : ${coins || 0} ◈`
+            );
+
+        }
+
+        return;
+    }
+
+
+    try{
+
+        /*
+         * Appel de l'API d'événement.
+         *
+         * Si ton serveur possède cette route,
+         * l'achat sera traité côté serveur.
+         */
+
+        const response =
+            await apiRequest(
+                "/api/event/buy",
+                {
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:JSON.stringify({
+                        event:eventId
+                    })
+                }
+            );
+
+
+        if(
+            !response ||
+            !response.success
+        ){
+
+            throw new Error(
+                response?.error ||
+                "EVENT PURCHASE FAILED"
+            );
+
+        }
+
+
+        /*
+         * Synchroniser le nouveau solde
+         */
+
+        if(
+            typeof response.coins === "number"
+        ){
+
+            currentUser.coins =
+                response.coins;
+
+        }else{
+
+            currentUser.coins =
+                coins - PRICE;
+
+        }
+
+
+        localStorage.setItem(
+            USER_KEY,
+            JSON.stringify(
+                currentUser
+            )
+        );
+
+
+        updateCoinsUI();
+        updateEventCoins();
+
+
+        console.log(
+            "[EVENT] Achat réussi:",
+            eventId
+        );
+
+
+    }catch(error){
+
+        console.error(
+            "[EVENT BUY]",
+            error
+        );
+
+
+        alert(
+            "Erreur événement : " +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   EVENT BUTTONS
+========================================================= */
+
+function initEventButtons(){
+
+    document
+        .querySelectorAll(
+            "[data-event]"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const eventId =
+                            button.dataset.event;
+
+                        if(!eventId){
+                            return;
+                        }
+
+                        buyGlobalEvent(
+                            eventId
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   EVENT COINS SYNC
+========================================================= */
+
+function syncEventCoins(){
+
+    updateEventCoins();
+
+}
+
+
+/* =========================================================
+   INIT EVENT
+========================================================= */
+
+initEventButtons();
+syncEventCoins();
 
 /* =========================================================
    DAVID COINS // VIDEO AD
