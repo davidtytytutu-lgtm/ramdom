@@ -1,0 +1,5 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_obunga/obunga"
+	"$alphatest" 1
+}

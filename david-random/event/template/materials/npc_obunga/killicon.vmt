@@ -1,0 +1,6 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_obunga/obunga"
+	"$translucent" 1
+	"$vertexalpha" 1
+}
