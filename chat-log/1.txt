@@ -1,7 +1,2 @@
-
-[2026-09-05T18:46:46.176Z] david_officiel (3091303f-3eaf-4977-9d18-a8aa0a8a2208) : :pepe_pug: hi
-[2026-09-16T13:34:36.458Z] david_officiel (3091303f-3eaf-4977-9d18-a8aa0a8a2208) : :nyan_cat:
 [2026-09-18T22:04:01.608Z] david_officiel (3091303f-3eaf-4977-9d18-a8aa0a8a2208) : https://discord.gg/6cvKrMhJRy
-[2026-09-23T19:44:38.622Z] david_officiel (3091303f-3eaf-4977-9d18-a8aa0a8a2208) [RGB] : :pepe_dance: hi
 [2026-10-02T16:12:11.936Z] david_officiel (3091303f-3eaf-4977-9d18-a8aa0a8a2208) [RGB] : :pepe_dance: welcome
-[2026-10-02T16:29:53.255Z] david (89e0eb47-266e-4bf9-af25-491b696b2890) [NORMAL] : :pepe_dance:
