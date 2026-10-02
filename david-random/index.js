@@ -5,11 +5,11 @@
    CONFIG
 ========================================================= */
 
-const API =
-"https://david-random.onrender.com";
+const API = 
+"https://ramdom.david.blitz.cloud";
 
 const SOCKET_URL =
-"wss://david-random.onrender.com/ws";
+"wss://ramdom.david.blitz.cloud/ws";
 
 const TOKEN_KEY =
 "david_random_token";
