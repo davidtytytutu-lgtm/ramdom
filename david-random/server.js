@@ -56,7 +56,7 @@ const USERS_FILE =
 ========================================================= */
 
 const HEARTBEAT_SERVER_URL =
-    "https://david-heartbeat.onrender.com";
+    "https://david-heartbeat.david.blitz.cloud";
 
 const HEARTBEAT_DELAY =
     5000;
