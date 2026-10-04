@@ -28,7 +28,7 @@ DAVID RANDOM<span class="blink">_</span>
 </div>
 
 <div class="logo-small">
-[ RANDOM INTERNET TERMINAL // V2 ]
+[ R.I.T // Ramdom Internet Terminal // V2.5 // Power By David's Mod ]
 </div>
 
 <div class="status">
@@ -69,15 +69,23 @@ ACCOUNT:
 <button data-page="about">[ ABOUT ]</button>
 <button data-page="coins">[ DAVID COINS ]</button>
 <button data-page="shop">[ SHOP ]</button>
-<button data-page="event">[ EVENT ]</button>
+<button data-page="david-chat">[ DAVID CHAT ]</button>
+
 
 </nav>
+
+<div class="page" data-page="david-chat">
+    <iframe
+        src="https://perchance.org/david-chat"
+        style="width:100%; height:700px; border:0;"
+    ></iframe>
+</div>
 
 <div class="marquee">
 
 <span>
 *** DAVID RANDOM ***
-*** RENDER SERVER ***
+*** BLITZ SERVER ***
 *** GITHUB STORAGE ***
 *** WSS CHAT ***
 *** ACCOUNT SYSTEM ***
@@ -112,7 +120,8 @@ ACCOUNT:
 <div class="side-link" data-page="about">ⓘ About</div>
 <div class="side-link" data-page="coins">◈ David Coins</div>
 <div class="side-link" data-page="shop">✦ SHOP</div>
-<div class="side-link" data-page="event">⛦ EVENT</div>
+<div class="side-link" data-page="david-chat">✦ David Chat</div>
+
 
 <div class="side-box">
 
@@ -120,7 +129,7 @@ ACCOUNT:
 
 <br><br>
 
-RENDER:
+BLITZ:
 <span id="renderSide" class="offline">CHECKING</span>
 
 <br>
@@ -194,17 +203,25 @@ cat welcome.txt
 </p>
 
 <p>
-Bienvenue dans le coin le plus random de l'Internet.
+Bienvenue dans le coin le plus random de l'Internet                                                     
 </p>
 
 <p>
-Images, musique, vidéos, chat, terminal et trucs inutiles.
+  Serveur Discord →
+  <a href="https://discord.gg/6cvKrMhJRy" target="_blank" rel="noopener noreferrer">
+    https://discord.gg/6cvKrMhJRy
+  </a>
 </p>
 
 <p>
-<span class="blink">█</span>
-Explore.
+  Images, musique, vidéos, chat, terminal et trucs inutiles.
 </p>
+
+<p>
+  <span class="blink">█</span>
+  Explore.
+</p>
+
 
 </div>
 
@@ -541,14 +558,11 @@ TERMINAL // DAVID_OS
 <div class="terminal">
 
 <div class="terminal-output" id="terminalOutput">
-DAVID_OS v2.0
+DAVID_OS v2.5
 Booting...
-Render server detected.
+Not Again
 GitHub storage detected.
 WSS system detected.
-ACCOUNT SYSTEM detected.
-CHAT-LOG SYSTEM detected.
-EMOTE SYSTEM detected.
 SYSTEM READY.
 Type "help".
 </div>
@@ -562,7 +576,7 @@ guest@david:~$&nbsp;
 <input
 class="terminal-input"
 id="terminalInput"
-autocomplete="off"
+autocomplete="on"
 spellcheck="false"
 >
 
@@ -961,8 +975,8 @@ ABOUT // README.TXT
 ╔══════════════════════════════════╗
 ║          DAVID RANDOM            ║
 ║                                  ║
-║ Version : 2.0                    ║
-║ Server  : Render                 ║
+║ Version : 2.5                    ║
+║ Server  : blitz.cloud            ║
 ║ Storage : GitHub                 ║
 ║ Engine  : HTML/CSS/JS            ║
 ║ WebSocket : WSS                  ║
@@ -1076,130 +1090,6 @@ BALANCE : <span id="shopCoinBalance">0</span> ◈
 </div>
 
 </div>
-
-</section>
-
-<!-- EVENT -->
-
-<!-- =========================================================
-     GLOBAL EVENTS
-     ========================================================= -->
-
-<section class="page" id="event">
-
-    <div class="event-page">
-
-        <!-- HEADER -->
-
-        <div class="event-header">
-            <div class="event-title">
-                [ GLOBAL EVENTS ]
-            </div>
-
-            <div class="event-subtitle">
-                GLOBAL EVENTS // DAVID RANDOM
-            </div>
-        </div>
-
-
-        <!-- COINS -->
-
-        <div class="event-balance">
-            <span>DAVID COINS</span>
-            <strong id="eventDavidCoins">◈ 0</strong>
-        </div>
-
-
-        <!-- EVENT GRID -->
-
-        <div class="event-grid">
-
-
-            <!-- ANGRY MUCCI -->
-
-            <div class="event-item">
-
-                <!-- ASCII TOP -->
-
-                <div class="event-ascii">
-                    +----------------+
-                </div>
-
-
-                <!-- TITLE -->
-
-                <div class="event-name">
-                    | ANGRY MUCCI |
-                </div>
-
-
-                <!-- IMAGE -->
-
-                <div class="event-picture">
-
-                    <img
-                        src="https://raw.githubusercontent.com/davidtytytutu-lgtm/ramdom/refs/heads/main/david-random/event/angry-mucci.png"
-                        alt="ANGRY MUCCI"
-                    >
-
-                </div>
-
-
-                <!-- ASCII SEPARATOR -->
-
-                <div class="event-ascii">
-                    +----------------+
-                </div>
-
-
-                <!-- PRICE -->
-
-                <div class="event-price">
-                    PRICE : <strong>100 ◈</strong>
-                </div>
-
-
-                <!-- BUTTON -->
-
-                <button
-                    type="button"
-                    class="event-button"
-                    data-event="angry_mucci"
-                >
-                    [ ACTIVATE ]
-                </button>
-
-
-                <!-- ERROR -->
-
-                <div
-                    class="event-error"
-                    id="eventNotEnough"
-                >
-                    NOT ENOUGH ◈
-                </div>
-
-            </div>
-
-
-        </div>
-
-
-        <!-- INFO -->
-
-        <div class="event-footer">
-
-            <div class="event-footer-title">
-                [ EVENT SYSTEM ]
-            </div>
-
-            <div class="event-footer-text">
-                Events are visible to all connected users.
-            </div>
-
-        </div>
-
-    </div>
 
 </section>
 
