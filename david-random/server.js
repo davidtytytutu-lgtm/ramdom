@@ -51,6 +51,8 @@ const MESSAGE_LIMIT =
 const USERS_FILE =
     "accounts/users.enc";
 
+const { createProxyMiddleware } = require("http-proxy-middleware");
+
 /* =========================================================
    HEARTBEAT
 ========================================================= */
