@@ -15,6 +15,48 @@ const wss = new WebSocket.Server({
     path: "/ws"
 });
 
+// ============================================================
+// DAVID CHAT - PERCHANCE PROXY
+// ============================================================
+
+app.use(
+    "/david-chat",
+    createProxyMiddleware({
+        target: "https://null.perchance.org",
+        changeOrigin: true,
+        secure: true,
+
+        pathRewrite: {
+            "^/david-chat": "/david-chat"
+        },
+
+        on: {
+            proxyReq(proxyReq) {
+                proxyReq.setHeader(
+                    "Referer",
+                    "https://null.perchance.org/david-chat"
+                );
+
+                proxyReq.setHeader(
+                    "Origin",
+                    "https://null.perchance.org"
+                );
+            },
+
+            proxyRes(proxyRes) {
+                // Empêche certains headers du site distant
+                // de bloquer l'affichage dans notre iframe.
+                delete proxyRes.headers["content-security-policy"];
+                delete proxyRes.headers["content-security-policy-report-only"];
+                delete proxyRes.headers["x-frame-options"];
+
+                proxyRes.headers["access-control-allow-origin"] =
+                    "https://david-officiel.neocities.org";
+            }
+        }
+    })
+);
+
 /* =========================================================
    CONFIG
 ========================================================= */
