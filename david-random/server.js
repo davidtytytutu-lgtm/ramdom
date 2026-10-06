@@ -6,7 +6,7 @@ const WebSocket = require("ws");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
-
+const { createProxyMiddleware } = require("http-proxy-middleware");
 const app = express();
 const server = http.createServer(app);
 
@@ -92,8 +92,6 @@ const MESSAGE_LIMIT =
 
 const USERS_FILE =
     "accounts/users.enc";
-
-const { createProxyMiddleware } = require("http-proxy-middleware");
 
 /* =========================================================
    HEARTBEAT
