@@ -22,7 +22,7 @@ const wss = new WebSocket.Server({
 app.use(
     "/david-chat",
     createProxyMiddleware({
-        target: "https://null.perchance.org",
+        target: "https://2faec86fd82fcedf1ec451ddd7b279b4.perchance.org",
         changeOrigin: true,
         secure: true,
 
@@ -34,24 +34,13 @@ app.use(
             proxyReq(proxyReq) {
                 proxyReq.setHeader(
                     "Referer",
-                    "https://null.perchance.org/david-chat"
+                    "https://2faec86fd82fcedf1ec451ddd7b279b4.perchance.org/david-chat"
                 );
 
                 proxyReq.setHeader(
                     "Origin",
-                    "https://null.perchance.org"
+                    "https://2faec86fd82fcedf1ec451ddd7b279b4.perchance.org"
                 );
-            },
-
-            proxyRes(proxyRes) {
-                // Empêche certains headers du site distant
-                // de bloquer l'affichage dans notre iframe.
-                delete proxyRes.headers["content-security-policy"];
-                delete proxyRes.headers["content-security-policy-report-only"];
-                delete proxyRes.headers["x-frame-options"];
-
-                proxyRes.headers["access-control-allow-origin"] =
-                    "https://david-officiel.neocities.org";
             }
         }
     })
